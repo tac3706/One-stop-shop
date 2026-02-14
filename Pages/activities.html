@@ -16,6 +16,7 @@
 </head>
 <body>
     <div class="container">
+        <!-- Back to Home -->
         <a href="../index.html" class="back-button">⬅ Back to Home</a>
 
         <h1>Interactive Activities</h1>
@@ -26,18 +27,22 @@
             <input type="submit" value="💖 Donate" class="back-button">
         </form>
 
+        <!-- Activity Menu -->
         <div id="activity-menu" class="section-grid">
+            <!-- Links relative to this file (activities.html in Pages/) -->
             <a href="flashcards.html" class="section-card">📚 Vocabulary & Flashcards</a>
             <a href="conditionals.html" class="section-card">📚 Conditionals Masterclass</a>
             <button class="section-card" onclick="loadActivity(0)">🌤 Weather vs. Climate</button>
         </div>
 
+        <!-- Game Display -->
         <div id="game-display" style="display:none;">
             <button onclick="showMenu()" style="margin-bottom:20px;">← Back to Activities</button>
             <div id="game-content"></div>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="../Scripts/activities.js"></script>
 </body>
 </html>
