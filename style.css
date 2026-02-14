@@ -79,14 +79,16 @@ input[type="text"] {
     border-radius: 4px;
 }
 
-.donate-form {
-  position: fixed;       /* stays visible when scrolling */
-  top: 20px;             /* distance from top */
-  right: 20px;            /* distance from left */
-  z-index: 1000;         /* ensure it’s above other elements */
+/* Position the donation container in the top right */
+.donate-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 100; /* Keeps it above other elements */
 }
 
-.donate-form .back-button {
-  padding: 8px 14px;     /* slightly bigger for visibility */
-  font-size: 14px;
+/* Ensure the main container can handle the absolute positioning */
+.container {
+    position: relative;
+    padding-top: 40px; /* Gives extra space so content doesn't overlap */
 }
