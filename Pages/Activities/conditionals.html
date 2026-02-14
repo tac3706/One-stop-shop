@@ -2,97 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Conditionals Masterclass</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .conditional-container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        .explanation-box { 
-            background: #fff3e0; 
-            padding: 20px; 
-            border-radius: 12px; 
-            margin-bottom: 30px; 
-            text-align: left; 
-            border-left: 8px solid #ff9800; 
-        }
-        .game-card { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-        }
-        .question-item { margin-bottom: 25px; font-size: 1.2rem; text-align: left; }
-        input { 
-            border: none; 
-            border-bottom: 2px solid #ff9800; 
-            font-size: 1.1rem; 
-            width: 150px; 
-            text-align: center;
-            outline: none;
-        }
-        .feedback { font-weight: bold; margin-left: 10px; }
-        .correct { color: #2e7d32; }
-        .incorrect { color: #c62828; }
-        .nav-btn { margin-bottom: 20px; cursor: pointer; }
-    </style>
+    <title>Conditionals Activity</title>
+
+    <!-- Adjust this path depending on folder depth -->
+    <link rel="stylesheet" href="../style.css">
 </head>
+
 <body>
 
+    <button class="back-button" onclick="window.location.href='../activities.html'">
+        ⬅ Back
+    </button>
+
     <div class="container">
-        <button class="nav-btn" onclick="window.location.href='../activities.html'">← Back to Activities</button>
-        
-        <h1>Conditional Sentences</h1>
-        
-        <div id="conditional-menu" class="section-grid">
-            <button class="section-card" onclick="loadConditional(0)">Zero Conditional<br>(100% Truth)</button>
-            <button class="section-card" onclick="loadConditional(1)">1st Conditional<br>(Real Possibility)</button>
-            <button class="section-card" onclick="loadConditional(2)">2nd Conditional<br>(Hypothetical)</button>
-            <button class="section-card" onclick="loadConditional(3)">3rd Conditional<br>(Past Regret)</button>
-        </div>
+        <h1>Conditionals Practice</h1>
 
-        <div id="game-display" style="display:none;">
-            <button class="nav-btn" onclick="showCondMenu()">← Back to Conditionals List</button>
-            <div id="game-content"></div>
-        </div>
+        <p id="question">Loading question...</p>
+
+        <div id="answers"></div>
+
+        <button onclick="nextQuestion()">Next Question</button>
     </div>
 
+    <!-- ✅ Explanation box is now INSIDE body -->
+    <div class="explanation-box">
+        <h2>Explanation</h2>
+        <p id="explanationText">Answer a question to see the explanation.</p>
+    </div>
+
+    <!-- Adjust path depending on folder depth -->
     <script src="../Scripts/conditionals.js"></script>
-</body>
-<div class="explanation-box" style="background-color: #f9f9f9; border-left: 8px solid #2196f3;">
-    <h2>Grammar Overview: Conditional Sentences</h2>
-    <p>Conditional sentences consist of two halves, known as clauses[cite: 437]:</p>
-    <ul>
-        <li><strong>The "if" part (if clause):</strong> Sets the condition[cite: 438].</li>
-        <li><strong>The other part (main clause):</strong> Uses words like <em>can, will, may, might, could,</em> or <em>would</em> to show the result[cite: 439].</li>
-    </ul>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
-        <div class="game-card" style="padding: 15px;">
-            <h4>Zero Conditional (100%)</h4>
-            <p>Used for general truths and scientific facts.</p>
-            <code>If + Present Simple, Present Simple</code>
-        </div>
-        
-        <div class="game-card" style="padding: 15px;">
-            <h4>1st Conditional (75%)</h4>
-            <p>Used for real possibilities in the present or future.</p>
-            <code>If + Present Simple, Will + Verb</code>
-        </div>
-        
-        <div class="game-card" style="padding: 15px;">
-            <h4>2nd Conditional (25%)</h4>
-            <p>Used for unreal or hypothetical situations[cite: 448, 449].</p>
-            <code>If + Past Simple, Would + Verb</code>
-        </div>
-        
-        <div class="game-card" style="padding: 15px;">
-            <h4>3rd Conditional (0%)</h4>
-            <p>Used for past regrets or things that did not happen[cite: 453, 454, 456].</p>
-            <code>If + Past Perfect, Would have + P.P.</code>
-        </div>
-    </div>
 
-    <p style="margin-top: 15px; font-style: italic;">
-        <strong>Tip:</strong> If the "if" clause comes first, use a comma. If it comes second, no comma is needed (e.g., "Water boils if you heat it")[cite: 467, 468, 469].
-    </p>
-</div>
+</body>
 </html>
