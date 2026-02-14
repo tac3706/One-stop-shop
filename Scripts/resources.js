@@ -1,4 +1,4 @@
-import { resources } from "../data/resources.js";
+import { resources } from "../Data/resources.js";
 
 // DOM Elements
 const list = document.getElementById("resourceList");
