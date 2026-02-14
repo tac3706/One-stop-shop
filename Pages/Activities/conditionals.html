@@ -2,36 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Conditionals Activity</title>
-
-    <!-- Adjust this path depending on folder depth -->
+    <title>Conditionals Masterclass</title>
     <link rel="stylesheet" href="../style.css">
+    <style>
+        .nav-btn { margin-bottom: 20px; cursor: pointer; }
+    </style>
 </head>
-
 <body>
-
-    <button class="back-button" onclick="window.location.href='../activities.html'">
-        ⬅ Back
-    </button>
-
     <div class="container">
-        <h1>Conditionals Practice</h1>
+        <button class="nav-btn" onclick="window.location.href='activities.html'">← Back to Activities</button>
 
-        <p id="question">Loading question...</p>
+        <!-- Donate Button -->
+        <form action="https://www.paypal.com/donate" method="post" target="_blank" style="margin-bottom:20px;">
+            <input type="hidden" name="hosted_button_id" value="XXXXXXXXXXXX">
+            <input type="submit" value="💖 Donate" class="back-button">
+        </form>
 
-        <div id="answers"></div>
+        <h1>Conditional Sentences</h1>
 
-        <button onclick="nextQuestion()">Next Question</button>
+        <div id="conditional-menu" class="section-grid">
+            <button class="section-card" onclick="loadConditional(0)">Zero Conditional<br>(100% Truth)</button>
+            <button class="section-card" onclick="loadConditional(1)">1st Conditional<br>(Real Possibility)</button>
+            <button class="section-card" onclick="loadConditional(2)">2nd Conditional<br>(Hypothetical)</button>
+            <button class="section-card" onclick="loadConditional(3)">3rd Conditional<br>(Past Regret)</button>
+        </div>
+
+        <div id="game-display" style="display:none;">
+            <button class="nav-btn" onclick="showCondMenu()">← Back to Conditionals List</button>
+            <div id="game-content"></div>
+        </div>
     </div>
 
-    <!-- ✅ Explanation box is now INSIDE body -->
-    <div class="explanation-box">
-        <h2>Explanation</h2>
-        <p id="explanationText">Answer a question to see the explanation.</p>
-    </div>
-
-    <!-- Adjust path depending on folder depth -->
     <script src="../Scripts/conditionals.js"></script>
-
 </body>
 </html>
