@@ -1,14 +1,52 @@
-<link rel="stylesheet" href="../style.css">
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Resource Library</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .resource-item { 
+            padding: 15px; 
+            border-bottom: 1px solid #eee; 
+            margin-bottom: 10px;
+            background: #fff;
+            border-radius: 8px;
+        }
+        .filter-controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        input, select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
 <body>
   <div class="container">
     <a href="../index.html" class="back-button">⬅ Back to Home</a>
     <h1>Resource Library</h1>
 
+    <div class="filter-controls">
+        <input type="text" id="searchInput" placeholder="Search by title...">
+        
+        <select id="topicFilter">
+            <option value="">All Topics</option>
+            <option value="grammar">Grammar</option>
+            <option value="vocabulary">Vocabulary</option>
+            <option value="business english">Business English</option>
+            <option value="general">General</option>
+        </select>
+    </div>
+
     <div id="resourceList"></div>
   </div>
 
   <script type="module">
+    // Make sure this path is exactly correct on GitHub
     import { resources } from '../Scripts/resources.js';
 
     const container = document.getElementById('resourceList');
@@ -16,30 +54,45 @@
     const topicFilter = document.getElementById('topicFilter');
 
     function displayResources(filteredData) {
-      container.innerHTML = ''; // Clear previous list
+      container.innerHTML = ''; 
+      
+      if (filteredData.length === 0) {
+        container.innerHTML = '<p>No resources found matching your search.</p>';
+        return;
+      }
+
       filteredData.forEach(res => {
         const div = document.createElement('div');
-        div.className = 'resource-item'; // Style this in your CSS
+        div.className = 'resource-item';
         div.innerHTML = `
           <h3><a href="${res.url}" target="_blank">${res.title}</a></h3>
-          <p>Topic: ${res.topic} | Age: ${res.ageGroup}</p>
+          <p><strong>Topic:</strong> ${res.topic} | <strong>Age:</strong> ${res.ageGroup}</p>
         `;
         container.appendChild(div);
       });
     }
 
-    // Initial display
+    // Initial load
     displayResources(resources);
 
-    // Basic Search Logic
-    searchInput.addEventListener('input', (e) => {
-      const term = e.target.value.toLowerCase();
-      const filtered = resources.filter(res => 
-        res.title.toLowerCase().includes(term)
-      );
-      displayResources(filtered);
-    });
+    // Unified Filter Logic
+    function filterAll() {
+      const term = searchInput.value.toLowerCase();
+      const topic = topicFilter.value;
 
-    // You can add similar listeners for topicFilter, ageFilter, etc.
+      const filtered = resources.filter(res => {
+        const matchesSearch = res.title.toLowerCase().includes(term);
+        const matchesTopic = topic === "" || res.topic === topic;
+        return matchesSearch && matchesTopic;
+      });
+
+      displayResources(filtered);
+    }
+
+    // Listeners
+    searchInput.addEventListener('input', filterAll);
+    topicFilter.addEventListener('change', filterAll);
+
   </script>
 </body>
+</html>
