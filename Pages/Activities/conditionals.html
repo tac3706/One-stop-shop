@@ -2,15 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Conditionals Masterclass</title>
-    <link rel="stylesheet" href="../style.css">
-    <style>
-        .nav-btn { margin-bottom: 20px; cursor: pointer; }
-    </style>
+    <title>One Stop Shop - Conditionals</title>
+    <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
     <div class="container">
-        <button class="nav-btn" onclick="window.location.href='Pages/activities.html'">← Back to Activities</button>
+        <!-- Back to Activities List -->
+        <a href="../activities.html" class="back-button">⬅ Back to Activities</a>
 
         <!-- Donate Button -->
         <form action="https://www.paypal.com/donate" method="post" target="_blank" style="margin-bottom:20px;">
@@ -21,18 +19,18 @@
         <h1>Conditional Sentences</h1>
 
         <div id="conditional-menu" class="section-grid">
-            <button class="section-card" onclick="loadConditional(0)">Zero Conditional<br>(100% Truth)</button>
-            <button class="section-card" onclick="loadConditional(1)">1st Conditional<br>(Real Possibility)</button>
-            <button class="section-card" onclick="loadConditional(2)">2nd Conditional<br>(Hypothetical)</button>
-            <button class="section-card" onclick="loadConditional(3)">3rd Conditional<br>(Past Regret)</button>
+            <button class="section-card" onclick="loadConditional(0)">Zero Conditional (100%)</button>
+            <button class="section-card" onclick="loadConditional(1)">1st Conditional (Real Possibility)</button>
+            <button class="section-card" onclick="loadConditional(2)">2nd Conditional (Hypothetical)</button>
+            <button class="section-card" onclick="loadConditional(3)">3rd Conditional (Past Regret)</button>
         </div>
 
         <div id="game-display" style="display:none;">
-            <button class="nav-btn" onclick="showCondMenu()">← Back to Conditionals List</button>
+            <button onclick="showCondMenu()" style="margin-bottom:20px;">← Back to Conditionals List</button>
             <div id="game-content"></div>
         </div>
     </div>
 
-    <script src="../Scripts/conditionals.js"></script>
+    <script src="../../Scripts/conditionals.js"></script>
 </body>
 </html>
