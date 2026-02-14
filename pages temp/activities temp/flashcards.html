@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>One Stop Shop - Flashcards</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+
+    <div class="container">
+        <a href="../activities.html" style="text-decoration:none; color:#2196f3; font-weight:bold;">⬅ Back to Activities</a>
+
+<!-- Donate Button -->
+<form action="https://www.paypal.com/donate" method="post" target="_blank" class="donate-form">
+  <input type="hidden" name="hosted_button_id" value="XXXXXXXXXXXX">
+  <input type="submit" value="💖 Donate" class="back-button">
+</form>
+
+        <h1>Irregular Verbs Flashcards</h1>
+
+        <div class="card" id="flashcard">
+            <div id="card-content"></div>
+        </div>
+
+        <div class="buttons">
+            <button onclick="prevCard()">Previous</button>
+            <button onclick="flipCard()">Flip</button>
+            <button onclick="nextCard()">Next</button>
+        </div>
+    </div>
+
+    <script src="../../script.js"></script>
+</body>
+</html>
