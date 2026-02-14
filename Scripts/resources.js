@@ -6,8 +6,6 @@ const searchInput = document.getElementById("searchInput");
 const topicFilter = document.getElementById("topicFilter");
 const ageFilter = document.getElementById("ageFilter");
 const typeFilter = document.getElementById("typeFilter");
-
-// Optional: Teacher filter dropdown (add in resources.html)
 const teacherFilter = document.getElementById("teacherFilter");
 
 // Result count element
@@ -25,47 +23,41 @@ function displayResources(filteredResources) {
 
   topics.forEach(topic => {
     const section = document.createElement("div");
+    section.style.marginBottom = "15px";
 
-    // Section header
+    // Section header (Clickable)
     const header = document.createElement("h2");
     const topicResources = filteredResources.filter(r => r.topic === topic);
-    header.textContent = `${topic} (${topicResources.length})`;
+    header.textContent = `▶ ${topic.toUpperCase()} (${topicResources.length})`;
     header.style.cursor = "pointer";
+    header.style.padding = "10px";
+    header.style.backgroundColor = "#e3f2fd";
+    header.style.borderRadius = "8px";
 
     // Section content (hidden initially)
     const content = document.createElement("div");
     content.style.display = "none";
+    content.style.padding = "10px 20px";
 
     topicResources.forEach(resource => {
       const div = document.createElement("div");
+      div.className = "resource-item";
+      div.style.textAlign = "left";
       div.innerHTML = `
         <h3>${resource.title}</h3>
-        <p>Type: ${resource.type}</p>
-        <p>Topic: <input value="${resource.topic}" /></p>
-        <p>Age: <input value="${resource.ageGroup}" /></p>
-        <p>Tags: <input value="${resource.tags.join(", ")}" /></p>
-        <button>Save</button>
-        <a href="${resource.url}" target="_blank">Open</a>
-        <hr>
+        <p><strong>Type:</strong> ${resource.type} | <strong>Age:</strong> ${resource.ageGroup}</p>
+        <p><strong>Tags:</strong> ${resource.tags.join(", ")}</p>
+        <a href="${resource.url}" target="_blank" class="back-button" style="background-color: #4CAF50; margin-top: 5px;">🔗 Open Resource</a>
+        <hr style="border: 0.5px solid #ddd; margin: 15px 0;">
       `;
-
-      // Save button functionality (local save)
-      const saveButton = div.querySelector("button");
-      saveButton.addEventListener("click", () => {
-        resource.topic = div.querySelector("input:nth-of-type(1)").value;
-        resource.ageGroup = div.querySelector("input:nth-of-type(2)").value;
-        resource.tags = div.querySelector("input:nth-of-type(3)").value
-          .split(",")
-          .map(t => t.trim());
-        alert("Saved locally!");
-      });
-
       content.appendChild(div);
     });
 
-    // Toggle section display
+    // Toggle logic for opening/closing topics
     header.addEventListener("click", () => {
-      content.style.display = content.style.display === "none" ? "block" : "none";
+      const isHidden = content.style.display === "none";
+      content.style.display = isHidden ? "block" : "none";
+      header.textContent = (isHidden ? "▼ " : "▶ ") + `${topic.toUpperCase()} (${topicResources.length})`;
     });
 
     section.appendChild(header);
