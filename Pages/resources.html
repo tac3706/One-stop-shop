@@ -2,12 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Resource Library</title>
+    <title>One Stop Shop - Resources</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
     <div class="container">
+        <!-- Back to Home -->
         <a href="../index.html" class="back-button">⬅ Back to Home</a>
+
+        <h1>Interactive Activities</h1>
 
 <div style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
     <form action="https://www.paypal.com/donate" method="post" target="_top">
@@ -16,51 +19,24 @@
         <img alt="" border="0" src="https://www.paypal.com/en_DE/i/scr/pixel.gif" width="1" height="1" />
     </form>
 </div>
-        <h1>Resource Library</h1>
 
-        <div class="filter-controls">
-            <input type="text" id="searchInput" placeholder="Search resources...">
-            
-            <select id="topicFilter">
-                <option value="">All Topics</option>
-                <option value="phonics">Phonics</option>
-                <option value="grammar">Grammar</option>
-                <option value="vocabulary">Vocabulary</option>
-                <option value="exam prep">Exam Prep</option>
-                <option value="business english">Business English</option>
-                <option value="general">General</option>
-            </select>
+        <!-- Resource Menu -->
+        <div id="activity-menu" class="section-grid">
+            <!-- Correct links into the Activities folder -->
+            <a href="Resources" class="section-card">📚 
 
-            <select id="ageFilter">
-                <option value="">All Ages</option>
-                <option value="3-10">3-10</option>
-                <option value="teens">Teens</option>
-                <option value="adults">Adults</option>
-                <option value="all">All</option>
-            </select>
+            <a href="#" class="section-card">
+                📄 Printable Materials
+            </a>
 
-            <select id="typeFilter">
-                <option value="">All Types</option>
-                <option value="website">Website</option>
-                <option value="video">Video</option>
-                <option value="printable">Printable</option>
-                <option value="interactive">Interactive</option>
-            </select>
-
-            <select id="teacherFilter">
-                <option value="">All Teachers</option>
-                <option value="Travis">Travis</option>
-                <option value="Jeffrey">Jeffrey</option>
-                <option value="Anna">Anna</option>
-                <option value="Margret">Margret</option>
-            </select>
+        <!-- Game Display -->
+        <div id="game-display" style="display:none;">
+            <button onclick="showMenu()" style="margin-bottom:20px;">← Back to Activities</button>
+            <div id="game-content"></div>
         </div>
-
-        <hr>
-
-        <div id="resourceList"></div>
     </div>
 
-    <script type="module" src="../Scripts/resources.js"></script>
+    <!-- Scripts -->
+    <script src="../Scripts/activities.js"></script>
 </body>
 </html>
