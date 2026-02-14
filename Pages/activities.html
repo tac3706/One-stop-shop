@@ -5,33 +5,6 @@
     <title>One Stop Shop - Activities</title>
     <link rel="stylesheet" href="../style.css">
     <style>
-        .activity-container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        .explanation-box { 
-            background: #e3f2fd; 
-            padding: 20px; 
-            border-radius: 12px; 
-            margin-bottom: 30px; 
-            text-align: left; 
-            border-left: 8px solid #2196f3; 
-        }
-        .game-card { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-        }
-        .question-item { margin-bottom: 20px; font-size: 1.2rem; }
-        input[type="text"] { 
-            border: none; 
-            border-bottom: 2px solid #2196f3; 
-            font-size: 1.1rem; 
-            text-align: center; 
-            width: 120px; 
-            outline: none;
-        }
-        .feedback { font-weight: bold; margin-left: 10px; }
-        .correct { color: green; }
-        .incorrect { color: red; }
         .back-button {
             display: inline-block;
             margin-bottom: 20px;
@@ -42,24 +15,21 @@
     </style>
 </head>
 <body>
-
     <div class="container">
         <a href="../index.html" class="back-button">⬅ Back to Home</a>
 
         <h1>Interactive Activities</h1>
-        
+
+        <!-- Donate Button -->
+        <form action="https://www.paypal.com/donate" method="post" target="_blank" style="margin-bottom:20px;">
+            <input type="hidden" name="hosted_button_id" value="XXXXXXXXXXXX">
+            <input type="submit" value="💖 Donate" class="back-button">
+        </form>
+
         <div id="activity-menu" class="section-grid">
-            <a href="../flashcards.html" class="section-card">
-                📚 Vocabulary & Flashcards
-            </a>
-
-            <a href="../conditionals.html" class="section-card">
-                📚 Conditionals Masterclass
-            </a>
-
-            <button class="section-card" onclick="loadActivity(0)">
-                🌤 Weather vs. Climate
-            </button>
+            <a href="flashcards.html" class="section-card">📚 Vocabulary & Flashcards</a>
+            <a href="conditionals.html" class="section-card">📚 Conditionals Masterclass</a>
+            <button class="section-card" onclick="loadActivity(0)">🌤 Weather vs. Climate</button>
         </div>
 
         <div id="game-display" style="display:none;">
