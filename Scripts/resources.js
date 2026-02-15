@@ -44,148 +44,150 @@ async function loadAndDisplay() {
 
 // 4. Display Logic
 function displayResources(filteredData) {
+  const list = document.getElementById("resourceList");
+  const countDisplay = document.getElementById("resultCount");
+  if (!list) return;
 
-    const list = document.getElementById("resourceList");
-    const countDisplay = document.getElementById("resultCount");
-    if (!list) return;
+  list.innerHTML = "";
 
-    list.innerHTML = "";
+  if (countDisplay) {
+    countDisplay.innerText = `Showing ${filteredData.length} resources`;
+  }
 
-    if (countDisplay) {
-        countDisplay.innerText = `Showing ${filteredData.length} resources`;
-    }
+  if (filteredData.length === 0) {
+    list.innerHTML = "<p>No resources found.</p>";
+    return;
+  }
 
-    if (filteredData.length === 0) {
-        list.innerHTML = "<p>No resources found.</p>";
-        return;
-    }
+  const topics = [...new Set(
+    filteredData.map(res => String(res.topic || "general").toLowerCase())
+  )];
 
-    const topics = [...new Set(
-        filteredData.map(res => String(res.topic || "general").toLowerCase())
-    )];
+  topics.forEach(topic => {
+    const topicItems = filteredData.filter(res =>
+      String(res.topic || "general").toLowerCase() === topic
+    );
 
-    topics.forEach(topic => {
+    const section = document.createElement("div");
+    section.style.marginBottom = "15px";
 
-        const topicItems = filteredData.filter(res =>
-            String(res.topic || "general").toLowerCase() === topic
-        );
+    section.innerHTML = `
+      <h2 class="topic-header"
+          style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px;">
+          ▶ ${topic.toUpperCase()} (${topicItems.length})
+      </h2>
+      <div class="topic-content" style="display:none; padding:10px;">
+        ${topicItems.map(res => {
+          const tagText = Array.isArray(res.tags)
+            ? res.tags.join(", ")
+            : (res.tags || "Staff");
 
-        const section = document.createElement("div");
-        section.style.marginBottom = "15px";
+          return `
+            <div class="resource-item"
+                 data-id="${res.id}"
+                 style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
 
-        section.innerHTML = `
-            <h2 class="topic-header" 
-                style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px;">
-                ▶ ${topic.toUpperCase()} (${topicItems.length})
-            </h2>
-            <div class="topic-content" style="display:none; padding:10px;">
-                ${topicItems.map(res => {
+              <h3>${res.title || "Untitled"}</h3>
+              <p>👤 Teacher: ${tagText}</p>
+              <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
 
-                    const tagText = Array.isArray(res.tags)
-                        ? res.tags.join(", ")
-                        : (res.tags || "Staff");
+              <a href="${res.url}" target="_blank"
+                 style="background:#4CAF50; color:white; display:inline-block;
+                        padding:5px 15px; text-decoration:none; border-radius:3px;">
+                 🔗 Open
+              </a>
 
-                    return `
-                        <div class="resource-item" 
-                             style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
-                            
-                            <h3>${res.title || "Untitled"}</h3>
-                            <p>👤 Teacher: ${tagText}</p>
-                            <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
+              <div style="margin-top:10px;">
+                <button class="edit-btn"
+                        style="background:#2196F3; color:white; border:none;
+                               padding:5px 10px; cursor:pointer; border-radius:3px;">
+                  Edit Any Field
+                </button>
 
-                            <a href="${res.url}" target="_blank"
-                               style="background:#4CAF50; color:white; display:inline-block;
-                                      padding:5px 15px; text-decoration:none; border-radius:3px;">
-                               🔗 Open
-                            </a>
-
-                            <div style="margin-top:10px;">
-                                <button class="edit-btn"
-                                        data-id="${res.id}"
-                                        style="background:#2196F3; color:white; border:none;
-                                               padding:5px 10px; cursor:pointer; border-radius:3px;">
-                                    Edit Any Field
-                                </button>
-
-                                <button class="delete-btn"
-                                        data-id="${res.id}"
-                                        style="background:red; color:white; border:none;
-                                               padding:5px 10px; cursor:pointer; margin-left:10px;
-                                               border-radius:3px;">
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                }).join("")}
+                <button class="delete-btn"
+                        style="background:red; color:white; border:none;
+                               padding:5px 10px; cursor:pointer; margin-left:10px;
+                               border-radius:3px;">
+                  Delete
+                </button>
+              </div>
             </div>
-        `;
+          `;
+        }).join("")}
+      </div>
+    `;
 
-        // Toggle topic open/close
-        section.querySelector("h2").onclick = () => {
-            const content = section.querySelector(".topic-content");
-            content.style.display =
-                content.style.display === "none" ? "block" : "none";
-        };
+    // Toggle topic open/close
+    section.querySelector("h2").addEventListener("click", () => {
+      const content = section.querySelector(".topic-content");
+      content.style.display =
+        content.style.display === "none" ? "block" : "none";
+    });
 
-        // Edit Buttons
-        section.querySelectorAll(".edit-btn").forEach(btn => {
-            btn.onclick = async (e) => {
+    list.appendChild(section);
+  });
+}
 
-                const docId = e.currentTarget.getAttribute("data-id");
-                const item = allResources.find(r => r.id === docId);
-                if (!item) return;
+// Add ONE delegated handler on the container:
+document.addEventListener("click", async (e) => {
+  const editBtn = e.target.closest(".edit-btn");
+  const deleteBtn = e.target.closest(".delete-btn");
 
-                let updatedData = {};
-                let cancelled = false;
+  if (editBtn) {
+    const resourceItem = editBtn.closest(".resource-item");
+    const docId = resourceItem?.dataset.id;
+    const item = allResources.find(r => r.id === docId);
+    if (!item) return;
 
-                for (const key in item) {
-                    if (key === "id" || key === "createdAt") continue;
+    let updatedData = {};
+    let cancelled = false;
 
-                    let value = item[key];
-                    if (Array.isArray(value)) {
-                        value = value.join(", ");
-                    }
+    for (const key in item) {
+      if (key === "id" || key === "createdAt") continue;
 
-                    const newValue = prompt(`Edit ${key}:`, value);
-                    if (newValue === null) {
-                        cancelled = true;
-                        break;
-                    }
+      let value = item[key];
+      if (Array.isArray(value)) {
+        value = value.join(", ");
+      }
 
-                    updatedData[key] = newValue;
-                }
+      const newValue = prompt(`Edit ${key}:`, value);
+      if (newValue === null) {
+        cancelled = true;
+        break;
+      }
 
-                if (!cancelled) {
-                    try {
-                        const docRef = doc(db, "resources", docId);
-                        await updateDoc(docRef, updatedData);
-                        alert("Updated successfully!");
-                        loadAndDisplay();
-                    } catch (error) {
-                        console.error("Update Error:", error);
-                        alert("Error updating. Check Firestore rules.");
-                    }
-                }
-            };
-        });
+      updatedData[key] = newValue;
+    }
 
-        // Delete Buttons
-        section.querySelectorAll(".delete-btn").forEach(btn => {
-            btn.onclick = async (e) => {
+    if (!cancelled) {
+      try {
+        const docRef = doc(db, "resources", docId);
+        await updateDoc(docRef, updatedData);
+        alert("Updated successfully!");
+        loadAndDisplay();
+      } catch (error) {
+        console.error("Update Error:", error);
+        alert("Error updating. Check Firestore rules.");
+      }
+    }
+  }
 
-                const docId = e.currentTarget.getAttribute("data-id");
+  if (deleteBtn) {
+    const resourceItem = deleteBtn.closest(".resource-item");
+    const docId = resourceItem?.dataset.id;
+    if (!docId) return;
 
-                if (confirm("Are you sure?")) {
-                    try {
-                        await deleteDoc(doc(db, "resources", docId));
-                        loadAndDisplay();
-                    } catch (error) {
-                        console.error("Delete Error:", error);
-                    }
-                }
-            };
-        });
+    if (confirm("Are you sure?")) {
+      try {
+        await deleteDoc(doc(db, "resources", docId));
+        loadAndDisplay();
+      } catch (error) {
+        console.error("Delete Error:", error);
+      }
+    }
+  }
+});
+
 
         list.appendChild(section);
     });
