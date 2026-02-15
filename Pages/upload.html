@@ -21,7 +21,20 @@
                 <option value="phonics">Phonics</option>
                 <option value="general">General</option>
             </select>
+            <label>Material Type:</label>
+            <select id="fileType" style="width:100%; margin-bottom:10px;">
+                <option value="PDF">PDF / Worksheet</option>
+                <option value="Video">Video Link / File</option>
+                <option value="Image">Infographic / Image</option>
+                <option value="PowerPoint">PowerPoint / Slides</option>
+            </select>
 
+            <label>Target Age:</label>
+            <select id="fileAge" style="width:100%; margin-bottom:10px;">
+                <option value="Children">Children (Primary)</option>
+                <option value="Teens">Teens (Secondary)</option>
+                <option value="Adults">Adults / Business</option>
+            </select>
             <label>Teacher Name:</label>
             <input type="text" id="teacherName" placeholder="Your Name" style="width:100%; margin-bottom:10px;">
 
@@ -58,6 +71,8 @@
             const file = document.getElementById('filePicker').files[0];
             const title = document.getElementById('fileTitle').value;
             const topic = document.getElementById('fileTopic').value;
+            const type = document.getElementById('fileType').value;
+            const age = document.getElementById('fileAge').value;
             const teacher = document.getElementById('teacherName').value;
 
             if (!file || !title || !teacher) {
@@ -79,9 +94,10 @@
                 title: title,
                 topic: topic,
                 teacher: teacher,
+                type: type,      // New Tag
+                ageGroup: age,   // New Tag
                 url: downloadURL,
-                storagePath: 'printables/' + file.name, // ADD THIS LINE
-                type: "PDF",
+                storagePath: 'printables/' + file.name,
                 createdAt: new Date()
                 });
 
