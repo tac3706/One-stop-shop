@@ -46,7 +46,6 @@ function displayResources(filteredData) {
         return;
     }
 
-    // Get unique topics for headers
     const topics = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))];
 
     topics.forEach(topic => {
@@ -60,7 +59,7 @@ function displayResources(filteredData) {
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => {
-                    // Logic to handle both old Array tags and new String tags
+                    // ARRAY FIX: Convert old array tags ["Travis"] to "Travis" for display
                     let displayTags = res.tags;
                     if (Array.isArray(res.tags)) {
                         displayTags = res.tags.join(", ");
@@ -82,36 +81,37 @@ function displayResources(filteredData) {
             </div>
         `;
 
-        // Toggle visibility of topic sections
         section.querySelector('h2').onclick = () => {
             const content = section.querySelector('.topic-content');
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
 
-        // Edit functionality with Array-to-String safety
+        // FIXED EDIT LOGIC FOR ARRAYS
         section.querySelectorAll('.edit-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
                 const item = allResources.find(r => r.id === docId);
                 if (!item) return;
 
-                // Pre-fill prompt: Convert Array to String if necessary
+                // ARRAY FIX: Convert old array tags to a string for the prompt window
                 let currentTags = item.tags;
                 if (Array.isArray(item.tags)) {
                     currentTags = item.tags.join(", ");
+                } else {
+                    currentTags = String(item.tags || "");
                 }
 
-                const newTitle = prompt("Edit Title:", item.title || "");
-                const newTeacher = prompt("Edit Teacher:", currentTags || "");
-                const newTopic = prompt("Edit Topic:", item.topic || "general");
-                const newAge = prompt("Edit Age Group:", item.ageGroup || "All");
+                const newTitle = prompt("Edit Title:", String(item.title || ""));
+                const newTeacher = prompt("Edit Teacher:", currentTags);
+                const newTopic = prompt("Edit Topic:", String(item.topic || "general"));
+                const newAge = prompt("Edit Age Group:", String(item.ageGroup || "All"));
 
                 if (newTitle !== null) { 
                     try {
                         const docRef = doc(db, "resources", docId);
                         await updateDoc(docRef, {
                             title: newTitle,
-                            tags: newTeacher, // Saves back as a clean string
+                            tags: newTeacher, // Saves back as a proper String
                             topic: newTopic.toLowerCase(),
                             ageGroup: newAge
                         });
@@ -125,7 +125,6 @@ function displayResources(filteredData) {
             };
         });
 
-        // Delete functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
