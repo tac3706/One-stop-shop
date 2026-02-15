@@ -98,7 +98,7 @@ function displayResources(filteredData) {
                         const docRef = doc(db, "resources", docId);
                         await updateDoc(docRef, {
                             title: newTitle,
-                            tags: newTeacher, // Saves back to the "tags" field
+                            tags: newTeacher,
                             topic: newTopic.toLowerCase(),
                             ageGroup: newAge
                         });
@@ -142,7 +142,7 @@ function applyFilters() {
         const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
         const matchesTopic = !topic || (res.topic?.toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
-        const currentTeacher = (res.tags || "").toLowerCase(); // Filters based on "tags" field
+        const currentTeacher = (res.tags || "").toLowerCase();
         const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
         return matchesSearch && matchesTopic && matchesAge && matchesTeacher;
     });
