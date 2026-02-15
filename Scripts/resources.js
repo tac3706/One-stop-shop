@@ -1,7 +1,7 @@
 // 1. Imports
 import { resources as staticResources } from "../Data/resources.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 2. Firebase Config
 const firebaseConfig = {
@@ -68,16 +68,16 @@ function displayResources(filteredData) {
         section.style.marginBottom = "15px";
         
         section.innerHTML = `
-            <h2 class="topic-header" style="cursor:pointer; background:#e3f2fd; padding:10px; border-radius:8px;">
-                ▶ ${topic.toUpperCase()} (${topicItems.length})
-            </h2>
-            <div class="topic-content" style="display:none; padding:10px 20px;">
+            <h2 class="topic-header" style="cursor:pointer">▶ ${topic.toUpperCase()} (${topicItems.length})</h2>
+            <div class="topic-content" style="display:none">
                 ${topicItems.map(res => `
-                    <div class="resource-item" style="text-align: left; margin-bottom: 20px;">
+                    <div class="resource-item">
                         <h3>${res.title}</h3>
-                        <p>👤 Teacher: ${res.teacher || "Staff"} | 🎯 Age: ${res.ageGroup || "All"}</p>
-                        <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px;">🔗 Open Resource</a>
-                        <hr style="border:0.5px solid #ddd; margin-top:15px;">
+                        <p>👤 Teacher: ${res.teacher || "Staff"}</p>
+                        <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px;">🔗 Open</a>
+                        
+                        ${res.id ? `<button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px;">Delete</button>` : ''}
+                        <hr>
                     </div>
                 `).join('')}
             </div>
@@ -90,7 +90,22 @@ function displayResources(filteredData) {
             content.style.display = isHidden ? "block" : "none";
             section.querySelector('h2').textContent = (isHidden ? "▼ " : "▶ ") + topic.toUpperCase() + ` (${topicItems.length})`;
         });
-
+      // 3. Add Delete Button Listeners
+              section.querySelectorAll('.delete-btn').forEach(btn => {
+                  btn.addEventListener('click', async (e) => {
+                      const docId = e.target.getAttribute('data-id');
+                      if (confirm("Are you sure you want to delete this resource?")) {
+                          try {
+                              await deleteDoc(doc(db, "resources", docId));
+                              alert("Resource deleted successfully!");
+                              loadAndDisplay(); // Refresh the list
+                          } catch (error) {
+                              console.error("Delete Error:", error);
+                              alert("Error deleting resource. Check your permissions.");
+                          }
+                      }
+                  });
+              });
         list.appendChild(section);
     });
 }
