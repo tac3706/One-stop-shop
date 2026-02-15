@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Teacher Upload Portal</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-button">⬅ Back to Home</a>
+        <h1>Teacher Upload Portal</h1>
+        <p>Submit your printable materials here.</p>
+
+        <form style="max-width: 500px; margin: 0 auto; text-align: left; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <label>Resource Title:</label><br>
+            <input type="text" id="title" placeholder="e.g., Irregular Verbs List" style="width: 100%; margin-bottom: 15px;"><br>
+
+            <label>Topic:</label><br>
+            <select id="topic" style="width: 100%; margin-bottom: 15px;">
+                <option value="grammar">Grammar</option>
+                <option value="vocabulary">Vocabulary</option>
+                <option value="phonics">Phonics</option>
+            </select><br>
+
+            <label>Select File (PDF or Image):</label><br>
+            <input type="file" id="fileUpload" style="margin-bottom: 20px;"><br>
+
+            <button type="submit" class="back-button" style="width: 100%; background-color: #4CAF50;">Submit for Review</button>
+        </form>
+    </div>
+</body>
+</html>
