@@ -14,22 +14,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
-const list = document.getElementById("printableList");
 
 let allResources = []; 
 
 async function loadAndDisplay() {
+    const list = document.getElementById("printableList");
     list.innerHTML = "<p>Loading materials...</p>";
+    
     try {
         const querySnapshot = await getDocs(collection(db, "printables"));
         allResources = [];
-        querySnapshot.forEach((document) => {
-            allResources.push({ id: document.id, ...document.data() });
+        querySnapshot.forEach((doc) => {
+            allResources.push({ id: doc.id, ...doc.data() });
         });
         applyFilters(); 
     } catch (error) {
-        console.error("Error loading:", error);
-        list.innerHTML = "<p>Error loading materials. Check console.</p>";
+        console.error("Firebase Error:", error);
+        list.innerHTML = "<p>Error: Check if Firestore Rules are set to 'true'.</p>";
     }
 }
 
@@ -51,81 +52,49 @@ function applyFilters() {
 }
 
 function displayPrintables(filteredData) {
+    const list = document.getElementById("printableList");
     list.innerHTML = "";
+    
     if (filteredData.length === 0) {
-        list.innerHTML = "<p>No resources found matching these filters.</p>";
+        list.innerHTML = "<p>No resources found.</p>";
         return;
     }
 
+    // Group by topic
     const topics = [...new Set(filteredData.map(p => p.topic))];
 
     topics.forEach(topic => {
-        const section = document.createElement("div");
         const topicFiles = filteredData.filter(p => p.topic === topic);
+        const section = document.createElement("div");
         
-        const header = document.createElement("h2");
-        header.textContent = `▶ ${topic.toUpperCase()} (${topicFiles.length})`;
-        header.style.cursor = "pointer";
-        header.className = "topic-header";
-        
-        const content = document.createElement("div");
-        content.style.display = "none";
-
-        topicFiles.forEach(file => {
-            const div = document.createElement("div");
-            div.className = "resource-item";
-            div.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div>
-                        <h3 style="margin-bottom: 5px;">${file.title}</h3>
-                        <p style="font-size: 0.9em; color: #666;">
-                            👤 <strong>${file.teacher}</strong> | 🎂 ${file.ageGroup} | 📄 ${file.type}
-                        </p>
+        section.innerHTML = `
+            <h2 class="topic-header" style="cursor:pointer">▶ ${topic.toUpperCase()} (${topicFiles.length})</h2>
+            <div class="topic-content" style="display:none">
+                ${topicFiles.map(file => `
+                    <div class="resource-item">
+                        <h3>${file.title}</h3>
+                        <p>👤 ${file.teacher} | 📄 ${file.type}</p>
+                        <a href="${file.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 10px;">Download</a>
+                        <button class="delete-btn" data-id="${file.id}" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">Delete</button>
+                        <hr>
                     </div>
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <a href="${file.url}" target="_blank" class="back-button" style="background-color: #4CAF50; margin:0; padding: 8px 15px;">
-                        📥 View/Download
-                    </a>
-                    <button class="delete-btn" data-id="${file.id}" data-path="${file.storagePath}" 
-                        style="background-color: #ff4444; color: white; border: none; border-radius: 5px; cursor: pointer; padding: 5px 10px;">
-                        🗑 Delete
-                    </button>
-                </div>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-            `;
-            content.appendChild(div);
-        });
+                `).join('')}
+            </div>
+        `;
 
-        header.addEventListener("click", () => {
+        // Toggle visibility
+        section.querySelector('h2').addEventListener('click', () => {
+            const content = section.querySelector('.topic-content');
             const isHidden = content.style.display === "none";
             content.style.display = isHidden ? "block" : "none";
-            header.textContent = (isHidden ? "▼ " : "▶ ") + topic.toUpperCase() + ` (${topicFiles.length})`;
+            section.querySelector('h2').textContent = (isHidden ? "▼ " : "▶ ") + topic.toUpperCase();
         });
 
-        section.appendChild(header);
-        section.appendChild(content);
         list.appendChild(section);
-    });
-
-    // Re-attach delete logic
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.onclick = async (e) => {
-            const id = e.target.getAttribute('data-id');
-            const path = e.target.getAttribute('data-path');
-            const password = prompt("Enter Admin Password:");
-            if (password === "YourSecretPassword123") {
-                if (confirm("Delete this file permanently?")) {
-                    await deleteDoc(doc(db, "printables", id));
-                    if (path) await deleteObject(ref(storage, path));
-                    loadAndDisplay();
-                }
-            }
-        };
     });
 }
 
-// Attach Event Listeners
+// Start the app and listeners
 document.getElementById('searchInput').addEventListener('input', applyFilters);
 document.getElementById('topicFilter').addEventListener('change', applyFilters);
 document.getElementById('ageFilter').addEventListener('change', applyFilters);
