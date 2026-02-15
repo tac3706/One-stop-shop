@@ -129,25 +129,31 @@ function displayResources(filteredData) {
 
 // 5. Unified Filter Logic
 function applyFilters() {
+    // 1. Get values from the HTML inputs
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const topic = document.getElementById('topicFilter').value.toLowerCase();
     const age = document.getElementById('ageFilter').value;
-    const type = document.getElementById('typeFilter') ? document.getElementById('typeFilter').value : "";
     const teacherSearch = document.getElementById('teacherFilter').value.toLowerCase();
+    
+    // Check if typeFilter exists in your HTML before trying to read it
+    const typeField = document.getElementById('typeFilter');
+    const typeValue = typeField ? typeField.value : "";
 
+    // 2. Filter the data
     const filtered = allResources.filter(res => {
         const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
         const matchesTopic = !topic || (res.topic?.toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
-        const matchesType = !type || res.type === type;
-        
-        // FIX: Force res.tags to be a String to prevent the crash
+        const matchesType = !typeValue || res.type === typeValue;
+
+        // SAFE FIX: Force the tags field to be a String to prevent "toLowerCase is not a function"
         const currentTeacher = String(res.tags || "").toLowerCase(); 
         const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
-        
+
         return matchesSearch && matchesTopic && matchesAge && matchesType && matchesTeacher;
     });
 
+    // 3. Send the clean data to be displayed
     displayResources(filtered);
 }
 
