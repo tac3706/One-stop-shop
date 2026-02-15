@@ -76,12 +76,13 @@
 
                 // 2. Save Tags/Meta to Firestore
                 await addDoc(collection(db, "printables"), {
-                    title: title,
-                    topic: topic,
-                    teacher: teacher,
-                    url: downloadURL,
-                    type: "PDF",
-                    createdAt: new Date()
+                title: title,
+                topic: topic,
+                teacher: teacher,
+                url: downloadURL,
+                storagePath: 'printables/' + file.name, // ADD THIS LINE
+                type: "PDF",
+                createdAt: new Date()
                 });
 
                 status.innerText = "✅ Success! Resource added to library.";
