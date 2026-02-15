@@ -41,14 +41,6 @@ function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
     list.innerHTML = "";
     
-    let countDisplay = document.getElementById("resultCount");
-    if (!countDisplay) {
-        countDisplay = document.createElement("p");
-        countDisplay.id = "resultCount";
-        list.parentNode.insertBefore(countDisplay, list);
-    }
-    countDisplay.textContent = `Showing ${filteredData.length} of ${allResources.length} resources`;
-
     if (filteredData.length === 0) {
         list.innerHTML = "<p>No resources found.</p>";
         return;
@@ -69,7 +61,7 @@ function displayResources(filteredData) {
                 ${topicItems.map(res => `
                     <div class="resource-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
                         <h3>${res.title}</h3>
-                        <p>👤 Teacher: ${res.teacher || "Staff"}</p>
+                        <p>👤 Teacher: ${res.tags || "Staff"}</p>
                         <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
                         <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                         
@@ -83,26 +75,21 @@ function displayResources(filteredData) {
         `;
 
         // Toggle logic
-        section.querySelector('h2').addEventListener('click', () => {
+        section.querySelector('h2').onclick = () => {
             const content = section.querySelector('.topic-content');
-            const isHidden = content.style.display === "none";
-            content.style.display = isHidden ? "block" : "none";
-            section.querySelector('h2').textContent = (isHidden ? "▼ " : "▶ ") + topic.toUpperCase() + ` (${topicItems.length})`;
-        });
+            content.style.display = content.style.display === "none" ? "block" : "none";
+        };
 
-        // Edit functionality
+        // EDIT functionality
         section.querySelectorAll('.edit-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
-                const item = allResources.find(r => String(r.id) === String(docId));
+                const item = allResources.find(r => r.id === docId);
 
-                if (!item) {
-                    console.error("Could not find item with ID:", docId);
-                    return;
-                }
+                if (!item) return;
 
                 const newTitle = prompt("Edit Title:", item.title || "");
-                const newTeacher = prompt("Edit Teacher:", item.teacher || "Staff");
+                const newTeacher = prompt("Edit Teacher:", item.tags || "Staff");
                 const newTopic = prompt("Edit Topic:", item.topic || "general");
                 const newAge = prompt("Edit Age Group:", item.ageGroup || "All");
 
@@ -111,7 +98,7 @@ function displayResources(filteredData) {
                         const docRef = doc(db, "resources", docId);
                         await updateDoc(docRef, {
                             title: newTitle,
-                            teacher: newTeacher,
+                            tags: newTeacher, // Saves back to the "tags" field
                             topic: newTopic.toLowerCase(),
                             ageGroup: newAge
                         });
@@ -119,17 +106,17 @@ function displayResources(filteredData) {
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Update Error:", error);
-                        alert("Error: Missing permissions to update.");
+                        alert("Error updating. Check your internet or Firebase rules.");
                     }
                 }
             };
         });
 
-        // Delete functionality
+        // DELETE functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
-                if (confirm("Are you sure you want to delete this resource?")) {
+                if (confirm("Are you sure you want to delete this?")) {
                     try {
                         await deleteDoc(doc(db, "resources", docId));
                         loadAndDisplay(); 
@@ -155,7 +142,8 @@ function applyFilters() {
         const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
         const matchesTopic = !topic || (res.topic?.toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
-        const matchesTeacher = !teacherSearch || (res.teacher && res.teacher.toLowerCase().includes(teacherSearch));
+        const currentTeacher = (res.tags || "").toLowerCase(); // Filters based on "tags" field
+        const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
         return matchesSearch && matchesTopic && matchesAge && matchesTeacher;
     });
 
