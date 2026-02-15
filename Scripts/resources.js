@@ -1,11 +1,8 @@
 // 1. Imports
-<<<<<<< HEAD
-
-=======
-import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
->>>>>>> parent of 57aecf4 (Update resources.js)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { 
+    getFirestore, collection, getDocs, doc, deleteDoc, updateDoc 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 2. Firebase Config
 const firebaseConfig = {
@@ -20,17 +17,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let allResources = []; // Master list combining static and DB
+let allResources = []; 
 
-// 3. Load Data from Both Sources
+// 3. Load Data
 async function loadAndDisplay() {
     const list = document.getElementById("resourceList");
+    if (!list) return;
     list.innerHTML = "<p>Loading library...</p>";
     try {
         const querySnapshot = await getDocs(collection(db, "resources"));
         allResources = []; 
         querySnapshot.forEach((doc) => {
-            // Because every item now comes from the database, every item has an id!
             allResources.push({ id: doc.id, ...doc.data() });
         });
         applyFilters(); 
@@ -44,7 +41,6 @@ function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
     list.innerHTML = "";
     
-    // Manage result count display
     let countDisplay = document.getElementById("resultCount");
     if (!countDisplay) {
         countDisplay = document.createElement("p");
@@ -77,6 +73,7 @@ function displayResources(filteredData) {
                         <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                         
                         ${res.id ? `
+                            <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">Edit Tags</button>
                             <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">Delete</button>
                         ` : ''}
                     </div>
@@ -92,42 +89,36 @@ function displayResources(filteredData) {
             section.querySelector('h2').textContent = (isHidden ? "▼ " : "▶ ") + topic.toUpperCase() + ` (${topicItems.length})`;
         });
 
-<<<<<<< HEAD
-=======
-// Edit functionality
-section.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-        const docId = e.target.getAttribute('data-id');
-        
-        // Find the current data for this item
-        const item = allResources.find(r => r.id === docId);
+        // Edit functionality
+        section.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const docId = e.target.getAttribute('data-id');
+                const item = allResources.find(r => r.id === docId);
 
-        // Ask for new values (showing current values as defaults)
-        const newTitle = prompt("Edit Title:", item.title);
-        const newTeacher = prompt("Edit Teacher:", item.teacher);
-        const newTopic = prompt("Edit Topic:", item.topic);
-        const newAge = prompt("Edit Age Group:", item.ageGroup);
+                const newTitle = prompt("Edit Title:", item.title);
+                const newTeacher = prompt("Edit Teacher:", item.teacher);
+                const newTopic = prompt("Edit Topic:", item.topic);
+                const newAge = prompt("Edit Age Group:", item.ageGroup);
 
-        if (newTitle) { // Only update if they didn't hit cancel
-            try {
-                const docRef = doc(db, "resources", docId);
-                await updateDoc(docRef, {
-                    title: newTitle,
-                    teacher: newTeacher,
-                    topic: newTopic.toLowerCase(),
-                    ageGroup: newAge
-                });
-                alert("Updated successfully!");
-                loadAndDisplay(); // Refresh the list
-            } catch (error) {
-                console.error("Update Error:", error);
-                alert("Error updating. Check permissions.");
-            }
-        }
-    });
-});
+                if (newTitle) { 
+                    try {
+                        const docRef = doc(db, "resources", docId);
+                        await updateDoc(docRef, {
+                            title: newTitle,
+                            teacher: newTeacher,
+                            topic: newTopic.toLowerCase(),
+                            ageGroup: newAge
+                        });
+                        alert("Updated successfully!");
+                        loadAndDisplay(); 
+                    } catch (error) {
+                        console.error("Update Error:", error);
+                        alert("Error updating. Check permissions.");
+                    }
+                }
+            });
+        });
 
->>>>>>> parent of 57aecf4 (Update resources.js)
         // Delete functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
@@ -136,7 +127,7 @@ section.querySelectorAll('.edit-btn').forEach(btn => {
                     try {
                         await deleteDoc(doc(db, "resources", docId));
                         alert("Resource deleted successfully!");
-                        loadAndDisplay(); // Refresh the list
+                        loadAndDisplay(); 
                     } catch (error) {
                         console.error("Delete Error:", error);
                         alert("Error: Missing permissions to delete.");
