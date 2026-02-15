@@ -46,6 +46,7 @@ function displayResources(filteredData) {
         return;
     }
 
+    // Get unique topics for headers
     const topics = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))];
 
     topics.forEach(topic => {
@@ -58,10 +59,17 @@ function displayResources(filteredData) {
                 ▶ ${topic.toUpperCase()} (${topicItems.length})
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
-                ${topicItems.map(res => `
+                ${topicItems.map(res => {
+                    // Logic to handle both old Array tags and new String tags
+                    let displayTags = res.tags;
+                    if (Array.isArray(res.tags)) {
+                        displayTags = res.tags.join(", ");
+                    }
+                    
+                    return `
                     <div class="resource-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
                         <h3>${res.title || "Untitled"}</h3>
-                        <p>👤 Teacher: ${res.tags || "Staff"}</p>
+                        <p>👤 Teacher: ${displayTags || "Staff"}</p>
                         <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
                         <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                         
@@ -70,38 +78,40 @@ function displayResources(filteredData) {
                             <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">Delete</button>
                         </div>
                     </div>
-                `).join('')}
+                `}).join('')}
             </div>
         `;
 
+        // Toggle visibility of topic sections
         section.querySelector('h2').onclick = () => {
             const content = section.querySelector('.topic-content');
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
 
-        // FIXED EDIT LOGIC
+        // Edit functionality with Array-to-String safety
         section.querySelectorAll('.edit-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
                 const item = allResources.find(r => r.id === docId);
                 if (!item) return;
 
-                const currentTitle = String(item.title || "");
-                const currentTags = String(item.tags || ""); // Removed "Staff" default here
-                const currentTopic = String(item.topic || "general");
-                const currentAge = String(item.ageGroup || "All");
+                // Pre-fill prompt: Convert Array to String if necessary
+                let currentTags = item.tags;
+                if (Array.isArray(item.tags)) {
+                    currentTags = item.tags.join(", ");
+                }
 
-                const newTitle = prompt("Edit Title:", currentTitle);
-                const newTeacher = prompt("Edit Teacher:", currentTags);
-                const newTopic = prompt("Edit Topic:", currentTopic);
-                const newAge = prompt("Edit Age Group:", currentAge);
+                const newTitle = prompt("Edit Title:", item.title || "");
+                const newTeacher = prompt("Edit Teacher:", currentTags || "");
+                const newTopic = prompt("Edit Topic:", item.topic || "general");
+                const newAge = prompt("Edit Age Group:", item.ageGroup || "All");
 
                 if (newTitle !== null) { 
                     try {
                         const docRef = doc(db, "resources", docId);
                         await updateDoc(docRef, {
                             title: newTitle,
-                            tags: newTeacher,
+                            tags: newTeacher, // Saves back as a clean string
                             topic: newTopic.toLowerCase(),
                             ageGroup: newAge
                         });
@@ -115,6 +125,7 @@ function displayResources(filteredData) {
             };
         });
 
+        // Delete functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
@@ -145,6 +156,7 @@ function applyFilters() {
         const matchesTopic = !topic || (String(res.topic || "").toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
         
+        // Safety: Convert any data type in tags to string for filtering
         const currentTeacher = String(res.tags || "").toLowerCase(); 
         const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
         
