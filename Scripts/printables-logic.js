@@ -109,17 +109,17 @@ function initialize() {
     const aFilter = document.getElementById('ageFilter');
     const tyFilter = document.getElementById('typeFilter');
 
-    // Only add listeners if the elements actually exist on the page
+    // Attach listeners only if the elements exist
     if (sInput) sInput.addEventListener('input', applyFilters);
     if (tFilter) tFilter.addEventListener('change', applyFilters);
     if (aFilter) aFilter.addEventListener('change', applyFilters);
     if (tyFilter) tyFilter.addEventListener('change', applyFilters);
 
-    // Finally, load the data
+    // Now call the function to fetch data from Firebase
     loadAndDisplay();
 }
 
-// This tells the browser: "Wait until the HTML is drawn, then run initialize"
+// Run initialization when the document is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialize);
 } else {
