@@ -1,5 +1,9 @@
 // 1. Imports
+<<<<<<< HEAD
 
+=======
+import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+>>>>>>> parent of 57aecf4 (Update resources.js)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -88,6 +92,42 @@ function displayResources(filteredData) {
             section.querySelector('h2').textContent = (isHidden ? "▼ " : "▶ ") + topic.toUpperCase() + ` (${topicItems.length})`;
         });
 
+<<<<<<< HEAD
+=======
+// Edit functionality
+section.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+        const docId = e.target.getAttribute('data-id');
+        
+        // Find the current data for this item
+        const item = allResources.find(r => r.id === docId);
+
+        // Ask for new values (showing current values as defaults)
+        const newTitle = prompt("Edit Title:", item.title);
+        const newTeacher = prompt("Edit Teacher:", item.teacher);
+        const newTopic = prompt("Edit Topic:", item.topic);
+        const newAge = prompt("Edit Age Group:", item.ageGroup);
+
+        if (newTitle) { // Only update if they didn't hit cancel
+            try {
+                const docRef = doc(db, "resources", docId);
+                await updateDoc(docRef, {
+                    title: newTitle,
+                    teacher: newTeacher,
+                    topic: newTopic.toLowerCase(),
+                    ageGroup: newAge
+                });
+                alert("Updated successfully!");
+                loadAndDisplay(); // Refresh the list
+            } catch (error) {
+                console.error("Update Error:", error);
+                alert("Error updating. Check permissions.");
+            }
+        }
+    });
+});
+
+>>>>>>> parent of 57aecf4 (Update resources.js)
         // Delete functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
