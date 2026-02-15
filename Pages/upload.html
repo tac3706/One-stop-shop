@@ -84,12 +84,20 @@
                 return;
             }
 
-            status.innerText = "Uploading... please wait.";
+            // STOP if file is larger than 5MB
+            if (file.size > 5 * 1024 * 1024) { 
+                alert("File is too big! Please keep it under 5MB.");
+                return;
+            }
+
+        // 2. Disable button to prevent double-submissions
             uploadBtn.disabled = true;
+            status.innerText = "⏳ Uploading... please wait.";
 
             try {
                 // 1. Upload File to Storage
-                const storageRef = ref(storage, 'printables/' + file.name);
+                const storagePath = `printables/${Date.now()}_${file.name}`;
+                const storageRef = ref(storage, storagePath);
                 const snapshot = await uploadBytes(storageRef, file);
                 const downloadURL = await getDownloadURL(snapshot.ref);
 
@@ -98,10 +106,10 @@
                 title: title,
                 topic: topic,
                 teacher: teacher,
-                type: type,      // New Tag
-                ageGroup: age,   // New Tag
+                type: type,
+                ageGroup: age,
                 url: downloadURL,
-                storagePath: 'printables/' + file.name,
+                storagePath: storagePath, // Make sure this matches!
                 createdAt: new Date()
                 });
 
