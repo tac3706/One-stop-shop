@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getStorage, ref, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCVNUfj11PBHmjoPmDtudky9z6MHAdCsLw",
@@ -12,38 +13,29 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 const list = document.getElementById("printableList");
 
 async function loadAndDisplay() {
     list.innerHTML = "<p>Loading materials...</p>";
-    
-    try {
-        const querySnapshot = await getDocs(collection(db, "printables"));
-        const printablesData = [];
-        querySnapshot.forEach((doc) => {
-            printablesData.push(doc.data());
-        });
-
-        displayPrintables(printablesData);
-    } catch (e) {
-        list.innerHTML = "<p>Error loading materials. Make sure your Firestore rules are set to Test Mode.</p>";
-    }
+    const querySnapshot = await getDocs(collection(db, "printables"));
+    const printablesData = [];
+    querySnapshot.forEach((document) => {
+        // We include the ID so we know which one to delete later
+        printablesData.push({ id: document.id, ...document.data() });
+    });
+    displayPrintables(printablesData);
 }
 
 function displayPrintables(filteredData) {
     list.innerHTML = "";
-    if (filteredData.length === 0) {
-        list.innerHTML = "<p>No materials found yet.</p>";
-        return;
-    }
-
     const topics = [...new Set(filteredData.map(p => p.topic))];
 
     topics.forEach(topic => {
         const section = document.createElement("div");
-        const header = document.createElement("h2");
         const topicFiles = filteredData.filter(p => p.topic === topic);
         
+        const header = document.createElement("h2");
         header.textContent = `▶ ${topic.toUpperCase()} (${topicFiles.length})`;
         header.style.cursor = "pointer";
         header.className = "topic-header";
@@ -57,7 +49,10 @@ function displayPrintables(filteredData) {
             div.innerHTML = `
                 <h3>${file.title}</h3>
                 <p>Teacher: ${file.teacher}</p>
-                <a href="${file.url}" target="_blank" class="back-button" style="background-color: #4CAF50;">📥 Download PDF</a>
+                <div style="display: flex; gap: 10px;">
+                    <a href="${file.url}" target="_blank" class="back-button" style="background-color: #4CAF50; margin:0;">📥 Download</a>
+                    <button class="delete-btn" data-id="${file.id}" data-path="${file.storagePath}" style="background-color: #ff4444; color: white; border: none; border-radius: 5px; cursor: pointer; padding: 5px 10px;">🗑 Delete</button>
+                </div>
                 <hr>
             `;
             content.appendChild(div);
@@ -73,7 +68,33 @@ function displayPrintables(filteredData) {
         section.appendChild(content);
         list.appendChild(section);
     });
+
+    // Add click events to all delete buttons
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = e.target.getAttribute('data-id');
+            const path = e.target.getAttribute('data-path');
+            
+            if (confirm("Are you sure you want to delete this resource?")) {
+                try {
+                    // 1. Delete from Firestore
+                    await deleteDoc(doc(db, "printables", id));
+                    
+                    // 2. Delete from Storage (if path exists)
+                    if (path) {
+                        const fileRef = ref(storage, path);
+                        await deleteObject(fileRef);
+                    }
+                    
+                    alert("Deleted successfully!");
+                    loadAndDisplay(); // Refresh the list
+                } catch (error) {
+                    console.error("Error deleting:", error);
+                    alert("Delete failed. Check console.");
+                }
+            }
+        });
+    });
 }
 
-// Kick off the load
 loadAndDisplay();
