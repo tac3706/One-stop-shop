@@ -113,7 +113,7 @@ function displayResources(filteredData) {
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Update Error:", error);
-                        alert("Error updating. Check permissions.");
+                        alert("Error updating.");
                     }
                 }
             });
@@ -126,11 +126,9 @@ function displayResources(filteredData) {
                 if (confirm("Are you sure you want to delete this resource?")) {
                     try {
                         await deleteDoc(doc(db, "resources", docId));
-                        alert("Resource deleted successfully!");
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Delete Error:", error);
-                        alert("Error: Missing permissions to delete.");
                     }
                 }
             });
