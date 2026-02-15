@@ -89,54 +89,70 @@
 
         const uploadBtn = document.getElementById('uploadBtn');
         const status = document.getElementById('status');
+        const categorySelect = document.getElementById('resourceCategory');
+        const fileSection = document.getElementById('fileUploadSection');
+        const linkSection = document.getElementById('linkUploadSection');
 
+        // 4. Toggle visibility based on category choice
+        categorySelect.addEventListener('change', (e) => {
+            const isLink = e.target.value === 'link';
+            fileSection.style.display = isLink ? 'none' : 'block';
+            linkSection.style.display = isLink ? 'block' : 'none';
+        });
+
+        // 5. Unified Upload Logic
         uploadBtn.addEventListener('click', async () => {
-            const file = document.getElementById('filePicker').files[0];
+            const category = categorySelect.value;
             const title = document.getElementById('fileTitle').value;
             const topic = document.getElementById('fileTopic').value;
+            const teacher = document.getElementById('teacherName').value;
             const type = document.getElementById('fileType').value;
             const age = document.getElementById('fileAge').value;
-            const teacher = document.getElementById('teacherName').value;
 
-            if (!file || !title || !teacher) {
-                alert("Please fill in all fields and select a file!");
+            if (!title || !teacher) {
+                alert("Please fill in the title and your name!");
                 return;
             }
 
-            // STOP if file is larger than 5MB
-            if (file.size > 5 * 1024 * 1024) { 
-                alert("File is too big! Please keep it under 5MB.");
-                return;
-            }
-
-        // 2. Disable button to prevent double-submissions
             uploadBtn.disabled = true;
-            status.innerText = "⏳ Uploading... please wait.";
+            status.innerText = "⏳ Processing... please wait.";
 
             try {
-                // 1. Upload File to Storage
-                const storagePath = `printables/${Date.now()}_${file.name}`;
-                const storageRef = ref(storage, storagePath);
-                const snapshot = await uploadBytes(storageRef, file);
-                const downloadURL = await getDownloadURL(snapshot.ref);
+                if (category === 'file') {
+                    // --- FILE MODE: Upload to Storage ---
+                    const file = document.getElementById('filePicker').files[0];
+                    if (!file) throw new Error("Please select a file.");
+                    if (file.size > 5 * 1024 * 1024) throw new Error("File too big (Max 5MB).");
 
-                // 2. Save Tags/Meta to Firestore
-                await addDoc(collection(db, "printables"), {
-                title: title,
-                topic: topic,
-                teacher: teacher,
-                type: type,
-                ageGroup: age,
-                url: downloadURL,
-                storagePath: storagePath, // Make sure this matches!
-                createdAt: new Date()
-                });
+                    const storagePath = `printables/${Date.now()}_${file.name}`;
+                    const storageRef = ref(storage, storagePath);
+                    const snapshot = await uploadBytes(storageRef, file);
+                    const downloadURL = await getDownloadURL(snapshot.ref);
 
-                status.innerText = "✅ Success! Resource added to library.";
+                    // Save to 'printables' collection
+                    await addDoc(collection(db, "printables"), {
+                        title, topic, teacher, type, ageGroup: age,
+                        url: downloadURL, storagePath, createdAt: new Date()
+                    });
+                } else {
+                    // --- LINK MODE: Save URL directly ---
+                    const linkUrl = document.getElementById('externalUrl').value;
+                    if (!linkUrl) throw new Error("Please paste a URL.");
+
+                    // Save to 'resources' collection for your YouTube library
+                    await addDoc(collection(db, "resources"), {
+                        title, topic, teacher, type, ageGroup: age,
+                        url: linkUrl, createdAt: new Date()
+                    });
+                }
+
+                status.innerText = "✅ Success! Added to the library.";
                 document.getElementById('fileTitle').value = "";
+                if(document.getElementById('externalUrl')) document.getElementById('externalUrl').value = "";
+                
             } catch (error) {
                 console.error(error);
-                status.innerText = "❌ Error uploading. Check console.";
+                status.innerText = "❌ Error: " + error.message;
             } finally {
                 uploadBtn.disabled = false;
             }
