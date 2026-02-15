@@ -37,6 +37,7 @@ async function loadAndDisplay() {
 }
 
 // 4. Display Logic
+// 4. Display Logic
 function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
     list.innerHTML = "";
@@ -46,10 +47,10 @@ function displayResources(filteredData) {
         return;
     }
 
-    const topics = [...new Set(filteredData.map(res => res.topic?.toLowerCase() || "general"))];
+    const topics = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))];
 
     topics.forEach(topic => {
-        const topicItems = filteredData.filter(res => (res.topic?.toLowerCase() || "general") === topic);
+        const topicItems = filteredData.filter(res => String(res.topic || "general").toLowerCase() === topic);
         const section = document.createElement("div");
         section.style.marginBottom = "15px";
         
@@ -60,7 +61,7 @@ function displayResources(filteredData) {
             <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => `
                     <div class="resource-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
-                        <h3>${res.title}</h3>
+                        <h3>${res.title || "Untitled"}</h3>
                         <p>👤 Teacher: ${res.tags || "Staff"}</p>
                         <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
                         <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
@@ -79,16 +80,23 @@ function displayResources(filteredData) {
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
 
+        // FIXED EDIT LOGIC
         section.querySelectorAll('.edit-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
                 const item = allResources.find(r => r.id === docId);
                 if (!item) return;
 
-                const newTitle = prompt("Edit Title:", item.title || "");
-                const newTeacher = prompt("Edit Teacher:", item.tags || "Staff");
-                const newTopic = prompt("Edit Topic:", item.topic || "general");
-                const newAge = prompt("Edit Age Group:", item.ageGroup || "All");
+                // Safety checks: Fallback to empty string if field is missing or not a string
+                const currentTitle = String(item.title || "");
+                const currentTags = String(item.tags || "Staff");
+                const currentTopic = String(item.topic || "general");
+                const currentAge = String(item.ageGroup || "All");
+
+                const newTitle = prompt("Edit Title:", currentTitle);
+                const newTeacher = prompt("Edit Teacher (Tags):", currentTags);
+                const newTopic = prompt("Edit Topic:", currentTopic);
+                const newAge = prompt("Edit Age Group:", currentAge);
 
                 if (newTitle !== null) { 
                     try {
@@ -103,16 +111,17 @@ function displayResources(filteredData) {
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Update Error:", error);
-                        alert("Error updating. Check your Firestore rules.");
+                        alert("Error updating. Check your Firestore Database rules.");
                     }
                 }
             };
         });
 
+        // DELETE functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
-                if (confirm("Are you sure you want to delete this?")) {
+                if (confirm("Are you sure?")) {
                     try {
                         await deleteDoc(doc(db, "resources", docId));
                         loadAndDisplay(); 
