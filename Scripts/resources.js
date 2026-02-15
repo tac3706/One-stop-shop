@@ -103,7 +103,7 @@ function displayResources(filteredData) {
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Update Error:", error);
-                        alert("Error updating. Check your internet or Firebase rules.");
+                        alert("Error updating. Check your Firebase rules.");
                     }
                 }
             };
@@ -141,7 +141,7 @@ function applyFilters() {
         const matchesAge = !age || res.ageGroup === age;
         const matchesType = !type || res.type === type;
         
-        // Convert res.tags to a String to prevent crashes if it's not text
+        // FIX: Force res.tags to be a String to prevent the crash
         const currentTeacher = String(res.tags || "").toLowerCase(); 
         const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
         
