@@ -188,11 +188,6 @@ document.addEventListener("click", async (e) => {
   }
 });
 
-
-        list.appendChild(section);
-    });
-}
-
 // 5. Filter Logic
 function applyFilters() {
 
