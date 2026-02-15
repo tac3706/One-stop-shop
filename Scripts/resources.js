@@ -1,100 +1,104 @@
-import { resources } from "../Data/resources.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// DOM Elements
-const list = document.getElementById("resourceList");
-const searchInput = document.getElementById("searchInput");
-const topicFilter = document.getElementById("topicFilter");
-const ageFilter = document.getElementById("ageFilter");
-const typeFilter = document.getElementById("typeFilter");
-const teacherFilter = document.getElementById("teacherFilter");
+const firebaseConfig = {
+    apiKey: "AIzaSyCVNUfj11PBHmjoPmDtudky9z6MHAdCsLw",
+    authDomain: "one-stop-shop-5e668.firebaseapp.com",
+    projectId: "one-stop-shop-5e668",
+    storageBucket: "one-stop-shop-5e668.firebasestorage.app",
+    messagingSenderId: "158039043020",
+    appId: "1:158039043020:web:424c94c7feda5b3004cb69"
+};
 
-// Result count element
-const resultCount = document.createElement("p");
-resultCount.id = "resultCount";
-list.parentNode.insertBefore(resultCount, list);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-// --- DISPLAY FUNCTION ---
-function displayResources(filteredResources) {
-  list.innerHTML = "";
-  resultCount.textContent = `Showing ${filteredResources.length} of ${resources.length} resources`;
+let allResources = [];
 
-  // Group by topic for collapsible sections
-  const topics = [...new Set(filteredResources.map(r => r.topic))];
-
-  topics.forEach(topic => {
-    const section = document.createElement("div");
-    section.style.marginBottom = "15px";
-
-    // Section header (Clickable)
-    const header = document.createElement("h2");
-    const topicResources = filteredResources.filter(r => r.topic === topic);
-    header.textContent = `▶ ${topic.toUpperCase()} (${topicResources.length})`;
-    header.style.cursor = "pointer";
-    header.style.padding = "10px";
-    header.style.backgroundColor = "#e3f2fd";
-    header.style.borderRadius = "8px";
-
-    // Section content (hidden initially)
-    const content = document.createElement("div");
-    content.style.display = "none";
-    content.style.padding = "10px 20px";
-
-    topicResources.forEach(resource => {
-      const div = document.createElement("div");
-      div.className = "resource-item";
-      div.style.textAlign = "left";
-      div.innerHTML = `
-        <h3>${resource.title}</h3>
-        <p><strong>Type:</strong> ${resource.type} | <strong>Age:</strong> ${resource.ageGroup}</p>
-        <p><strong>Tags:</strong> ${resource.tags.join(", ")}</p>
-        <a href="${resource.url}" target="_blank" class="back-button" style="background-color: #4CAF50; margin-top: 5px;">🔗 Open Resource</a>
-        <hr style="border: 0.5px solid #ddd; margin: 15px 0;">
-      `;
-      content.appendChild(div);
-    });
-
-    // Toggle logic for opening/closing topics
-    header.addEventListener("click", () => {
-      const isHidden = content.style.display === "none";
-      content.style.display = isHidden ? "block" : "none";
-      header.textContent = (isHidden ? "▼ " : "▶ ") + `${topic.toUpperCase()} (${topicResources.length})`;
-    });
-
-    section.appendChild(header);
-    section.appendChild(content);
-    list.appendChild(section);
-  });
+async function loadAndDisplay() {
+    const list = document.getElementById("resourceList");
+    list.innerHTML = "<p>Loading library...</p>";
+    
+    try {
+        // Fetch from 'resources' collection where teacher links are saved
+        const querySnapshot = await getDocs(collection(db, "resources"));
+        allResources = [];
+        querySnapshot.forEach((doc) => {
+            allResources.push({ id: doc.id, ...doc.data() });
+        });
+        applyFilters(); 
+    } catch (error) {
+        console.error("Firebase Error:", error);
+        list.innerHTML = "<p>Error loading resources. Check database permissions.</p>";
+    }
 }
 
-// --- FILTER FUNCTION ---
+function displayResources(filteredData) {
+    const list = document.getElementById("resourceList");
+    list.innerHTML = "";
+    
+    if (filteredData.length === 0) {
+        list.innerHTML = "<p>No resources found matching these filters.</p>";
+        return;
+    }
+
+    // DYNAMIC TAGS: Automatically find every unique topic in the data
+    const topics = [...new Set(filteredData.map(res => res.topic || "general"))];
+
+    topics.forEach(topic => {
+        const topicItems = filteredData.filter(res => res.topic === topic);
+        const section = document.createElement("div");
+        
+        section.innerHTML = `
+            <h2 class="topic-header" style="cursor:pointer; background:#e3f2fd; padding:10px; border-radius:8px; margin-bottom:10px;">
+                ▶ ${topic.toUpperCase()} (${topicItems.length})
+            </h2>
+            <div class="topic-content" style="display:none; padding-left: 15px;">
+                ${topicItems.map(res => `
+                    <div class="resource-item" style="margin-bottom: 20px; text-align: left;">
+                        <h3>${res.title}</h3>
+                        <p>👤 Teacher: ${res.teacher || "Staff"} | 🎯 Age: ${res.ageGroup || "All"}</p>
+                        <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px;">🔗 Open Resource</a>
+                        <hr style="border:0.5px solid #ddd; margin-top:15px;">
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        // Toggle logic for collapsible headers
+        section.querySelector('h2').addEventListener('click', () => {
+            const content = section.querySelector('.topic-content');
+            const isHidden = content.style.display === "none";
+            content.style.display = isHidden ? "block" : "none";
+            section.querySelector('h2').textContent = (isHidden ? "▼ " : "▶ ") + topic.toUpperCase() + ` (${topicItems.length})`;
+        });
+
+        list.appendChild(section);
+    });
+}
+
 function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const topic = document.getElementById('topicFilter').value;
     const age = document.getElementById('ageFilter').value;
-    const type = document.getElementById('typeFilter').value;
-    // NEW: Get the teacher name from the text input
-    const teacherSearch = document.getElementById('teacherFilter').value.toLowerCase();
+    const teacherSearch = document.getElementById('teacherFilter').value.toLowerCase(); // Variable Teacher Search
 
     const filtered = allResources.filter(res => {
         const matchesSearch = res.title.toLowerCase().includes(searchTerm);
         const matchesTopic = !topic || res.topic === topic;
         const matchesAge = !age || res.ageGroup === age;
-        const matchesType = !type || res.type === type;
-        // NEW: Check if the teacher name includes what was typed
         const matchesTeacher = !teacherSearch || (res.teacher && res.teacher.toLowerCase().includes(teacherSearch));
-        
-        return matchesSearch && matchesTopic && matchesAge && matchesType && matchesTeacher;
+        return matchesSearch && matchesTopic && matchesAge && matchesTeacher;
     });
 
     displayResources(filtered);
 }
 
-// --- EVENT LISTENERS ---
-searchInput.addEventListener("input", applyFilters);
-topicFilter.addEventListener("change", applyFilters);
-ageFilter.addEventListener("change", applyFilters);
-typeFilter.addEventListener("change", applyFilters);
-if (teacherFilter) teacherFilter.addEventListener("input", applyFilters);
+// Listeners
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+document.getElementById('topicFilter').addEventListener('change', applyFilters);
+document.getElementById('ageFilter').addEventListener('change', applyFilters);
+document.getElementById('teacherFilter').addEventListener('input', applyFilters);
 
-// --- INITIAL DISPLAY ---
-displayResources(resources);
+// Initialize
+window.addEventListener('DOMContentLoaded', loadAndDisplay);
