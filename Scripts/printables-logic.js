@@ -16,19 +16,47 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const list = document.getElementById("printableList");
 
+let allResources = []; // Store data for filtering
+
 async function loadAndDisplay() {
     list.innerHTML = "<p>Loading materials...</p>";
-    const querySnapshot = await getDocs(collection(db, "printables"));
-    const printablesData = [];
-    querySnapshot.forEach((document) => {
-        // We include the ID so we know which one to delete later
-        printablesData.push({ id: document.id, ...document.data() });
+    try {
+        const querySnapshot = await getDocs(collection(db, "printables"));
+        allResources = [];
+        querySnapshot.forEach((document) => {
+            allResources.push({ id: document.id, ...document.data() });
+        });
+        applyFilters(); 
+    } catch (error) {
+        console.error("Error loading:", error);
+        list.innerHTML = "<p>Error loading materials. Check console.</p>";
+    }
+}
+
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const topic = document.getElementById('topicFilter').value;
+    const age = document.getElementById('ageFilter').value;
+    const type = document.getElementById('typeFilter').value;
+
+    const filtered = allResources.filter(res => {
+        const matchesSearch = res.title.toLowerCase().includes(searchTerm);
+        const matchesTopic = !topic || res.topic === topic;
+        const matchesAge = !age || res.ageGroup === age;
+        const matchesType = !type || res.type === type;
+        return matchesSearch && matchesTopic && matchesAge && matchesType;
     });
-    displayPrintables(printablesData);
+
+    displayPrintables(filtered);
 }
 
 function displayPrintables(filteredData) {
     list.innerHTML = "";
+    if (filteredData.length === 0) {
+        list.innerHTML = "<p>No matching resources found.</p>";
+        return;
+    }
+
     const topics = [...new Set(filteredData.map(p => p.topic))];
 
     topics.forEach(topic => {
@@ -46,16 +74,12 @@ function displayPrintables(filteredData) {
         topicFiles.forEach(file => {
             const div = document.createElement("div");
             div.className = "resource-item";
-            
-            // We display the Type and Age Group tags here
             div.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
                         <h3 style="margin-bottom: 5px;">${file.title}</h3>
                         <p style="font-size: 0.9em; color: #666;">
-                            👤 <strong>${file.teacher}</strong> | 
-                            🎂 ${file.ageGroup} | 
-                            📄 ${file.type}
+                            👤 <strong>${file.teacher}</strong> | 🎂 ${file.ageGroup} | 📄 ${file.type}
                         </p>
                     </div>
                 </div>
@@ -84,82 +108,31 @@ function displayPrintables(filteredData) {
         list.appendChild(section);
     });
 
-    // Add click events to all delete buttons
+    // Re-attach delete events after rendering
     document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
+        btn.onclick = async (e) => {
             const id = e.target.getAttribute('data-id');
             const path = e.target.getAttribute('data-path');
-            
-            // 1. Ask for the secret password
             const adminKey = prompt("Enter Admin Password to delete:");
 
-            if (adminKey === null) return; // User cancelled
-
-            if (confirm("Are you sure you want to delete this resource?")) {
-                try {
-                    // Note: Firebase Client SDK doesn't support custom headers easily for delete.
-                    // So for a simple "Teacher Site," we do a local check first:
-                    if (adminKey !== "YourSecretPassword123") {
-                        alert("Incorrect Password!");
-                        return;
-                    }
-
-                    // 2. Proceed with deletion
+            if (adminKey === "YourSecretPassword123") {
+                if (confirm("Are you sure?")) {
                     await deleteDoc(doc(db, "printables", id));
-                    
-                    if (path) {
-                        const fileRef = ref(storage, path);
-                        await deleteObject(fileRef);
-                    }
-                    
-                    alert("Deleted successfully!");
-// Inside printables-logic.js
-let allResources = []; // To store data for filtering
-
-async function loadAndDisplay() {
-    list.innerHTML = "<p>Loading materials...</p>";
-    try {
-        const querySnapshot = await getDocs(collection(db, "printables"));
-        allResources = [];
-        querySnapshot.forEach((doc) => {
-            allResources.push({ id: doc.id, ...doc.data() });
-        });
-        applyFilters(); // Initial display
-    } catch (error) {
-        console.error("Error loading:", error);
-        list.innerHTML = "<p>Error loading materials. check console.</p>";
-    }
-}
-
-function applyFilters() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const topic = document.getElementById('topicFilter').value;
-    const age = document.getElementById('ageFilter').value;
-    const type = document.getElementById('typeFilter').value;
-
-    const filtered = allResources.filter(res => {
-        const matchesSearch = res.title.toLowerCase().includes(searchTerm);
-        const matchesTopic = !topic || res.topic === topic;
-        const matchesAge = !age || res.ageGroup === age;
-        const matchesType = !type || res.type === type;
-        return matchesSearch && matchesTopic && matchesAge && matchesType;
+                    if (path) await deleteObject(ref(storage, path));
+                    alert("Deleted!");
+                    loadAndDisplay();
+                }
+            } else {
+                alert("Incorrect Password!");
+            }
+        };
     });
-
-    displayPrintables(filtered);
 }
 
-// Add event listeners for the filters
+// Event Listeners
 document.getElementById('searchInput').addEventListener('input', applyFilters);
 document.getElementById('topicFilter').addEventListener('change', applyFilters);
 document.getElementById('ageFilter').addEventListener('change', applyFilters);
 document.getElementById('typeFilter').addEventListener('change', applyFilters);
-                } catch (error) {
-                    console.error("Error deleting:", error);
-                    alert("Delete failed. You might not have permission.");
-                }
-            }
-        });
-    });
-}
 
 loadAndDisplay();
