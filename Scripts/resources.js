@@ -74,18 +74,15 @@ function displayResources(filteredData) {
             </div>
         `;
 
-        // Toggle logic
         section.querySelector('h2').onclick = () => {
             const content = section.querySelector('.topic-content');
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
 
-        // EDIT functionality
         section.querySelectorAll('.edit-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
                 const item = allResources.find(r => r.id === docId);
-
                 if (!item) return;
 
                 const newTitle = prompt("Edit Title:", item.title || "");
@@ -106,13 +103,12 @@ function displayResources(filteredData) {
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Update Error:", error);
-                        alert("Error updating. Check your Firestore Database rules.");
+                        alert("Error updating. Check your Firestore rules.");
                     }
                 }
             };
         });
 
-        // DELETE functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
@@ -131,7 +127,6 @@ function displayResources(filteredData) {
     });
 }
 
-// 5. Unified Filter Logic
 function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const topic = document.getElementById('topicFilter').value.toLowerCase();
@@ -143,7 +138,7 @@ function applyFilters() {
         const matchesTopic = !topic || (res.topic?.toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
         
-        // Use String() to prevent crashes if tags is not text
+        // SAFE FIX: Force tags to be a string to prevent crash
         const currentTeacher = String(res.tags || "").toLowerCase(); 
         const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
         
@@ -153,7 +148,6 @@ function applyFilters() {
     displayResources(filtered);
 }
 
-// 6. Listeners
 document.getElementById('searchInput').addEventListener('input', applyFilters);
 document.getElementById('topicFilter').addEventListener('change', applyFilters);
 document.getElementById('ageFilter').addEventListener('change', applyFilters);
