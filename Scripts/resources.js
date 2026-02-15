@@ -38,13 +38,12 @@ async function loadAndDisplay() {
 
     } catch (error) {
         console.error("Database error:", error);
-        list.innerHTML = "<p>Error loading resources. Check Firebase rules.</p>";
+        list.innerHTML = "<p>Error loading resources. Check your connection or Firebase rules.</p>";
     }
 }
 
 // 4. Display Logic
 function displayResources(filteredData) {
-
     const list = document.getElementById("resourceList");
     const countDisplay = document.getElementById("resultCount");
     if (!list) return;
@@ -74,44 +73,34 @@ function displayResources(filteredData) {
         section.style.marginBottom = "15px";
 
         section.innerHTML = `
-            <h2 class="topic-header" 
-                style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px;">
+            <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px;">
                 ▶ ${topic.toUpperCase()} (${topicItems.length})
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => {
 
-                    const tagText = Array.isArray(res.tags)
+                    let tagText = Array.isArray(res.tags)
                         ? res.tags.join(", ")
                         : (res.tags || "Staff");
 
                     return `
-                        <div class="resource-item" 
-                             style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
-                            
+                        <div class="resource-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
                             <h3>${res.title || "Untitled"}</h3>
                             <p>👤 Teacher: ${tagText}</p>
                             <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
-
-                            <a href="${res.url}" target="_blank"
-                               style="background:#4CAF50; color:white; display:inline-block;
-                                      padding:5px 15px; text-decoration:none; border-radius:3px;">
+                            <a href="${res.url}" target="_blank" 
+                               style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">
                                🔗 Open
                             </a>
 
                             <div style="margin-top:10px;">
-                                <button class="edit-btn"
-                                        data-id="${res.id}"
-                                        style="background:#2196F3; color:white; border:none;
-                                               padding:5px 10px; cursor:pointer; border-radius:3px;">
+                                <button class="edit-btn" data-id="${res.id}"
+                                    style="background:#2196F3; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:3px;">
                                     Edit Any Field
                                 </button>
 
-                                <button class="delete-btn"
-                                        data-id="${res.id}"
-                                        style="background:red; color:white; border:none;
-                                               padding:5px 10px; cursor:pointer; margin-left:10px;
-                                               border-radius:3px;">
+                                <button class="delete-btn" data-id="${res.id}"
+                                    style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">
                                     Delete
                                 </button>
                             </div>
@@ -121,18 +110,18 @@ function displayResources(filteredData) {
             </div>
         `;
 
-        // Toggle topic open/close
+        // Toggle topic
         section.querySelector("h2").onclick = () => {
             const content = section.querySelector(".topic-content");
             content.style.display =
                 content.style.display === "none" ? "block" : "none";
         };
 
-        // Edit Buttons
+        // Edit buttons
         section.querySelectorAll(".edit-btn").forEach(btn => {
             btn.onclick = async (e) => {
 
-                const docId = e.currentTarget.getAttribute("data-id");
+                const docId = e.target.getAttribute("data-id");
                 const item = allResources.find(r => r.id === docId);
                 if (!item) return;
 
@@ -170,11 +159,10 @@ function displayResources(filteredData) {
             };
         });
 
-        // Delete Buttons
+        // Delete buttons
         section.querySelectorAll(".delete-btn").forEach(btn => {
             btn.onclick = async (e) => {
-
-                const docId = e.currentTarget.getAttribute("data-id");
+                const docId = e.target.getAttribute("data-id");
 
                 if (confirm("Are you sure?")) {
                     try {
@@ -191,7 +179,7 @@ function displayResources(filteredData) {
     });
 }
 
-// 5. Filter Logic
+// 5. Unified Filter Logic
 function applyFilters() {
 
     const searchInput = document.getElementById("searchInput");
@@ -238,7 +226,7 @@ function applyFilters() {
     displayResources(filtered);
 }
 
-// 6. DOM Ready Setup
+// 6. Safe DOM Setup
 window.addEventListener("DOMContentLoaded", () => {
 
     loadAndDisplay();
