@@ -100,28 +100,18 @@ document.getElementById('topicFilter').addEventListener('change', applyFilters);
 document.getElementById('ageFilter').addEventListener('change', applyFilters);
 document.getElementById('typeFilter').addEventListener('change', applyFilters);
 
-// ... keep all your existing code at the top ...
+// Ensure the code waits for the HTML elements to exist
+window.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('searchInput');
+    const topicFilter = document.getElementById('topicFilter');
+    const ageFilter = document.getElementById('ageFilter');
+    const typeFilter = document.getElementById('typeFilter');
 
-// REPLACE THE VERY BOTTOM WITH THIS:
-function initialize() {
-    const sInput = document.getElementById('searchInput');
-    const tFilter = document.getElementById('topicFilter');
-    const aFilter = document.getElementById('ageFilter');
-    const tyFilter = document.getElementById('typeFilter');
+    // Only attach listeners if the elements are found
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+    if (topicFilter) topicFilter.addEventListener('change', applyFilters);
+    if (ageFilter) ageFilter.addEventListener('change', applyFilters);
+    if (typeFilter) typeFilter.addEventListener('change', applyFilters);
 
-    // Only add listeners if the elements actually exist on the page
-    if (sInput) sInput.addEventListener('input', applyFilters);
-    if (tFilter) tFilter.addEventListener('change', applyFilters);
-    if (aFilter) aFilter.addEventListener('change', applyFilters);
-    if (tyFilter) tyFilter.addEventListener('change', applyFilters);
-
-    // Finally, load the data
-    loadAndDisplay();
-}
-
-// This tells the browser: "Wait until the HTML is drawn, then run initialize"
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initialize);
-} else {
-    initialize();
-};
+loadAndDisplay();
+});
