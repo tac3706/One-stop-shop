@@ -1,6 +1,9 @@
+// 1. Imports
+import { resources as staticResources } from "../Data/resources.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// 2. Firebase Config
 const firebaseConfig = {
     apiKey: "AIzaSyCVNUfj11PBHmjoPmDtudky9z6MHAdCsLw",
     authDomain: "one-stop-shop-5e668.firebaseapp.com",
@@ -13,49 +16,64 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let allResources = [];
+let allResources = []; // Master list
 
+// 3. Load Data from Both Sources
 async function loadAndDisplay() {
     const list = document.getElementById("resourceList");
     list.innerHTML = "<p>Loading library...</p>";
     
     try {
-        // Fetch from 'resources' collection where teacher links are saved
+        // Fetch from Firebase
         const querySnapshot = await getDocs(collection(db, "resources"));
-        allResources = [];
+        const dbResources = [];
         querySnapshot.forEach((doc) => {
-            allResources.push({ id: doc.id, ...doc.data() });
+            dbResources.push({ id: doc.id, ...doc.data() });
         });
+
+        // COMBINE: Put static resources and database resources together
+        allResources = [...staticResources, ...dbResources];
+
         applyFilters(); 
     } catch (error) {
-        console.error("Firebase Error:", error);
-        list.innerHTML = "<p>Error loading resources. Check database permissions.</p>";
+        console.error("Database error:", error);
+        // Fallback to just static resources if DB fails
+        allResources = [...staticResources];
+        applyFilters();
     }
 }
 
+// 4. Display Logic
 function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
     list.innerHTML = "";
     
+    // Result count
+    const countDisplay = document.getElementById("resultCount") || document.createElement("p");
+    countDisplay.id = "resultCount";
+    countDisplay.textContent = `Showing ${filteredData.length} of ${allResources.length} resources`;
+    if (!document.getElementById("resultCount")) list.parentNode.insertBefore(countDisplay, list);
+
     if (filteredData.length === 0) {
-        list.innerHTML = "<p>No resources found matching these filters.</p>";
+        list.innerHTML = "<p>No resources found.</p>";
         return;
     }
 
-    // DYNAMIC TAGS: Automatically find every unique topic in the data
-    const topics = [...new Set(filteredData.map(res => res.topic || "general"))];
+    // Dynamic grouping by topic
+    const topics = [...new Set(filteredData.map(res => res.topic?.toLowerCase() || "general"))];
 
     topics.forEach(topic => {
-        const topicItems = filteredData.filter(res => res.topic === topic);
+        const topicItems = filteredData.filter(res => (res.topic?.toLowerCase() || "general") === topic);
         const section = document.createElement("div");
+        section.style.marginBottom = "15px";
         
         section.innerHTML = `
-            <h2 class="topic-header" style="cursor:pointer; background:#e3f2fd; padding:10px; border-radius:8px; margin-bottom:10px;">
+            <h2 class="topic-header" style="cursor:pointer; background:#e3f2fd; padding:10px; border-radius:8px;">
                 ▶ ${topic.toUpperCase()} (${topicItems.length})
             </h2>
-            <div class="topic-content" style="display:none; padding-left: 15px;">
+            <div class="topic-content" style="display:none; padding:10px 20px;">
                 ${topicItems.map(res => `
-                    <div class="resource-item" style="margin-bottom: 20px; text-align: left;">
+                    <div class="resource-item" style="text-align: left; margin-bottom: 20px;">
                         <h3>${res.title}</h3>
                         <p>👤 Teacher: ${res.teacher || "Staff"} | 🎯 Age: ${res.ageGroup || "All"}</p>
                         <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px;">🔗 Open Resource</a>
@@ -65,7 +83,7 @@ function displayResources(filteredData) {
             </div>
         `;
 
-        // Toggle logic for collapsible headers
+        // Toggle logic
         section.querySelector('h2').addEventListener('click', () => {
             const content = section.querySelector('.topic-content');
             const isHidden = content.style.display === "none";
@@ -77,15 +95,16 @@ function displayResources(filteredData) {
     });
 }
 
+// 5. Unified Filter Logic
 function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const topic = document.getElementById('topicFilter').value;
+    const topic = document.getElementById('topicFilter').value.toLowerCase();
     const age = document.getElementById('ageFilter').value;
-    const teacherSearch = document.getElementById('teacherFilter').value.toLowerCase(); // Variable Teacher Search
+    const teacherSearch = document.getElementById('teacherFilter').value.toLowerCase();
 
     const filtered = allResources.filter(res => {
         const matchesSearch = res.title.toLowerCase().includes(searchTerm);
-        const matchesTopic = !topic || res.topic === topic;
+        const matchesTopic = !topic || (res.topic?.toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
         const matchesTeacher = !teacherSearch || (res.teacher && res.teacher.toLowerCase().includes(teacherSearch));
         return matchesSearch && matchesTopic && matchesAge && matchesTeacher;
@@ -94,11 +113,10 @@ function applyFilters() {
     displayResources(filtered);
 }
 
-// Listeners
+// 6. Listeners
 document.getElementById('searchInput').addEventListener('input', applyFilters);
 document.getElementById('topicFilter').addEventListener('change', applyFilters);
 document.getElementById('ageFilter').addEventListener('change', applyFilters);
 document.getElementById('teacherFilter').addEventListener('input', applyFilters);
 
-// Initialize
 window.addEventListener('DOMContentLoaded', loadAndDisplay);
