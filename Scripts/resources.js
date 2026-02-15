@@ -1,5 +1,5 @@
 // 1. Imports
-
+import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -73,6 +73,7 @@ function displayResources(filteredData) {
                         <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                         
                         ${res.id ? `
+                            <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">Edit Tags</button>
                             <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">Delete</button>
                         ` : ''}
                     </div>
@@ -87,6 +88,39 @@ function displayResources(filteredData) {
             content.style.display = isHidden ? "block" : "none";
             section.querySelector('h2').textContent = (isHidden ? "▼ " : "▶ ") + topic.toUpperCase() + ` (${topicItems.length})`;
         });
+
+// Edit functionality
+section.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+        const docId = e.target.getAttribute('data-id');
+        
+        // Find the current data for this item
+        const item = allResources.find(r => r.id === docId);
+
+        // Ask for new values (showing current values as defaults)
+        const newTitle = prompt("Edit Title:", item.title);
+        const newTeacher = prompt("Edit Teacher:", item.teacher);
+        const newTopic = prompt("Edit Topic:", item.topic);
+        const newAge = prompt("Edit Age Group:", item.ageGroup);
+
+        if (newTitle) { // Only update if they didn't hit cancel
+            try {
+                const docRef = doc(db, "resources", docId);
+                await updateDoc(docRef, {
+                    title: newTitle,
+                    teacher: newTeacher,
+                    topic: newTopic.toLowerCase(),
+                    ageGroup: newAge
+                });
+                alert("Updated successfully!");
+                loadAndDisplay(); // Refresh the list
+            } catch (error) {
+                console.error("Update Error:", error);
+                alert("Error updating. Check permissions.");
+            }
+        }
+    });
+});
 
         // Delete functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
