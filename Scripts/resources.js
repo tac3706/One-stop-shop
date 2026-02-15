@@ -78,9 +78,9 @@ function displayResources(filteredData) {
       </h2>
       <div class="topic-content" style="display:none; padding:10px;">
         ${topicItems.map(res => {
-          const tagText = Array.isArray(res.tags)
-            ? res.tags.join(", ")
-            : (res.tags || "Staff");
+          // Check for 'teacher' (new) or 'tags' (old)
+          const rawTeacher = res.teacher || res.tags || "Staff";
+          const tagText = Array.isArray(rawTeacher) ? rawTeacher.join(", ") : rawTeacher;
 
           return `
             <div class="resource-item"
@@ -117,18 +117,16 @@ function displayResources(filteredData) {
       </div>
     `;
 
-    // Toggle topic open/close
     section.querySelector("h2").addEventListener("click", () => {
       const content = section.querySelector(".topic-content");
-      content.style.display =
-        content.style.display === "none" ? "block" : "none";
+      content.style.display = content.style.display === "none" ? "block" : "none";
     });
 
     list.appendChild(section);
   });
 }
 
-// Add ONE delegated handler on the container:
+// Delegated Event Listener for Buttons
 document.addEventListener("click", async (e) => {
   const editBtn = e.target.closest(".edit-btn");
   const deleteBtn = e.target.closest(".delete-btn");
@@ -142,20 +140,18 @@ document.addEventListener("click", async (e) => {
     let updatedData = {};
     let cancelled = false;
 
+    // Dynamically edit whatever fields exist in the document
     for (const key in item) {
       if (key === "id" || key === "createdAt") continue;
 
       let value = item[key];
-      if (Array.isArray(value)) {
-        value = value.join(", ");
-      }
+      if (Array.isArray(value)) value = value.join(", ");
 
       const newValue = prompt(`Edit ${key}:`, value);
       if (newValue === null) {
         cancelled = true;
         break;
       }
-
       updatedData[key] = newValue;
     }
 
@@ -175,9 +171,7 @@ document.addEventListener("click", async (e) => {
   if (deleteBtn) {
     const resourceItem = deleteBtn.closest(".resource-item");
     const docId = resourceItem?.dataset.id;
-    if (!docId) return;
-
-    if (confirm("Are you sure?")) {
+    if (docId && confirm("Are you sure?")) {
       try {
         await deleteDoc(doc(db, "resources", docId));
         loadAndDisplay();
@@ -190,7 +184,6 @@ document.addEventListener("click", async (e) => {
 
 // 5. Filter Logic
 function applyFilters() {
-
     const searchInput = document.getElementById("searchInput");
     const topicFilter = document.getElementById("topicFilter");
     const ageFilter = document.getElementById("ageFilter");
@@ -204,32 +197,16 @@ function applyFilters() {
     const teacherSearch = teacherFilter ? teacherFilter.value.toLowerCase() : "";
 
     const filtered = allResources.filter(res => {
+        const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
+        const matchesTopic = !topic || String(res.topic || "").toLowerCase() === topic;
+        const matchesAge = !age || res.ageGroup === age;
+        const matchesType = !typeValue || res.type === typeValue;
 
-        const matchesSearch =
-            (res.title || "").toLowerCase().includes(searchTerm);
+        // Check both 'teacher' and 'tags' for filtering
+        const rawTeacher = res.teacher || res.tags || "";
+        const teacherText = Array.isArray(rawTeacher) ? rawTeacher.join(", ").toLowerCase() : String(rawTeacher).toLowerCase();
 
-        const matchesTopic =
-            !topic || String(res.topic || "").toLowerCase() === topic;
-
-        const matchesAge =
-            !age || res.ageGroup === age;
-
-        const matchesType =
-            !typeValue || res.type === typeValue;
-
-        const teacherText =
-            Array.isArray(res.tags)
-                ? res.tags.join(", ").toLowerCase()
-                : String(res.tags || "").toLowerCase();
-
-        const matchesTeacher =
-            !teacherSearch || teacherText.includes(teacherSearch);
-
-        return matchesSearch &&
-               matchesTopic &&
-               matchesAge &&
-               matchesType &&
-               matchesTeacher;
+        return matchesSearch && matchesTopic && matchesAge && matchesType && teacherText.includes(teacherSearch);
     });
 
     displayResources(filtered);
@@ -237,18 +214,10 @@ function applyFilters() {
 
 // 6. DOM Ready Setup
 window.addEventListener("DOMContentLoaded", () => {
-
     loadAndDisplay();
-
-    const searchInput = document.getElementById("searchInput");
-    const topicFilter = document.getElementById("topicFilter");
-    const ageFilter = document.getElementById("ageFilter");
-    const typeFilter = document.getElementById("typeFilter");
-    const teacherFilter = document.getElementById("teacherFilter");
-
-    if (searchInput) searchInput.addEventListener("input", applyFilters);
-    if (topicFilter) topicFilter.addEventListener("change", applyFilters);
-    if (ageFilter) ageFilter.addEventListener("change", applyFilters);
-    if (typeFilter) typeFilter.addEventListener("change", applyFilters);
-    if (teacherFilter) teacherFilter.addEventListener("input", applyFilters);
+    const ids = ["searchInput", "topicFilter", "ageFilter", "typeFilter", "teacherFilter"];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(id.includes("Filter") && id !== "teacherFilter" ? "change" : "input", applyFilters);
+    });
 });
