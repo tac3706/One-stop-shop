@@ -75,22 +75,33 @@ function displayPrintables(filteredData) {
             const id = e.target.getAttribute('data-id');
             const path = e.target.getAttribute('data-path');
             
+            // 1. Ask for the secret password
+            const adminKey = prompt("Enter Admin Password to delete:");
+
+            if (adminKey === null) return; // User cancelled
+
             if (confirm("Are you sure you want to delete this resource?")) {
                 try {
-                    // 1. Delete from Firestore
+                    // Note: Firebase Client SDK doesn't support custom headers easily for delete.
+                    // So for a simple "Teacher Site," we do a local check first:
+                    if (adminKey !== "YourSecretPassword123") {
+                        alert("Incorrect Password!");
+                        return;
+                    }
+
+                    // 2. Proceed with deletion
                     await deleteDoc(doc(db, "printables", id));
                     
-                    // 2. Delete from Storage (if path exists)
                     if (path) {
                         const fileRef = ref(storage, path);
                         await deleteObject(fileRef);
                     }
                     
                     alert("Deleted successfully!");
-                    loadAndDisplay(); // Refresh the list
+                    loadAndDisplay(); 
                 } catch (error) {
                     console.error("Error deleting:", error);
-                    alert("Delete failed. Check console.");
+                    alert("Delete failed. You might not have permission.");
                 }
             }
         });
