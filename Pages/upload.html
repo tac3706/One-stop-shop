@@ -11,9 +11,15 @@
         <h1>Teacher Upload Portal</h1>
         
         <div id="uploadForm" class="explanation-box" style="text-align: left;">
+            <label>Resource Category:</label>
+            <select id="resourceCategory" style="width:100%; margin-bottom:10px;">
+                <option value="file">📄 Printable File (PDF/Docs)</option>
+                <option value="link">🎥 YouTube or External Link</option>
+            </select>
+
             <label>Resource Title:</label>
             <input type="text" id="fileTitle" placeholder="e.g. Irregular Verbs List" style="width:100%; margin-bottom:10px;">
-            
+
             <label>Topic:</label>
             <select id="fileTopic" style="width:100%; margin-bottom:10px;">
                 <option value="grammar">Grammar</option>
@@ -22,31 +28,44 @@
                 <option value="writing">Writing</option>
                 <option value="speaking">Speaking</option>
                 <option value="listening">Listening</option>
+                <option value="exam prep">Exam Prep</option>
+                <option value="business english">Business English</option>
                 <option value="general">General</option>
             </select>
+
+            <div id="fileUploadSection">
+                <label>Select File (Max 5MB):</label>
+                <input type="file" id="filePicker" accept=".pdf,.doc,.docx,.png,.jpg" style="margin-bottom:10px;">
+            </div>
+
+            <div id="linkUploadSection" style="display:none;">
+                <label>Paste Link (YouTube or Website):</label>
+                <input type="url" id="externalUrl" placeholder="https://www.youtube.com/watch?v=..." style="width:100%; margin-bottom:10px;">
+            </div>
+
             <label>Material Type:</label>
             <select id="fileType" style="width:100%; margin-bottom:10px;">
                 <option value="PDF">PDF / Worksheet</option>
-                <option value="Video">Video Link / File</option>
-                <option value="Image">Infographic / Image</option>
-                <option value="PowerPoint">PowerPoint / Slides</option>
+                <option value="video">Video</option>
+                <option value="website">Website</option>
+                <option value="interactive">Interactive</option>
             </select>
 
-            <label>Target Age:</label>
+            <label>Target Age Group:</label>
             <select id="fileAge" style="width:100%; margin-bottom:10px;">
-                <option value="Children">Children</option>
-                <option value="Teens">Teens</option>
-                <option value="Adults">Adults</option>
-                <option value="All">All</option>
+                <option value="3-10">3-10</option>
+                <option value="teens">Teens</option>
+                <option value="adults">Adults</option>
+                <option value="all">All</option>
             </select>
+
             <label>Teacher Name:</label>
-            <input type="text" id="teacherName" placeholder="Your Name" style="width:100%; margin-bottom:10px;">
+            <input type="text" id="teacherName" placeholder="Your Name" style="width:100%; margin-bottom:20px;">
 
-            <label>Select File (PDF):</label>
-            <input type="file" id="filePicker" accept=".pdf" style="margin-bottom:20px;">
-
-            <button id="uploadBtn" class="back-button" style="background-color: #4CAF50; width: 100%;">🚀 Upload Resource</button>
-            <p id="status"></p>
+            <button id="uploadBtn" style="width:100%; padding:10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                🚀 Add to Library
+            </button>
+            <p id="status" style="margin-top:10px; font-weight:bold;"></p>
         </div>
     </div>
 
