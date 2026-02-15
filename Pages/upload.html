@@ -9,24 +9,90 @@
     <div class="container">
         <a href="../index.html" class="back-button">⬅ Back to Home</a>
         <h1>Teacher Upload Portal</h1>
-        <p>Submit your printable materials here.</p>
-
-        <form style="max-width: 500px; margin: 0 auto; text-align: left; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-            <label>Resource Title:</label><br>
-            <input type="text" id="title" placeholder="e.g., Irregular Verbs List" style="width: 100%; margin-bottom: 15px;"><br>
-
-            <label>Topic:</label><br>
-            <select id="topic" style="width: 100%; margin-bottom: 15px;">
+        
+        <div id="uploadForm" class="explanation-box" style="text-align: left;">
+            <label>Resource Title:</label>
+            <input type="text" id="fileTitle" placeholder="e.g. Irregular Verbs List" style="width:100%; margin-bottom:10px;">
+            
+            <label>Topic:</label>
+            <select id="fileTopic" style="width:100%; margin-bottom:10px;">
                 <option value="grammar">Grammar</option>
                 <option value="vocabulary">Vocabulary</option>
                 <option value="phonics">Phonics</option>
-            </select><br>
+                <option value="general">General</option>
+            </select>
 
-            <label>Select File (PDF or Image):</label><br>
-            <input type="file" id="fileUpload" style="margin-bottom: 20px;"><br>
+            <label>Teacher Name:</label>
+            <input type="text" id="teacherName" placeholder="Your Name" style="width:100%; margin-bottom:10px;">
 
-            <button type="submit" class="back-button" style="width: 100%; background-color: #4CAF50;">Submit for Review</button>
-        </form>
+            <label>Select File (PDF):</label>
+            <input type="file" id="filePicker" accept=".pdf" style="margin-bottom:20px;">
+
+            <button id="uploadBtn" class="back-button" style="background-color: #4CAF50; width: 100%;">🚀 Upload Resource</button>
+            <p id="status"></p>
+        </div>
     </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCVNUfj11PBHmjoPmDtudky9z6MHAdCsLw",
+            authDomain: "one-stop-shop-5e668.firebaseapp.com",
+            projectId: "one-stop-shop-5e668",
+            storageBucket: "one-stop-shop-5e668.firebasestorage.app",
+            messagingSenderId: "158039043020",
+            appId: "1:158039043020:web:424c94c7feda5b3004cb69"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const storage = getStorage(app);
+        const db = getFirestore(app);
+
+        const uploadBtn = document.getElementById('uploadBtn');
+        const status = document.getElementById('status');
+
+        uploadBtn.addEventListener('click', async () => {
+            const file = document.getElementById('filePicker').files[0];
+            const title = document.getElementById('fileTitle').value;
+            const topic = document.getElementById('fileTopic').value;
+            const teacher = document.getElementById('teacherName').value;
+
+            if (!file || !title || !teacher) {
+                alert("Please fill in all fields and select a file!");
+                return;
+            }
+
+            status.innerText = "Uploading... please wait.";
+            uploadBtn.disabled = true;
+
+            try {
+                // 1. Upload File to Storage
+                const storageRef = ref(storage, 'printables/' + file.name);
+                const snapshot = await uploadBytes(storageRef, file);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+
+                // 2. Save Tags/Meta to Firestore
+                await addDoc(collection(db, "printables"), {
+                    title: title,
+                    topic: topic,
+                    teacher: teacher,
+                    url: downloadURL,
+                    type: "PDF",
+                    createdAt: new Date()
+                });
+
+                status.innerText = "✅ Success! Resource added to library.";
+                document.getElementById('fileTitle').value = "";
+            } catch (error) {
+                console.error(error);
+                status.innerText = "❌ Error uploading. Check console.";
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        });
+    </script>
 </body>
 </html>
