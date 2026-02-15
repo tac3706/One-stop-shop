@@ -16,7 +16,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let allResources = []; // Master list
+let allResources = []; // Master list combining static and DB
 
 // 3. Load Data from Both Sources
 async function loadAndDisplay() {
@@ -24,21 +24,18 @@ async function loadAndDisplay() {
     list.innerHTML = "<p>Loading library...</p>";
     
     try {
-        // Fetch from Firebase
         const querySnapshot = await getDocs(collection(db, "resources"));
         const dbResources = [];
         querySnapshot.forEach((doc) => {
             dbResources.push({ id: doc.id, ...doc.data() });
         });
 
-        // COMBINE: Put static resources and database resources together
+        // Merge static files and database entries
         allResources = [...staticResources, ...dbResources];
-
         applyFilters(); 
     } catch (error) {
         console.error("Database error:", error);
-        // Fallback to just static resources if DB fails
-        allResources = [...staticResources];
+        allResources = [...staticResources]; // Fallback to static if DB fails
         applyFilters();
     }
 }
@@ -48,18 +45,20 @@ function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
     list.innerHTML = "";
     
-    // Result count
-    const countDisplay = document.getElementById("resultCount") || document.createElement("p");
-    countDisplay.id = "resultCount";
+    // Manage result count display
+    let countDisplay = document.getElementById("resultCount");
+    if (!countDisplay) {
+        countDisplay = document.createElement("p");
+        countDisplay.id = "resultCount";
+        list.parentNode.insertBefore(countDisplay, list);
+    }
     countDisplay.textContent = `Showing ${filteredData.length} of ${allResources.length} resources`;
-    if (!document.getElementById("resultCount")) list.parentNode.insertBefore(countDisplay, list);
 
     if (filteredData.length === 0) {
         list.innerHTML = "<p>No resources found.</p>";
         return;
     }
 
-    // Dynamic grouping by topic
     const topics = [...new Set(filteredData.map(res => res.topic?.toLowerCase() || "general"))];
 
     topics.forEach(topic => {
@@ -68,16 +67,19 @@ function displayResources(filteredData) {
         section.style.marginBottom = "15px";
         
         section.innerHTML = `
-            <h2 class="topic-header" style="cursor:pointer">▶ ${topic.toUpperCase()} (${topicItems.length})</h2>
-            <div class="topic-content" style="display:none">
+            <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px;">
+                ▶ ${topic.toUpperCase()} (${topicItems.length})
+            </h2>
+            <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => `
-                    <div class="resource-item">
+                    <div class="resource-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
                         <h3>${res.title}</h3>
                         <p>👤 Teacher: ${res.teacher || "Staff"}</p>
-                        <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px;">🔗 Open</a>
+                        <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                         
-                        ${res.id ? `<button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px;">Delete</button>` : ''}
-                        <hr>
+                        ${res.id ? `
+                            <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">Delete</button>
+                        ` : ''}
                     </div>
                 `).join('')}
             </div>
@@ -90,22 +92,24 @@ function displayResources(filteredData) {
             content.style.display = isHidden ? "block" : "none";
             section.querySelector('h2').textContent = (isHidden ? "▼ " : "▶ ") + topic.toUpperCase() + ` (${topicItems.length})`;
         });
-      // 3. Add Delete Button Listeners
-              section.querySelectorAll('.delete-btn').forEach(btn => {
-                  btn.addEventListener('click', async (e) => {
-                      const docId = e.target.getAttribute('data-id');
-                      if (confirm("Are you sure you want to delete this resource?")) {
-                          try {
-                              await deleteDoc(doc(db, "resources", docId));
-                              alert("Resource deleted successfully!");
-                              loadAndDisplay(); // Refresh the list
-                          } catch (error) {
-                              console.error("Delete Error:", error);
-                              alert("Error deleting resource. Check your permissions.");
-                          }
-                      }
-                  });
-              });
+
+        // Delete functionality
+        section.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const docId = e.target.getAttribute('data-id');
+                if (confirm("Are you sure you want to delete this resource?")) {
+                    try {
+                        await deleteDoc(doc(db, "resources", docId));
+                        alert("Resource deleted successfully!");
+                        loadAndDisplay(); // Refresh the list
+                    } catch (error) {
+                        console.error("Delete Error:", error);
+                        alert("Error: Missing permissions to delete.");
+                    }
+                }
+            });
+        });
+
         list.appendChild(section);
     });
 }
