@@ -143,16 +143,19 @@ function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const topic = document.getElementById('topicFilter').value.toLowerCase();
     const age = document.getElementById('ageFilter').value;
-    const type = document.getElementById('typeFilter').value; // Added Type filter logic
+    const type = document.getElementById('typeFilter') ? document.getElementById('typeFilter').value : "";
     const teacherSearch = document.getElementById('teacherFilter').value.toLowerCase();
 
     const filtered = allResources.filter(res => {
         const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
         const matchesTopic = !topic || (res.topic?.toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
-        const matchesType = !type || res.type === type; // Check for type match
-        const currentTeacher = (res.tags || "").toLowerCase();
+        const matchesType = !type || res.type === type;
+        
+        // FIX: Force tags to be a String before calling toLowerCase()
+        const currentTeacher = String(res.tags || "").toLowerCase(); 
         const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
+        
         return matchesSearch && matchesTopic && matchesAge && matchesType && matchesTeacher;
     });
 
