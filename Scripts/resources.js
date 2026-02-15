@@ -59,21 +59,17 @@ function displayResources(filteredData) {
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => {
-                    // ARRAY FIX: Convert old array tags ["Travis"] to "Travis" for display
-                    let displayTags = res.tags;
-                    if (Array.isArray(res.tags)) {
-                        displayTags = res.tags.join(", ");
-                    }
-                    
+                    // Pre-convert tags for display only
+                    let tagDisplay = Array.isArray(res.tags) ? res.tags.join(", ") : (res.tags || "Staff");
                     return `
                     <div class="resource-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
                         <h3>${res.title || "Untitled"}</h3>
-                        <p>👤 Teacher: ${displayTags || "Staff"}</p>
+                        <p>👤 Teacher: ${tagDisplay}</p>
                         <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
                         <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                         
                         <div style="margin-top:10px;">
-                            <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:3px;">Edit Tags</button>
+                            <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:3px;">Edit Any Field</button>
                             <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">Delete</button>
                         </div>
                     </div>
@@ -86,45 +82,48 @@ function displayResources(filteredData) {
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
 
-        // FIXED EDIT LOGIC FOR ARRAYS
+        // DYNAMIC EDIT LOGIC: Loop through existing fields
         section.querySelectorAll('.edit-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
                 const item = allResources.find(r => r.id === docId);
                 if (!item) return;
 
-                // ARRAY FIX: Convert old array tags to a string for the prompt window
-                let currentTags = item.tags;
-                if (Array.isArray(item.tags)) {
-                    currentTags = item.tags.join(", ");
-                } else {
-                    currentTags = String(item.tags || "");
+                let updatedData = {};
+                let userCancelled = false;
+
+                // Loop through every key in the document (id, title, tags, etc.)
+                for (const key in item) {
+                    if (key === 'id') continue; // Don't let users edit the Firebase ID
+
+                    let currentValue = item[key];
+                    // If it's your old array data, show it as text in the prompt
+                    if (Array.isArray(currentValue)) currentValue = currentValue.join(", ");
+
+                    const newValue = prompt(`Edit ${key}:`, currentValue);
+                    
+                    if (newValue === null) {
+                        userCancelled = true;
+                        break;
+                    }
+                    updatedData[key] = newValue;
                 }
 
-                const newTitle = prompt("Edit Title:", String(item.title || ""));
-                const newTeacher = prompt("Edit Teacher:", currentTags);
-                const newTopic = prompt("Edit Topic:", String(item.topic || "general"));
-                const newAge = prompt("Edit Age Group:", String(item.ageGroup || "All"));
-
-                if (newTitle !== null) { 
+                if (!userCancelled) { 
                     try {
                         const docRef = doc(db, "resources", docId);
-                        await updateDoc(docRef, {
-                            title: newTitle,
-                            tags: newTeacher, // Saves back as a proper String
-                            topic: newTopic.toLowerCase(),
-                            ageGroup: newAge
-                        });
+                        await updateDoc(docRef, updatedData);
                         alert("Updated successfully!");
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Update Error:", error);
-                        alert("Error updating. Check your Firestore Database rules.");
+                        alert("Error updating. Ensure you aren't trying to edit restricted system fields.");
                     }
                 }
             };
         });
 
+        // DELETE functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
