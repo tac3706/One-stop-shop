@@ -24,4 +24,37 @@
 
     <script type="module" src="../Scripts/printables-logic.js"></script>
 </body>
+<div class="filter-controls">
+    <input type="text" id="searchInput" placeholder="Search titles...">
+    
+    <select id="topicFilter">
+        <option value="">All Topics</option>
+        <option value="grammar">Grammar</option>
+        <option value="vocabulary">Vocabulary</option>
+        <option value="reading">Reading</option>
+        <option value="writing">Writing</option>
+        <option value="speaking">Speaking</option>
+        <option value="listening">Listening</option>
+        <option value="general">General</option>
+    </select>
+
+    <select id="ageFilter">
+        <option value="">All Ages</option>
+        <option value="Children">Children</option>
+        <option value="Teens">Teens</option>
+        <option value="Adults">Adults</option>
+        <option value="All">All</option>
+    </select>
+
+    <select id="typeFilter">
+        <option value="">All Types</option>
+        <option value="PDF">PDF / Worksheet</option>
+        <option value="Video">Video</option>
+        <option value="Image">Infographic</option>
+        <option value="PowerPoint">PowerPoint</option>
+    </select>
+</div>
+
+<hr>
+<div id="printableList"></div>
 </html>
