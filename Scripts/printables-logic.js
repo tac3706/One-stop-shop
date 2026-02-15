@@ -100,4 +100,17 @@ document.getElementById('topicFilter').addEventListener('change', applyFilters);
 document.getElementById('ageFilter').addEventListener('change', applyFilters);
 document.getElementById('typeFilter').addEventListener('change', applyFilters);
 
+// Ensure the code waits for the HTML elements to exist
+window.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('searchInput');
+    const topicFilter = document.getElementById('topicFilter');
+    const ageFilter = document.getElementById('ageFilter');
+    const typeFilter = document.getElementById('typeFilter');
+
+    // Only attach listeners if the elements are found
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+    if (topicFilter) topicFilter.addEventListener('change', applyFilters);
+    if (ageFilter) ageFilter.addEventListener('change', applyFilters);
+    if (typeFilter) typeFilter.addEventListener('change', applyFilters);
+
 loadAndDisplay();
