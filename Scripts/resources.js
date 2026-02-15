@@ -1,5 +1,5 @@
 // 1. Imports
-import { resources as staticResources } from "../Data/resources.js";
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -22,21 +22,16 @@ let allResources = []; // Master list combining static and DB
 async function loadAndDisplay() {
     const list = document.getElementById("resourceList");
     list.innerHTML = "<p>Loading library...</p>";
-    
     try {
         const querySnapshot = await getDocs(collection(db, "resources"));
-        const dbResources = [];
+        allResources = []; 
         querySnapshot.forEach((doc) => {
-            dbResources.push({ id: doc.id, ...doc.data() });
+            // Because every item now comes from the database, every item has an id!
+            allResources.push({ id: doc.id, ...doc.data() });
         });
-
-        // Merge static files and database entries
-        allResources = [...staticResources, ...dbResources];
         applyFilters(); 
     } catch (error) {
         console.error("Database error:", error);
-        allResources = [...staticResources]; // Fallback to static if DB fails
-        applyFilters();
     }
 }
 
