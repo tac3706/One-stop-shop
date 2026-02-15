@@ -46,14 +46,29 @@ function displayPrintables(filteredData) {
         topicFiles.forEach(file => {
             const div = document.createElement("div");
             div.className = "resource-item";
+            
+            // We display the Type and Age Group tags here
             div.innerHTML = `
-                <h3>${file.title}</h3>
-                <p>Teacher: ${file.teacher}</p>
-                <div style="display: flex; gap: 10px;">
-                    <a href="${file.url}" target="_blank" class="back-button" style="background-color: #4CAF50; margin:0;">📥 Download</a>
-                    <button class="delete-btn" data-id="${file.id}" data-path="${file.storagePath}" style="background-color: #ff4444; color: white; border: none; border-radius: 5px; cursor: pointer; padding: 5px 10px;">🗑 Delete</button>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h3 style="margin-bottom: 5px;">${file.title}</h3>
+                        <p style="font-size: 0.9em; color: #666;">
+                            👤 <strong>${file.teacher}</strong> | 
+                            🎂 ${file.ageGroup} | 
+                            📄 ${file.type}
+                        </p>
+                    </div>
                 </div>
-                <hr>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <a href="${file.url}" target="_blank" class="back-button" style="background-color: #4CAF50; margin:0; padding: 8px 15px;">
+                        📥 View/Download ${file.type}
+                    </a>
+                    <button class="delete-btn" data-id="${file.id}" data-path="${file.storagePath}" 
+                        style="background-color: #ff4444; color: white; border: none; border-radius: 5px; cursor: pointer; padding: 5px 10px;">
+                        🗑 Delete
+                    </button>
+                </div>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
             `;
             content.appendChild(div);
         });
