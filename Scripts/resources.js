@@ -74,15 +74,18 @@ function displayResources(filteredData) {
             </div>
         `;
 
+        // Toggle logic
         section.querySelector('h2').onclick = () => {
             const content = section.querySelector('.topic-content');
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
 
+        // EDIT functionality
         section.querySelectorAll('.edit-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
                 const item = allResources.find(r => r.id === docId);
+
                 if (!item) return;
 
                 const newTitle = prompt("Edit Title:", item.title || "");
@@ -103,12 +106,13 @@ function displayResources(filteredData) {
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Update Error:", error);
-                        alert("Error updating. Check your Firebase rules.");
+                        alert("Error updating. Check your Firestore Database rules.");
                     }
                 }
             };
         });
 
+        // DELETE functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
@@ -129,31 +133,23 @@ function displayResources(filteredData) {
 
 // 5. Unified Filter Logic
 function applyFilters() {
-    // 1. Get values from the HTML inputs
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const topic = document.getElementById('topicFilter').value.toLowerCase();
     const age = document.getElementById('ageFilter').value;
     const teacherSearch = document.getElementById('teacherFilter').value.toLowerCase();
-    
-    // Check if typeFilter exists in your HTML before trying to read it
-    const typeField = document.getElementById('typeFilter');
-    const typeValue = typeField ? typeField.value : "";
 
-    // 2. Filter the data
     const filtered = allResources.filter(res => {
         const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
         const matchesTopic = !topic || (res.topic?.toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
-        const matchesType = !typeValue || res.type === typeValue;
-
-        // SAFE FIX: Force the tags field to be a String to prevent "toLowerCase is not a function"
+        
+        // Use String() to prevent crashes if tags is not text
         const currentTeacher = String(res.tags || "").toLowerCase(); 
         const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
-
-        return matchesSearch && matchesTopic && matchesAge && matchesType && matchesTeacher;
+        
+        return matchesSearch && matchesTopic && matchesAge && matchesTeacher;
     });
 
-    // 3. Send the clean data to be displayed
     displayResources(filtered);
 }
 
@@ -161,9 +157,6 @@ function applyFilters() {
 document.getElementById('searchInput').addEventListener('input', applyFilters);
 document.getElementById('topicFilter').addEventListener('change', applyFilters);
 document.getElementById('ageFilter').addEventListener('change', applyFilters);
-if(document.getElementById('typeFilter')) {
-    document.getElementById('typeFilter').addEventListener('change', applyFilters);
-}
 document.getElementById('teacherFilter').addEventListener('input', applyFilters);
 
 window.addEventListener('DOMContentLoaded', loadAndDisplay);
