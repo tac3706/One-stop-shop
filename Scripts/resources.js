@@ -33,23 +33,27 @@ async function loadAndDisplay() {
         applyFilters(); 
     } catch (error) {
         console.error("Database error:", error);
+        list.innerHTML = "<p>Error loading resources. Check your connection or Firebase rules.</p>";
     }
 }
 
 // 4. Display Logic
 function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
+    const countDisplay = document.getElementById("resultCount");
+    
     list.innerHTML = "";
+    if (countDisplay) countDisplay.innerText = `Showing ${filteredData.length} resources`;
     
     if (filteredData.length === 0) {
         list.innerHTML = "<p>No resources found.</p>";
         return;
     }
 
-    const topics = [...new Set(filteredData.map(res => res.topic?.toLowerCase() || "general"))];
+    const topics = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))];
 
     topics.forEach(topic => {
-        const topicItems = filteredData.filter(res => (res.topic?.toLowerCase() || "general") === topic);
+        const topicItems = filteredData.filter(res => String(res.topic || "general").toLowerCase() === topic);
         const section = document.createElement("div");
         section.style.marginBottom = "15px";
         
@@ -58,19 +62,22 @@ function displayResources(filteredData) {
                 ▶ ${topic.toUpperCase()} (${topicItems.length})
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
-                ${topicItems.map(res => `
+                ${topicItems.map(res => {
+                    // Safe display for old array tags
+                    let tagText = Array.isArray(res.tags) ? res.tags.join(", ") : (res.tags || "Staff");
+                    return `
                     <div class="resource-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
-                        <h3>${res.title}</h3>
-                        <p>👤 Teacher: ${res.tags || "Staff"}</p>
+                        <h3>${res.title || "Untitled"}</h3>
+                        <p>👤 Teacher: ${tagText}</p>
                         <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
                         <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                         
                         <div style="margin-top:10px;">
-                            <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:3px;">Edit Tags</button>
+                            <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:3px;">Edit Any Field</button>
                             <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">Delete</button>
                         </div>
                     </div>
-                `).join('')}
+                `}).join('')}
             </div>
         `;
 
@@ -79,40 +86,50 @@ function displayResources(filteredData) {
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
 
+        // ATTACH EDIT LISTENERS
         section.querySelectorAll('.edit-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
                 const item = allResources.find(r => r.id === docId);
                 if (!item) return;
 
-                const newTitle = prompt("Edit Title:", item.title || "");
-                const newTeacher = prompt("Edit Teacher:", item.tags || "Staff");
-                const newTopic = prompt("Edit Topic:", item.topic || "general");
-                const newAge = prompt("Edit Age Group:", item.ageGroup || "All");
+                let updatedData = {};
+                let userCancelled = false;
 
-                if (newTitle !== null) { 
+                // Loop through all fields in the document
+                for (const key in item) {
+                    if (key === 'id' || key === 'createdAt') continue; 
+
+                    let val = item[key];
+                    if (Array.isArray(val)) val = val.join(", ");
+
+                    const newValue = prompt(`Edit ${key}:`, val);
+                    if (newValue === null) {
+                        userCancelled = true;
+                        break;
+                    }
+                    updatedData[key] = newValue;
+                }
+
+                if (!userCancelled) { 
                     try {
                         const docRef = doc(db, "resources", docId);
-                        await updateDoc(docRef, {
-                            title: newTitle,
-                            tags: newTeacher,
-                            topic: newTopic.toLowerCase(),
-                            ageGroup: newAge
-                        });
+                        await updateDoc(docRef, updatedData);
                         alert("Updated successfully!");
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Update Error:", error);
-                        alert("Error updating. Check your Firebase rules.");
+                        alert("Error updating. Check your Firestore Database rules.");
                     }
                 }
             };
         });
 
+        // ATTACH DELETE LISTENERS
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
-                if (confirm("Are you sure you want to delete this?")) {
+                if (confirm("Are you sure?")) {
                     try {
                         await deleteDoc(doc(db, "resources", docId));
                         loadAndDisplay(); 
@@ -132,16 +149,16 @@ function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const topic = document.getElementById('topicFilter').value.toLowerCase();
     const age = document.getElementById('ageFilter').value;
-    const type = document.getElementById('typeFilter') ? document.getElementById('typeFilter').value : "";
+    const typeField = document.getElementById('typeFilter');
+    const typeValue = typeField ? typeField.value : "";
     const teacherSearch = document.getElementById('teacherFilter').value.toLowerCase();
 
     const filtered = allResources.filter(res => {
         const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
-        const matchesTopic = !topic || (res.topic?.toLowerCase() === topic);
+        const matchesTopic = !topic || (String(res.topic || "").toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
-        const matchesType = !type || res.type === type;
+        const matchesType = !typeValue || res.type === typeValue;
         
-        // FIX: Force res.tags to be a String to prevent the crash
         const currentTeacher = String(res.tags || "").toLowerCase(); 
         const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
         
@@ -155,7 +172,7 @@ function applyFilters() {
 document.getElementById('searchInput').addEventListener('input', applyFilters);
 document.getElementById('topicFilter').addEventListener('change', applyFilters);
 document.getElementById('ageFilter').addEventListener('change', applyFilters);
-if(document.getElementById('typeFilter')) {
+if (document.getElementById('typeFilter')) {
     document.getElementById('typeFilter').addEventListener('change', applyFilters);
 }
 document.getElementById('teacherFilter').addEventListener('input', applyFilters);
