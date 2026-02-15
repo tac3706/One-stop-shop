@@ -113,7 +113,46 @@ function displayPrintables(filteredData) {
                     }
                     
                     alert("Deleted successfully!");
-                    loadAndDisplay(); 
+// Inside printables-logic.js
+let allResources = []; // To store data for filtering
+
+async function loadAndDisplay() {
+    list.innerHTML = "<p>Loading materials...</p>";
+    try {
+        const querySnapshot = await getDocs(collection(db, "printables"));
+        allResources = [];
+        querySnapshot.forEach((doc) => {
+            allResources.push({ id: doc.id, ...doc.data() });
+        });
+        applyFilters(); // Initial display
+    } catch (error) {
+        console.error("Error loading:", error);
+        list.innerHTML = "<p>Error loading materials. check console.</p>";
+    }
+}
+
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const topic = document.getElementById('topicFilter').value;
+    const age = document.getElementById('ageFilter').value;
+    const type = document.getElementById('typeFilter').value;
+
+    const filtered = allResources.filter(res => {
+        const matchesSearch = res.title.toLowerCase().includes(searchTerm);
+        const matchesTopic = !topic || res.topic === topic;
+        const matchesAge = !age || res.ageGroup === age;
+        const matchesType = !type || res.type === type;
+        return matchesSearch && matchesTopic && matchesAge && matchesType;
+    });
+
+    displayPrintables(filtered);
+}
+
+// Add event listeners for the filters
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+document.getElementById('topicFilter').addEventListener('change', applyFilters);
+document.getElementById('ageFilter').addEventListener('change', applyFilters);
+document.getElementById('typeFilter').addEventListener('change', applyFilters);
                 } catch (error) {
                     console.error("Error deleting:", error);
                     alert("Delete failed. You might not have permission.");
