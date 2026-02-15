@@ -37,6 +37,7 @@ function loadConditional(index) {
     const menu = document.getElementById('conditional-menu');
     const display = document.getElementById('game-display');
     const content = document.getElementById('game-content');
+    document.getElementById('general-overview').style.display = 'none';
 
     // Hide the selection grid and show the game area
     menu.style.display = 'none';
@@ -76,4 +77,5 @@ function checkCond(id, correct) {
 function showCondMenu() {
     document.getElementById('conditional-menu').style.display = 'grid';
     document.getElementById('game-display').style.display = 'none';
+    document.getElementById('general-overview').style.display = 'block';
 }
