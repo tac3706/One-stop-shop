@@ -19,7 +19,7 @@ const db = getFirestore(app);
 
 let allResources = []; 
 
-// 3. Load Data
+// 3. Load Data from Firebase
 async function loadAndDisplay() {
     const list = document.getElementById("resourceList");
     if (!list) return;
@@ -70,6 +70,7 @@ function displayResources(filteredData) {
                     <div class="resource-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
                         <h3>${res.title}</h3>
                         <p>👤 Teacher: ${res.teacher || "Staff"}</p>
+                        <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
                         <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                         
                         ${res.id ? `
@@ -95,12 +96,12 @@ function displayResources(filteredData) {
                 const docId = e.target.getAttribute('data-id');
                 const item = allResources.find(r => r.id === docId);
 
-                const newTitle = prompt("Edit Title:", item.title);
-                const newTeacher = prompt("Edit Teacher:", item.teacher);
-                const newTopic = prompt("Edit Topic:", item.topic);
-                const newAge = prompt("Edit Age Group:", item.ageGroup);
+                const newTitle = prompt("Edit Title:", item.title || "");
+                const newTeacher = prompt("Edit Teacher:", item.teacher || "Staff");
+                const newTopic = prompt("Edit Topic:", item.topic || "general");
+                const newAge = prompt("Edit Age Group:", item.ageGroup || "All");
 
-                if (newTitle) { 
+                if (newTitle !== null) { 
                     try {
                         const docRef = doc(db, "resources", docId);
                         await updateDoc(docRef, {
@@ -113,7 +114,7 @@ function displayResources(filteredData) {
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Update Error:", error);
-                        alert("Error updating.");
+                        alert("Error updating database.");
                     }
                 }
             });
@@ -129,6 +130,7 @@ function displayResources(filteredData) {
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Delete Error:", error);
+                        alert("Error: Missing permissions to delete.");
                     }
                 }
             });
