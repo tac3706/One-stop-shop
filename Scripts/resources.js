@@ -46,10 +46,10 @@ function displayResources(filteredData) {
         return;
     }
 
-    const topics = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))];
+    const topics = [...new Set(filteredData.map(res => res.topic?.toLowerCase() || "general"))];
 
     topics.forEach(topic => {
-        const topicItems = filteredData.filter(res => String(res.topic || "general").toLowerCase() === topic);
+        const topicItems = filteredData.filter(res => (res.topic?.toLowerCase() || "general") === topic);
         const section = document.createElement("div");
         section.style.marginBottom = "15px";
         
@@ -58,21 +58,19 @@ function displayResources(filteredData) {
                 ▶ ${topic.toUpperCase()} (${topicItems.length})
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
-                ${topicItems.map(res => {
-                    let displayTags = Array.isArray(res.tags) ? res.tags.join(", ") : (res.tags || "Staff");
-                    return `
+                ${topicItems.map(res => `
                     <div class="resource-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
-                        <h3>${res.title || "Untitled"}</h3>
-                        <p>👤 Teacher: ${displayTags}</p>
+                        <h3>${res.title}</h3>
+                        <p>👤 Teacher: ${res.tags || "Staff"}</p>
                         <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
                         <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                         
                         <div style="margin-top:10px;">
-                            <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:3px;">Edit Any Field</button>
+                            <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:3px;">Edit Tags</button>
                             <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">Delete</button>
                         </div>
                     </div>
-                `}).join('')}
+                `).join('')}
             </div>
         `;
 
@@ -81,39 +79,31 @@ function displayResources(filteredData) {
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
 
-        // DYNAMIC EDIT LOGIC: Loops through existing fields
         section.querySelectorAll('.edit-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
                 const item = allResources.find(r => r.id === docId);
                 if (!item) return;
 
-                let updatedData = {};
-                let userCancelled = false;
+                const newTitle = prompt("Edit Title:", item.title || "");
+                const newTeacher = prompt("Edit Teacher:", item.tags || "Staff");
+                const newTopic = prompt("Edit Topic:", item.topic || "general");
+                const newAge = prompt("Edit Age Group:", item.ageGroup || "All");
 
-                for (const key in item) {
-                    if (key === 'id') continue; 
-
-                    let currentValue = item[key];
-                    if (Array.isArray(currentValue)) currentValue = currentValue.join(", ");
-
-                    const newValue = prompt(`Edit ${key}:`, currentValue);
-                    if (newValue === null) {
-                        userCancelled = true;
-                        break;
-                    }
-                    updatedData[key] = newValue;
-                }
-
-                if (!userCancelled) { 
+                if (newTitle !== null) { 
                     try {
                         const docRef = doc(db, "resources", docId);
-                        await updateDoc(docRef, updatedData);
+                        await updateDoc(docRef, {
+                            title: newTitle,
+                            tags: newTeacher,
+                            topic: newTopic.toLowerCase(),
+                            ageGroup: newAge
+                        });
                         alert("Updated successfully!");
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Update Error:", error);
-                        alert("Error updating database.");
+                        alert("Error updating. Check your Firebase rules.");
                     }
                 }
             };
@@ -122,7 +112,7 @@ function displayResources(filteredData) {
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
-                if (confirm("Are you sure?")) {
+                if (confirm("Are you sure you want to delete this?")) {
                     try {
                         await deleteDoc(doc(db, "resources", docId));
                         loadAndDisplay(); 
@@ -142,15 +132,20 @@ function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const topic = document.getElementById('topicFilter').value.toLowerCase();
     const age = document.getElementById('ageFilter').value;
+    const type = document.getElementById('typeFilter') ? document.getElementById('typeFilter').value : "";
     const teacherSearch = document.getElementById('teacherFilter').value.toLowerCase();
 
     const filtered = allResources.filter(res => {
         const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
-        const matchesTopic = !topic || (String(res.topic || "").toLowerCase() === topic);
+        const matchesTopic = !topic || (res.topic?.toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
+        const matchesType = !type || res.type === type;
+        
+        // FIX: Force res.tags to be a String to prevent the crash
         const currentTeacher = String(res.tags || "").toLowerCase(); 
         const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
-        return matchesSearch && matchesTopic && matchesAge && matchesTeacher;
+        
+        return matchesSearch && matchesTopic && matchesAge && matchesType && matchesTeacher;
     });
 
     displayResources(filtered);
@@ -160,6 +155,9 @@ function applyFilters() {
 document.getElementById('searchInput').addEventListener('input', applyFilters);
 document.getElementById('topicFilter').addEventListener('change', applyFilters);
 document.getElementById('ageFilter').addEventListener('change', applyFilters);
+if(document.getElementById('typeFilter')) {
+    document.getElementById('typeFilter').addEventListener('change', applyFilters);
+}
 document.getElementById('teacherFilter').addEventListener('input', applyFilters);
 
 window.addEventListener('DOMContentLoaded', loadAndDisplay);
