@@ -63,7 +63,7 @@ function displayResources(filteredData) {
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => {
-                    // Safe display for old array tags
+                    // ARRAY FIX: Convert old array tags to string for display
                     let tagText = Array.isArray(res.tags) ? res.tags.join(", ") : (res.tags || "Staff");
                     return `
                     <div class="resource-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
@@ -86,7 +86,7 @@ function displayResources(filteredData) {
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
 
-        // ATTACH EDIT LISTENERS
+        // CONNECT EDIT BUTTONS
         section.querySelectorAll('.edit-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
@@ -96,11 +96,12 @@ function displayResources(filteredData) {
                 let updatedData = {};
                 let userCancelled = false;
 
-                // Loop through all fields in the document
+                // Loop through all fields found in the Firebase document
                 for (const key in item) {
                     if (key === 'id' || key === 'createdAt') continue; 
 
                     let val = item[key];
+                    // ARRAY FIX: Convert old array tags to string for the prompt
                     if (Array.isArray(val)) val = val.join(", ");
 
                     const newValue = prompt(`Edit ${key}:`, val);
@@ -125,7 +126,7 @@ function displayResources(filteredData) {
             };
         });
 
-        // ATTACH DELETE LISTENERS
+        // CONNECT DELETE BUTTONS
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
