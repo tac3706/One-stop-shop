@@ -1,8 +1,7 @@
 // 1. Imports
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-    getFirestore, collection, getDocs, doc, deleteDoc, updateDoc 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 2. Firebase Config
 const firebaseConfig = {
@@ -17,17 +16,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let allResources = []; 
+let allResources = []; // Master list combining static and DB
 
-// 3. Load Data
+// 3. Load Data from Both Sources
 async function loadAndDisplay() {
     const list = document.getElementById("resourceList");
-    if (!list) return;
     list.innerHTML = "<p>Loading library...</p>";
     try {
         const querySnapshot = await getDocs(collection(db, "resources"));
         allResources = []; 
         querySnapshot.forEach((doc) => {
+            // Because every item now comes from the database, every item has an id!
             allResources.push({ id: doc.id, ...doc.data() });
         });
         applyFilters(); 
@@ -41,6 +40,15 @@ function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
     list.innerHTML = "";
     
+    // Manage result count display
+    let countDisplay = document.getElementById("resultCount");
+    if (!countDisplay) {
+        countDisplay = document.createElement("p");
+        countDisplay.id = "resultCount";
+        list.parentNode.insertBefore(countDisplay, list);
+    }
+    countDisplay.textContent = `Showing ${filteredData.length} of ${allResources.length} resources`;
+
     if (filteredData.length === 0) {
         list.innerHTML = "<p>No resources found.</p>";
         return;
@@ -61,70 +69,74 @@ function displayResources(filteredData) {
                 ${topicItems.map(res => `
                     <div class="resource-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
                         <h3>${res.title}</h3>
-                        <p>👤 Teacher: ${res.tags || "Staff"}</p>
-                        <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
+                        <p>👤 Teacher: ${res.teacher || "Staff"}</p>
                         <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                         
-                        <div style="margin-top:10px;">
-                            <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:3px;">Edit Tags</button>
+                        ${res.id ? `
+                            <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">Edit Tags</button>
                             <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">Delete</button>
-                        </div>
+                        ` : ''}
                     </div>
                 `).join('')}
             </div>
         `;
 
         // Toggle logic
-        section.querySelector('h2').onclick = () => {
+        section.querySelector('h2').addEventListener('click', () => {
             const content = section.querySelector('.topic-content');
-            content.style.display = content.style.display === "none" ? "block" : "none";
-        };
-
-        // EDIT functionality
-        section.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.onclick = async (e) => {
-                const docId = e.target.getAttribute('data-id');
-                const item = allResources.find(r => r.id === docId);
-
-                if (!item) return;
-
-                const newTitle = prompt("Edit Title:", item.title || "");
-                const newTeacher = prompt("Edit Teacher:", item.tags || "Staff");
-                const newTopic = prompt("Edit Topic:", item.topic || "general");
-                const newAge = prompt("Edit Age Group:", item.ageGroup || "All");
-
-                if (newTitle !== null) { 
-                    try {
-                        const docRef = doc(db, "resources", docId);
-                        await updateDoc(docRef, {
-                            title: newTitle,
-                            tags: newTeacher,
-                            topic: newTopic.toLowerCase(),
-                            ageGroup: newAge
-                        });
-                        alert("Updated successfully!");
-                        loadAndDisplay(); 
-                    } catch (error) {
-                        console.error("Update Error:", error);
-                        alert("Error updating. Check your internet or Firebase rules.");
-                    }
-                }
-            };
+            const isHidden = content.style.display === "none";
+            content.style.display = isHidden ? "block" : "none";
+            section.querySelector('h2').textContent = (isHidden ? "▼ " : "▶ ") + topic.toUpperCase() + ` (${topicItems.length})`;
         });
 
-        // DELETE functionality
+// Edit functionality
+section.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+        const docId = e.target.getAttribute('data-id');
+        
+        // Find the current data for this item
+        const item = allResources.find(r => r.id === docId);
+
+        // Ask for new values (showing current values as defaults)
+        const newTitle = prompt("Edit Title:", item.title);
+        const newTeacher = prompt("Edit Teacher:", item.teacher);
+        const newTopic = prompt("Edit Topic:", item.topic);
+        const newAge = prompt("Edit Age Group:", item.ageGroup);
+
+        if (newTitle) { // Only update if they didn't hit cancel
+            try {
+                const docRef = doc(db, "resources", docId);
+                await updateDoc(docRef, {
+                    title: newTitle,
+                    teacher: newTeacher,
+                    topic: newTopic.toLowerCase(),
+                    ageGroup: newAge
+                });
+                alert("Updated successfully!");
+                loadAndDisplay(); // Refresh the list
+            } catch (error) {
+                console.error("Update Error:", error);
+                alert("Error updating. Check permissions.");
+            }
+        }
+    });
+});
+
+        // Delete functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.onclick = async (e) => {
+            btn.addEventListener('click', async (e) => {
                 const docId = e.target.getAttribute('data-id');
-                if (confirm("Are you sure you want to delete this?")) {
+                if (confirm("Are you sure you want to delete this resource?")) {
                     try {
                         await deleteDoc(doc(db, "resources", docId));
-                        loadAndDisplay(); 
+                        alert("Resource deleted successfully!");
+                        loadAndDisplay(); // Refresh the list
                     } catch (error) {
                         console.error("Delete Error:", error);
+                        alert("Error: Missing permissions to delete.");
                     }
                 }
-            };
+            });
         });
 
         list.appendChild(section);
@@ -139,11 +151,10 @@ function applyFilters() {
     const teacherSearch = document.getElementById('teacherFilter').value.toLowerCase();
 
     const filtered = allResources.filter(res => {
-        const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
+        const matchesSearch = res.title.toLowerCase().includes(searchTerm);
         const matchesTopic = !topic || (res.topic?.toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
-        const currentTeacher = (res.tags || "").toLowerCase();
-        const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
+        const matchesTeacher = !teacherSearch || (res.teacher && res.teacher.toLowerCase().includes(teacherSearch));
         return matchesSearch && matchesTopic && matchesAge && matchesTeacher;
     });
 
