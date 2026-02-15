@@ -37,7 +37,6 @@ async function loadAndDisplay() {
 }
 
 // 4. Display Logic
-// 4. Display Logic
 function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
     list.innerHTML = "";
@@ -87,14 +86,13 @@ function displayResources(filteredData) {
                 const item = allResources.find(r => r.id === docId);
                 if (!item) return;
 
-                // Safety checks: Fallback to empty string if field is missing or not a string
                 const currentTitle = String(item.title || "");
-                const currentTags = String(item.tags || "Staff");
+                const currentTags = String(item.tags || ""); // Removed "Staff" default here
                 const currentTopic = String(item.topic || "general");
                 const currentAge = String(item.ageGroup || "All");
 
                 const newTitle = prompt("Edit Title:", currentTitle);
-                const newTeacher = prompt("Edit Teacher (Tags):", currentTags);
+                const newTeacher = prompt("Edit Teacher:", currentTags);
                 const newTopic = prompt("Edit Topic:", currentTopic);
                 const newAge = prompt("Edit Age Group:", currentAge);
 
@@ -117,7 +115,6 @@ function displayResources(filteredData) {
             };
         });
 
-        // DELETE functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
@@ -136,6 +133,7 @@ function displayResources(filteredData) {
     });
 }
 
+// 5. Unified Filter Logic
 function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const topic = document.getElementById('topicFilter').value.toLowerCase();
@@ -144,10 +142,9 @@ function applyFilters() {
 
     const filtered = allResources.filter(res => {
         const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
-        const matchesTopic = !topic || (res.topic?.toLowerCase() === topic);
+        const matchesTopic = !topic || (String(res.topic || "").toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
         
-        // SAFE FIX: Force tags to be a string to prevent crash
         const currentTeacher = String(res.tags || "").toLowerCase(); 
         const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
         
@@ -157,6 +154,7 @@ function applyFilters() {
     displayResources(filtered);
 }
 
+// 6. Listeners
 document.getElementById('searchInput').addEventListener('input', applyFilters);
 document.getElementById('topicFilter').addEventListener('change', applyFilters);
 document.getElementById('ageFilter').addEventListener('change', applyFilters);
