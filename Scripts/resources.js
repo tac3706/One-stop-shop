@@ -41,6 +41,12 @@ function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
     list.innerHTML = "";
     
+    // Update the result count display
+    const countDisplay = document.getElementById("resultCount");
+    if (countDisplay) {
+        countDisplay.textContent = `Showing ${filteredData.length} of ${allResources.length} resources`;
+    }
+
     if (filteredData.length === 0) {
         list.innerHTML = "<p>No resources found.</p>";
         return;
@@ -106,7 +112,7 @@ function displayResources(filteredData) {
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Update Error:", error);
-                        alert("Error updating. Check your internet or Firebase rules.");
+                        alert("Error updating. Check your Firebase Rules (allow update).");
                     }
                 }
             };
@@ -122,6 +128,7 @@ function displayResources(filteredData) {
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Delete Error:", error);
+                        alert("Error deleting. Check your Firebase Rules (allow delete).");
                     }
                 }
             };
@@ -136,15 +143,17 @@ function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const topic = document.getElementById('topicFilter').value.toLowerCase();
     const age = document.getElementById('ageFilter').value;
+    const type = document.getElementById('typeFilter').value; // Added Type filter logic
     const teacherSearch = document.getElementById('teacherFilter').value.toLowerCase();
 
     const filtered = allResources.filter(res => {
         const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
         const matchesTopic = !topic || (res.topic?.toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
+        const matchesType = !type || res.type === type; // Check for type match
         const currentTeacher = (res.tags || "").toLowerCase();
         const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
-        return matchesSearch && matchesTopic && matchesAge && matchesTeacher;
+        return matchesSearch && matchesTopic && matchesAge && matchesType && matchesTeacher;
     });
 
     displayResources(filtered);
@@ -154,6 +163,7 @@ function applyFilters() {
 document.getElementById('searchInput').addEventListener('input', applyFilters);
 document.getElementById('topicFilter').addEventListener('change', applyFilters);
 document.getElementById('ageFilter').addEventListener('change', applyFilters);
+document.getElementById('typeFilter').addEventListener('change', applyFilters); // Listener for Type
 document.getElementById('teacherFilter').addEventListener('input', applyFilters);
 
 window.addEventListener('DOMContentLoaded', loadAndDisplay);
