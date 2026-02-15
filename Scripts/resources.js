@@ -19,7 +19,7 @@ const db = getFirestore(app);
 
 let allResources = []; 
 
-// 3. Load Data from Firebase
+// 3. Load Data
 async function loadAndDisplay() {
     const list = document.getElementById("resourceList");
     if (!list) return;
@@ -73,10 +73,10 @@ function displayResources(filteredData) {
                         <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
                         <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                         
-                        ${res.id ? `
-                            <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">Edit Tags</button>
+                        <div style="margin-top:10px;">
+                            <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:3px;">Edit Tags</button>
                             <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer; margin-left:10px; border-radius:3px;">Delete</button>
-                        ` : ''}
+                        </div>
                     </div>
                 `).join('')}
             </div>
@@ -92,9 +92,14 @@ function displayResources(filteredData) {
 
         // Edit functionality
         section.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
+            btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
-                const item = allResources.find(r => r.id === docId);
+                const item = allResources.find(r => String(r.id) === String(docId));
+
+                if (!item) {
+                    console.error("Could not find item with ID:", docId);
+                    return;
+                }
 
                 const newTitle = prompt("Edit Title:", item.title || "");
                 const newTeacher = prompt("Edit Teacher:", item.teacher || "Staff");
@@ -114,15 +119,15 @@ function displayResources(filteredData) {
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Update Error:", error);
-                        alert("Error updating database.");
+                        alert("Error: Missing permissions to update.");
                     }
                 }
-            });
+            };
         });
 
         // Delete functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
+            btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
                 if (confirm("Are you sure you want to delete this resource?")) {
                     try {
@@ -130,10 +135,9 @@ function displayResources(filteredData) {
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Delete Error:", error);
-                        alert("Error: Missing permissions to delete.");
                     }
                 }
-            });
+            };
         });
 
         list.appendChild(section);
@@ -148,7 +152,7 @@ function applyFilters() {
     const teacherSearch = document.getElementById('teacherFilter').value.toLowerCase();
 
     const filtered = allResources.filter(res => {
-        const matchesSearch = res.title.toLowerCase().includes(searchTerm);
+        const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
         const matchesTopic = !topic || (res.topic?.toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
         const matchesTeacher = !teacherSearch || (res.teacher && res.teacher.toLowerCase().includes(teacherSearch));
