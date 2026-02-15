@@ -1,8 +1,7 @@
 // 1. Imports
+import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-    getFirestore, collection, getDocs, doc, deleteDoc, updateDoc 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 2. Firebase Config
 const firebaseConfig = {
@@ -17,17 +16,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let allResources = []; 
+let allResources = []; // Master list combining static and DB
 
-// 3. Load Data
+// 3. Load Data from Both Sources
 async function loadAndDisplay() {
     const list = document.getElementById("resourceList");
-    if (!list) return;
     list.innerHTML = "<p>Loading library...</p>";
     try {
         const querySnapshot = await getDocs(collection(db, "resources"));
         allResources = []; 
         querySnapshot.forEach((doc) => {
+            // Because every item now comes from the database, every item has an id!
             allResources.push({ id: doc.id, ...doc.data() });
         });
         applyFilters(); 
@@ -41,6 +40,7 @@ function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
     list.innerHTML = "";
     
+    // Manage result count display
     let countDisplay = document.getElementById("resultCount");
     if (!countDisplay) {
         countDisplay = document.createElement("p");
@@ -89,35 +89,38 @@ function displayResources(filteredData) {
             section.querySelector('h2').textContent = (isHidden ? "▼ " : "▶ ") + topic.toUpperCase() + ` (${topicItems.length})`;
         });
 
-        // Edit functionality
-        section.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const docId = e.target.getAttribute('data-id');
-                const item = allResources.find(r => r.id === docId);
+// Edit functionality
+section.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+        const docId = e.target.getAttribute('data-id');
+        
+        // Find the current data for this item
+        const item = allResources.find(r => r.id === docId);
 
-                const newTitle = prompt("Edit Title:", item.title);
-                const newTeacher = prompt("Edit Teacher:", item.teacher);
-                const newTopic = prompt("Edit Topic:", item.topic);
-                const newAge = prompt("Edit Age Group:", item.ageGroup);
+        // Ask for new values (showing current values as defaults)
+        const newTitle = prompt("Edit Title:", item.title);
+        const newTeacher = prompt("Edit Teacher:", item.teacher);
+        const newTopic = prompt("Edit Topic:", item.topic);
+        const newAge = prompt("Edit Age Group:", item.ageGroup);
 
-                if (newTitle) { 
-                    try {
-                        const docRef = doc(db, "resources", docId);
-                        await updateDoc(docRef, {
-                            title: newTitle,
-                            teacher: newTeacher,
-                            topic: newTopic.toLowerCase(),
-                            ageGroup: newAge
-                        });
-                        alert("Updated successfully!");
-                        loadAndDisplay(); 
-                    } catch (error) {
-                        console.error("Update Error:", error);
-                        alert("Error updating. Check permissions.");
-                    }
-                }
-            });
-        });
+        if (newTitle) { // Only update if they didn't hit cancel
+            try {
+                const docRef = doc(db, "resources", docId);
+                await updateDoc(docRef, {
+                    title: newTitle,
+                    teacher: newTeacher,
+                    topic: newTopic.toLowerCase(),
+                    ageGroup: newAge
+                });
+                alert("Updated successfully!");
+                loadAndDisplay(); // Refresh the list
+            } catch (error) {
+                console.error("Update Error:", error);
+                alert("Error updating. Check permissions.");
+            }
+        }
+    });
+});
 
         // Delete functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
@@ -127,7 +130,7 @@ function displayResources(filteredData) {
                     try {
                         await deleteDoc(doc(db, "resources", docId));
                         alert("Resource deleted successfully!");
-                        loadAndDisplay(); 
+                        loadAndDisplay(); // Refresh the list
                     } catch (error) {
                         console.error("Delete Error:", error);
                         alert("Error: Missing permissions to delete.");
