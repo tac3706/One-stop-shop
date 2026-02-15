@@ -68,26 +68,25 @@ function displayResources(filteredResources) {
 
 // --- FILTER FUNCTION ---
 function applyFilters() {
-  const searchTerm = searchInput.value.toLowerCase();
-  const topicValue = topicFilter.value;
-  const ageValue = ageFilter.value;
-  const typeValue = typeFilter.value;
-  const teacherValue = teacherFilter ? teacherFilter.value : "";
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const topic = document.getElementById('topicFilter').value;
+    const age = document.getElementById('ageFilter').value;
+    const type = document.getElementById('typeFilter').value;
+    // NEW: Get the teacher name from the text input
+    const teacherSearch = document.getElementById('teacherFilter').value.toLowerCase();
 
-  const filtered = resources.filter(r => {
-    const matchesSearch =
-      r.title.toLowerCase().includes(searchTerm) ||
-      r.tags.join(" ").toLowerCase().includes(searchTerm);
+    const filtered = allResources.filter(res => {
+        const matchesSearch = res.title.toLowerCase().includes(searchTerm);
+        const matchesTopic = !topic || res.topic === topic;
+        const matchesAge = !age || res.ageGroup === age;
+        const matchesType = !type || res.type === type;
+        // NEW: Check if the teacher name includes what was typed
+        const matchesTeacher = !teacherSearch || (res.teacher && res.teacher.toLowerCase().includes(teacherSearch));
+        
+        return matchesSearch && matchesTopic && matchesAge && matchesType && matchesTeacher;
+    });
 
-    const matchesTopic = !topicValue || r.topic === topicValue;
-    const matchesAge = !ageValue || r.ageGroup === ageValue;
-    const matchesType = !typeValue || r.type === typeValue;
-    const matchesTeacher = !teacherValue || r.tags.includes(teacherValue);
-
-    return matchesSearch && matchesTopic && matchesAge && matchesType && matchesTeacher;
-  });
-
-  displayResources(filtered);
+    displayResources(filtered);
 }
 
 // --- EVENT LISTENERS ---
@@ -95,7 +94,7 @@ searchInput.addEventListener("input", applyFilters);
 topicFilter.addEventListener("change", applyFilters);
 ageFilter.addEventListener("change", applyFilters);
 typeFilter.addEventListener("change", applyFilters);
-if (teacherFilter) teacherFilter.addEventListener("change", applyFilters);
+if (teacherFilter) teacherFilter.addEventListener("input", applyFilters);
 
 // --- INITIAL DISPLAY ---
 displayResources(resources);
