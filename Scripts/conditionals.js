@@ -75,7 +75,7 @@ function checkCond(id, correct) {
 }
 
 function showCondMenu() {
-    document.getElementById('conditional-menu').style.display = 'grid';
+    document.getElementById('conditional-menu').style.display = 'flex';
     document.getElementById('game-display').style.display = 'none';
     document.getElementById('general-overview').style.display = 'block';
 }
