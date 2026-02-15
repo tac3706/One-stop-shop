@@ -114,3 +114,4 @@ window.addEventListener('DOMContentLoaded', () => {
     if (typeFilter) typeFilter.addEventListener('change', applyFilters);
 
 loadAndDisplay();
+});
