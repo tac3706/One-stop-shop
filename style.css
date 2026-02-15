@@ -13,18 +13,24 @@ h1 {
     margin-bottom: 10px;
 }
 
+/* Container for the buttons */
 .section-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-top: 40px;
+    display: flex;
+    flex-direction: column; /* Forces vertical arrangement */
+    align-items: center;    /* Centers the column on the screen */
+    gap: 15px;             /* Space between buttons */
+    margin-top: 30px;
+    width: 100%;           /* Ensure grid takes full width */
 }
 
+/* The buttons themselves */
 .section-card {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 120px;
+    height: 80px;          /* Slightly shorter for a list look */
+    width: 90%;            /* Fills most of the screen width */
+    max-width: 600px;      /* Prevents them from looking too stretched on desktop */
     background: white;
     border-radius: 12px;
     text-decoration: none;
@@ -36,7 +42,7 @@ h1 {
 }
 
 .section-card:hover {
-    transform: translateY(-5px);
+    transform: scale(1.02); /* Slight pop out effect */
     background-color: #e3f2fd;
 }
 
