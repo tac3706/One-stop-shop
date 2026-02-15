@@ -59,12 +59,11 @@ function displayResources(filteredData) {
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => {
-                    // Pre-convert tags for display only
-                    let tagDisplay = Array.isArray(res.tags) ? res.tags.join(", ") : (res.tags || "Staff");
+                    let displayTags = Array.isArray(res.tags) ? res.tags.join(", ") : (res.tags || "Staff");
                     return `
                     <div class="resource-item" style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
                         <h3>${res.title || "Untitled"}</h3>
-                        <p>👤 Teacher: ${tagDisplay}</p>
+                        <p>👤 Teacher: ${displayTags}</p>
                         <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
                         <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                         
@@ -82,7 +81,7 @@ function displayResources(filteredData) {
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
 
-        // DYNAMIC EDIT LOGIC: Loop through existing fields
+        // DYNAMIC EDIT LOGIC: Loops through existing fields
         section.querySelectorAll('.edit-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
@@ -92,16 +91,13 @@ function displayResources(filteredData) {
                 let updatedData = {};
                 let userCancelled = false;
 
-                // Loop through every key in the document (id, title, tags, etc.)
                 for (const key in item) {
-                    if (key === 'id') continue; // Don't let users edit the Firebase ID
+                    if (key === 'id') continue; 
 
                     let currentValue = item[key];
-                    // If it's your old array data, show it as text in the prompt
                     if (Array.isArray(currentValue)) currentValue = currentValue.join(", ");
 
                     const newValue = prompt(`Edit ${key}:`, currentValue);
-                    
                     if (newValue === null) {
                         userCancelled = true;
                         break;
@@ -117,13 +113,12 @@ function displayResources(filteredData) {
                         loadAndDisplay(); 
                     } catch (error) {
                         console.error("Update Error:", error);
-                        alert("Error updating. Ensure you aren't trying to edit restricted system fields.");
+                        alert("Error updating database.");
                     }
                 }
             };
         });
 
-        // DELETE functionality
         section.querySelectorAll('.delete-btn').forEach(btn => {
             btn.onclick = async (e) => {
                 const docId = e.target.getAttribute('data-id');
@@ -153,11 +148,8 @@ function applyFilters() {
         const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
         const matchesTopic = !topic || (String(res.topic || "").toLowerCase() === topic);
         const matchesAge = !age || res.ageGroup === age;
-        
-        // Safety: Convert any data type in tags to string for filtering
         const currentTeacher = String(res.tags || "").toLowerCase(); 
         const matchesTeacher = !teacherSearch || currentTeacher.includes(teacherSearch);
-        
         return matchesSearch && matchesTopic && matchesAge && matchesTeacher;
     });
 
