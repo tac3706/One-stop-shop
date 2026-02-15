@@ -16,7 +16,7 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const list = document.getElementById("printableList");
 
-let allResources = []; // Store data for filtering
+let allResources = []; 
 
 async function loadAndDisplay() {
     list.innerHTML = "<p>Loading materials...</p>";
@@ -53,7 +53,7 @@ function applyFilters() {
 function displayPrintables(filteredData) {
     list.innerHTML = "";
     if (filteredData.length === 0) {
-        list.innerHTML = "<p>No matching resources found.</p>";
+        list.innerHTML = "<p>No resources found matching these filters.</p>";
         return;
     }
 
@@ -85,7 +85,7 @@ function displayPrintables(filteredData) {
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <a href="${file.url}" target="_blank" class="back-button" style="background-color: #4CAF50; margin:0; padding: 8px 15px;">
-                        📥 View/Download ${file.type}
+                        📥 View/Download
                     </a>
                     <button class="delete-btn" data-id="${file.id}" data-path="${file.storagePath}" 
                         style="background-color: #ff4444; color: white; border: none; border-radius: 5px; cursor: pointer; padding: 5px 10px;">
@@ -108,28 +108,24 @@ function displayPrintables(filteredData) {
         list.appendChild(section);
     });
 
-    // Re-attach delete events after rendering
+    // Re-attach delete logic
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.onclick = async (e) => {
             const id = e.target.getAttribute('data-id');
             const path = e.target.getAttribute('data-path');
-            const adminKey = prompt("Enter Admin Password to delete:");
-
-            if (adminKey === "YourSecretPassword123") {
-                if (confirm("Are you sure?")) {
+            const password = prompt("Enter Admin Password:");
+            if (password === "YourSecretPassword123") {
+                if (confirm("Delete this file permanently?")) {
                     await deleteDoc(doc(db, "printables", id));
                     if (path) await deleteObject(ref(storage, path));
-                    alert("Deleted!");
                     loadAndDisplay();
                 }
-            } else {
-                alert("Incorrect Password!");
             }
         };
     });
 }
 
-// Event Listeners
+// Attach Event Listeners
 document.getElementById('searchInput').addEventListener('input', applyFilters);
 document.getElementById('topicFilter').addEventListener('change', applyFilters);
 document.getElementById('ageFilter').addEventListener('change', applyFilters);
