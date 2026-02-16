@@ -1,114 +1,223 @@
+// 1. Imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  doc,
-  deleteDoc,
-  updateDoc
+import { 
+    getFirestore, collection, getDocs, doc, deleteDoc, updateDoc 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// 2. Firebase Config
 const firebaseConfig = {
-  apiKey: "AIzaSyCVNUfj11PBHmjoPmDtudky9z6MHAdCsLw",
-  authDomain: "one-stop-shop-5e668.firebaseapp.com",
-  projectId: "one-stop-shop-5e668",
-  storageBucket: "one-stop-shop-5e668.firebasestorage.app",
-  messagingSenderId: "158039043020",
-  appId: "1:158039043020:web:424c94c7feda5b3004cb69"
+    apiKey: "AIzaSyCVNUfj11PBHmjoPmDtudky9z6MHAdCsLw",
+    authDomain: "one-stop-shop-5e668.firebaseapp.com",
+    projectId: "one-stop-shop-5e668",
+    storageBucket: "one-stop-shop-5e668.firebasestorage.app",
+    messagingSenderId: "158039043020",
+    appId: "1:158039043020:web:424c94c7feda5b3004cb69"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let allPrintables = [];
+let allResources = [];
 
-function formatDisplay(value) {
-  if (!value) return "General";
-  return value.toLowerCase().split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+// 3. Load Data
+async function loadAndDisplay() {
+    const list = document.getElementById("resourceList");
+    if (!list) return;
+
+    list.innerHTML = "<p>Loading library...</p>";
+
+    try {
+        const querySnapshot = await getDocs(collection(db, "resources"));
+        allResources = [];
+
+        querySnapshot.forEach((docSnap) => {
+            allResources.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        applyFilters();
+
+    } catch (error) {
+        console.error("Database error:", error);
+        list.innerHTML = "<p>Error loading resources. Check Firebase rules.</p>";
+    }
 }
 
-const allowedTopics = ["grammar","vocabulary","reading","writing","speaking","listening","phonics","exam prep","business english","general"];
-const allowedTypes = ["pdf","video","image","powerpoint","website","printable","interactive"];
-const allowedAges = ["children","teens","adults"];
-
-async function loadPrintables() {
-  const list = document.getElementById("printableList");
+// 4. Display Logic
+function displayResources(filteredData) {
+  const list = document.getElementById("resourceList");
+  const countDisplay = document.getElementById("resultCount");
   if (!list) return;
 
-  list.innerHTML = "<p>Loading...</p>";
-
-  const snapshot = await getDocs(collection(db, "printables"));
-  allPrintables = [];
-  snapshot.forEach(docSnap => {
-    allPrintables.push({ id: docSnap.id, ...docSnap.data() });
-  });
-
-  displayPrintables(allPrintables);
-}
-
-function displayPrintables(data) {
-  const list = document.getElementById("printableList");
   list.innerHTML = "";
 
-  data.forEach(res => {
-    const card = document.createElement("div");
-    card.className = "resource-item";
-    card.dataset.id = res.id;
+  if (countDisplay) {
+    countDisplay.innerText = `Showing ${filteredData.length} resources`;
+  }
 
-    card.innerHTML = `
-      <h3>${res.title}</h3>
-      <p>👤 Teacher: ${res.teacher}</p>
-      <p>🏷️ Topic: ${formatDisplay(res.topic)} | 🎂 Age: ${formatDisplay(res.ageGroup)}</p>
-      <a href="${res.url}" target="_blank">📥 Download</a>
-      <button class="edit-btn">Edit</button>
-      <button class="delete-btn" style="background:red;color:white;">Delete</button>
+  if (filteredData.length === 0) {
+    list.innerHTML = "<p>No resources found.</p>";
+    return;
+  }
+
+  const topics = [...new Set(
+    filteredData.map(res => String(res.topic || "general").toLowerCase())
+  )];
+
+  topics.forEach(topic => {
+    const topicItems = filteredData.filter(res =>
+      String(res.topic || "general").toLowerCase() === topic
+    );
+
+    const section = document.createElement("div");
+    section.style.marginBottom = "15px";
+
+    section.innerHTML = `
+      <h2 class="topic-header"
+          style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px;">
+          ▶ ${topic.toUpperCase()} (${topicItems.length})
+      </h2>
+      <div class="topic-content" style="display:none; padding:10px;">
+        ${topicItems.map(res => {
+          // Check for 'teacher' (new) or 'tags' (old)
+          const rawTeacher = res.teacher || res.tags || "Staff";
+          const tagText = Array.isArray(rawTeacher) ? rawTeacher.join(", ") : rawTeacher;
+
+          return `
+            <div class="resource-item"
+                 data-id="${res.id}"
+                 style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+
+              <h3>${res.title || "Untitled"}</h3>
+              <p>👤 Teacher: ${tagText}</p>
+              <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
+
+              <a href="${res.url}" target="_blank"
+                 style="background:#4CAF50; color:white; display:inline-block;
+                        padding:5px 15px; text-decoration:none; border-radius:3px;">
+                 🔗 Open
+              </a>
+
+              <div style="margin-top:10px;">
+                <button class="edit-btn"
+                        style="background:#2196F3; color:white; border:none;
+                               padding:5px 10px; cursor:pointer; border-radius:3px;">
+                  Edit
+                </button>
+
+                <button class="delete-btn"
+                        style="background:red; color:white; border:none;
+                               padding:5px 10px; cursor:pointer; margin-left:10px;
+                               border-radius:3px;">
+                  Delete
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
     `;
 
-    list.appendChild(card);
+    section.querySelector("h2").addEventListener("click", () => {
+      const content = section.querySelector(".topic-content");
+      content.style.display = content.style.display === "none" ? "block" : "none";
+    });
+
+    list.appendChild(section);
   });
 }
 
+// Delegated Event Listener for Buttons
 document.addEventListener("click", async (e) => {
-
   const editBtn = e.target.closest(".edit-btn");
   const deleteBtn = e.target.closest(".delete-btn");
 
   if (editBtn) {
-    const parent = editBtn.closest(".resource-item");
-    const id = parent?.dataset.id;
-    const item = allPrintables.find(p => p.id === id);
+    const resourceItem = editBtn.closest(".resource-item");
+    const docId = resourceItem?.dataset.id;
+    const item = allResources.find(r => r.id === docId);
     if (!item) return;
 
-    const newTitle = prompt("Edit Title:", item.title);
-    if (newTitle === null) return;
+    let updatedData = {};
+    let cancelled = false;
 
-    const newTopic = prompt(`Topic:\n${allowedTopics.join(", ")}`, item.topic);
-    if (!allowedTopics.includes(newTopic?.toLowerCase().trim())) return alert("Invalid topic.");
+    // Dynamically edit whatever fields exist in the document
+    for (const key in item) {
+      if (key === "id" || key === "createdAt") continue;
 
-    const newType = prompt(`Type:\n${allowedTypes.join(", ")}`, item.type);
-    if (!allowedTypes.includes(newType?.toLowerCase().trim())) return alert("Invalid type.");
+      let value = item[key];
+      if (Array.isArray(value)) value = value.join(", ");
 
-    const newAge = prompt(`Age:\n${allowedAges.join(", ")}`, item.ageGroup);
-    if (!allowedAges.includes(newAge?.toLowerCase().trim())) return alert("Invalid age.");
+      const newValue = prompt(`Edit ${key}:`, value);
+      if (newValue === null) {
+        cancelled = true;
+        break;
+      }
+      updatedData[key] = newValue;
+    }
 
-    await updateDoc(doc(db, "printables", id), {
-      title: newTitle,
-      topic: newTopic.toLowerCase().trim(),
-      type: newType.toLowerCase().trim(),
-      ageGroup: newAge.toLowerCase().trim()
-    });
-
-    loadPrintables();
+    if (!cancelled) {
+      try {
+        const docRef = doc(db, "resources", docId);
+        await updateDoc(docRef, updatedData);
+        alert("Updated successfully!");
+        loadAndDisplay();
+      } catch (error) {
+        console.error("Update Error:", error);
+        alert("Error updating. Check Firestore rules.");
+      }
+    }
   }
 
   if (deleteBtn) {
-    const parent = deleteBtn.closest(".resource-item");
-    const id = parent?.dataset.id;
-    if (id && confirm("Delete this printable?")) {
-      await deleteDoc(doc(db, "printables", id));
-      loadPrintables();
+    const resourceItem = deleteBtn.closest(".resource-item");
+    const docId = resourceItem?.dataset.id;
+    if (docId && confirm("Are you sure?")) {
+      try {
+        await deleteDoc(doc(db, "resources", docId));
+        loadAndDisplay();
+      } catch (error) {
+        console.error("Delete Error:", error);
+      }
     }
   }
 });
 
-window.addEventListener("DOMContentLoaded", loadPrintables);
+// 5. Filter Logic
+function applyFilters() {
+    const searchInput = document.getElementById("searchInput");
+    const topicFilter = document.getElementById("topicFilter");
+    const ageFilter = document.getElementById("ageFilter");
+    const typeFilter = document.getElementById("typeFilter");
+    const teacherFilter = document.getElementById("teacherFilter");
+
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
+    const topic = topicFilter ? topicFilter.value.toLowerCase() : "";
+    const age = ageFilter ? ageFilter.value : "";
+    const typeValue = typeFilter ? typeFilter.value : "";
+    const teacherSearch = teacherFilter ? teacherFilter.value.toLowerCase() : "";
+
+    const filtered = allResources.filter(res => {
+        const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
+        const matchesTopic = !topic || String(res.topic || "").toLowerCase() === topic;
+        const matchesAge = !age || res.ageGroup === age;
+        const matchesType = !typeValue || res.type === typeValue;
+
+        // Check both 'teacher' and 'tags' for filtering
+        const rawTeacher = res.teacher || res.tags || "";
+        const teacherText = Array.isArray(rawTeacher) ? rawTeacher.join(", ").toLowerCase() : String(rawTeacher).toLowerCase();
+
+        return matchesSearch && matchesTopic && matchesAge && matchesType && teacherText.includes(teacherSearch);
+    });
+
+    displayResources(filtered);
+}
+
+// 6. DOM Ready Setup
+window.addEventListener("DOMContentLoaded", () => {
+    loadAndDisplay();
+    const ids = ["searchInput", "topicFilter", "ageFilter", "typeFilter", "teacherFilter"];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(id.includes("Filter") && id !== "teacherFilter" ? "change" : "input", applyFilters);
+    });
+});
