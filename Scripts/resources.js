@@ -127,112 +127,47 @@ function displayResources(filteredData) {
 }
 
 // Delegated Event Listener for Buttons
-// Delegated Event Listener for Buttons
 document.addEventListener("click", async (e) => {
-
   const editBtn = e.target.closest(".edit-btn");
   const deleteBtn = e.target.closest(".delete-btn");
 
-  // =========================
-  // EDIT
-  // =========================
   if (editBtn) {
     const resourceItem = editBtn.closest(".resource-item");
     const docId = resourceItem?.dataset.id;
     const item = allResources.find(r => r.id === docId);
     if (!item) return;
 
-    // Prevent double editor
-    if (resourceItem.querySelector(".edit-panel")) return;
+    let updatedData = {};
+    let cancelled = false;
 
-    const allowedTopics = ["grammar","vocabulary","reading","writing","speaking","listening","phonics","exam prep","business english","general"];
-    const allowedAges = ["children","teens","adults"];
-    const allowedTypes = ["pdf","video","image","powerpoint","website","printable","interactive"];
+    // Dynamically edit whatever fields exist in the document
+    for (const key in item) {
+      if (key === "id" || key === "createdAt") continue;
 
-    function buildSelect(options, selected) {
-      return `
-        <select class="edit-select">
-          ${options.map(opt => `
-            <option value="${opt}" ${opt === (selected || "").toLowerCase() ? "selected" : ""}>
-              ${opt.charAt(0).toUpperCase() + opt.slice(1)}
-            </option>
-          `).join("")}
-        </select>
-      `;
+      let value = item[key];
+      if (Array.isArray(value)) value = value.join(", ");
+
+      const newValue = prompt(`Edit ${key}:`, value);
+      if (newValue === null) {
+        cancelled = true;
+        break;
+      }
+      updatedData[key] = newValue;
     }
 
-    const editPanel = document.createElement("div");
-    editPanel.className = "edit-panel";
-    editPanel.style.marginTop = "10px";
-
-    editPanel.innerHTML = `
-      <div style="margin-top:10px;">
-        Title:<br>
-        <input type="text" class="edit-title" value="${item.title || ""}"><br><br>
-
-        Teacher:<br>
-        <input type="text" class="edit-teacher" value="${item.teacher || item.tags || ""}"><br><br>
-
-        Topic:<br>
-        ${buildSelect(allowedTopics, item.topic)}<br><br>
-
-        Age:<br>
-        ${buildSelect(allowedAges, item.ageGroup)}<br><br>
-
-        Type:<br>
-        ${buildSelect(allowedTypes, item.type)}<br><br>
-
-        <button class="save-btn">Save</button>
-        <button class="cancel-btn" style="margin-left:10px;">Cancel</button>
-      </div>
-    `;
-
-    resourceItem.appendChild(editPanel);
-    editBtn.style.display = "none";
-  }
-
-  // =========================
-  // SAVE
-  // =========================
-  if (e.target.classList.contains("save-btn")) {
-
-    const resourceItem = e.target.closest(".resource-item");
-    const docId = resourceItem?.dataset.id;
-
-    const newTitle = resourceItem.querySelector(".edit-title").value.trim();
-    const newTeacher = resourceItem.querySelector(".edit-teacher").value.trim().toLowerCase();
-
-    const selects = resourceItem.querySelectorAll(".edit-select");
-
-    try {
-      await updateDoc(doc(db, "resources", docId), {
-        title: newTitle,
-        teacher: newTeacher,
-        topic: selects[0].value.toLowerCase(),
-        ageGroup: selects[1].value.toLowerCase(),
-        type: selects[2].value.toLowerCase()
-      });
-
-      loadAndDisplay();
-
-    } catch (error) {
-      console.error("Update Error:", error);
-      alert("Error updating.");
+    if (!cancelled) {
+      try {
+        const docRef = doc(db, "resources", docId);
+        await updateDoc(docRef, updatedData);
+        alert("Updated successfully!");
+        loadAndDisplay();
+      } catch (error) {
+        console.error("Update Error:", error);
+        alert("Error updating. Check Firestore rules.");
+      }
     }
   }
 
-  // =========================
-  // CANCEL
-  // =========================
-  if (e.target.classList.contains("cancel-btn")) {
-    const resourceItem = e.target.closest(".resource-item");
-    resourceItem.querySelector(".edit-panel")?.remove();
-    resourceItem.querySelector(".edit-btn").style.display = "inline-block";
-  }
-
-  // =========================
-  // DELETE (unchanged)
-  // =========================
   if (deleteBtn) {
     const resourceItem = deleteBtn.closest(".resource-item");
     const docId = resourceItem?.dataset.id;
@@ -245,4 +180,44 @@ document.addEventListener("click", async (e) => {
       }
     }
   }
+});
+
+// 5. Filter Logic
+function applyFilters() {
+    const searchInput = document.getElementById("searchInput");
+    const topicFilter = document.getElementById("topicFilter");
+    const ageFilter = document.getElementById("ageFilter");
+    const typeFilter = document.getElementById("typeFilter");
+    const teacherFilter = document.getElementById("teacherFilter");
+
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
+    const topic = topicFilter ? topicFilter.value.toLowerCase() : "";
+    const age = ageFilter ? ageFilter.value : "";
+    const typeValue = typeFilter ? typeFilter.value : "";
+    const teacherSearch = teacherFilter ? teacherFilter.value.toLowerCase() : "";
+
+    const filtered = allResources.filter(res => {
+        const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
+        const matchesTopic = !topic || String(res.topic || "").toLowerCase() === topic;
+        const matchesAge = !age || res.ageGroup === age;
+        const matchesType = !typeValue || res.type === typeValue;
+
+        // Check both 'teacher' and 'tags' for filtering
+        const rawTeacher = res.teacher || res.tags || "";
+        const teacherText = Array.isArray(rawTeacher) ? rawTeacher.join(", ").toLowerCase() : String(rawTeacher).toLowerCase();
+
+        return matchesSearch && matchesTopic && matchesAge && matchesType && teacherText.includes(teacherSearch);
+    });
+
+    displayResources(filtered);
+}
+
+// 6. DOM Ready Setup
+window.addEventListener("DOMContentLoaded", () => {
+    loadAndDisplay();
+    const ids = ["searchInput", "topicFilter", "ageFilter", "typeFilter", "teacherFilter"];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(id.includes("Filter") && id !== "teacherFilter" ? "change" : "input", applyFilters);
+    });
 });
