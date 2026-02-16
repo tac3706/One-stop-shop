@@ -20,84 +20,85 @@ async function loadPrintables() {
     const list = document.getElementById("printableList");
     if (!list) return;
     list.innerHTML = "<p>Loading printables...</p>";
+
     try {
         const querySnapshot = await getDocs(collection(db, "printables"));
-        allPrintables = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        allPrintables = [];
+        querySnapshot.forEach((docSnap) => {
+            allPrintables.push({ id: docSnap.id, ...docSnap.data() });
+        });
         applyPrintableFilters();
     } catch (error) {
         console.error("Error:", error);
+        list.innerHTML = "<p>Error loading library.</p>";
     }
 }
 
 function displayPrintables(data) {
     const list = document.getElementById("printableList");
     list.innerHTML = "";
+
+    if (data.length === 0) {
+        list.innerHTML = "<p>No matching printables found.</p>";
+        return;
+    }
+
     data.forEach(res => {
+        // DISPLAY LOGIC: Capitalize lowercase tags for a professional look
+        const teacherDisplay = res.teacher || res.tags || "Staff";
+        const topicDisplay = res.topic ? res.topic.charAt(0).toUpperCase() + res.topic.slice(1) : "General";
+        const ageDisplay = res.ageGroup ? res.ageGroup.charAt(0).toUpperCase() + res.ageGroup.slice(1) : "All";
+
         const card = document.createElement("div");
         card.className = "resource-item";
         card.style = "margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;";
+
         card.innerHTML = `
             <h3>${res.title || "Untitled"}</h3>
-            <p>👤 Teacher: ${res.teacher || res.tags || "Staff"}</p>
-            <p>🏷️ Topic: ${res.topic} | 🎂 Age: ${res.ageGroup}</p>
+            <p>👤 Teacher: ${teacherDisplay}</p>
+            <p>🏷️ Topic: ${topicDisplay} | 🎂 Age: ${ageDisplay}</p>
+            
             <div style="margin-top:10px;">
-                <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">📥 Download</a>
+                <a href="${res.url}" target="_blank" class="back-button" 
+                   style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">
+                   📥 Download PDF
+                </a>
+                
                 <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
                 <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
             </div>
         `;
-        
-        card.querySelector('.delete-btn').onclick = async () => {
-            if(confirm("Delete this printable?")) {
-                await deleteDoc(doc(db, "printables", res.id));
-                loadPrintables();
+
+        // EDIT BUTTON LOGIC
+        card.querySelector('.edit-btn').onclick = async () => {
+            const item = allPrintables.find(p => p.id === res.id);
+            const newTitle = prompt("Edit Title:", item.title);
+            const newTeacher = prompt("Edit Teacher:", item.teacher || item.tags);
+            
+            if (newTitle !== null) {
+                try {
+                    await updateDoc(doc(db, "printables", res.id), {
+                        title: newTitle,
+                        teacher: newTeacher
+                    });
+                    alert("Updated!");
+                    loadPrintables();
+                } catch (err) { alert("Error updating."); }
             }
         };
 
-        card.querySelector('.edit-btn').onclick = () => openEditModal("printables", res.id);
+        // DELETE BUTTON LOGIC
+        card.querySelector('.delete-btn').onclick = async () => {
+            if (confirm("Are you sure you want to delete this printable?")) {
+                try {
+                    await deleteDoc(doc(db, "printables", res.id));
+                    loadPrintables();
+                } catch (err) { alert("Error deleting."); }
+            }
+        };
+
         list.appendChild(card);
     });
-}
-
-function openEditModal(coll, id) {
-    const item = allPrintables.find(p => p.id === id);
-    const modal = document.createElement('div');
-    modal.className = "explanation-box";
-    modal.style = "position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border:2px solid #333; z-index:1000; width:90%; max-width:400px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);";
-    
-    modal.innerHTML = `
-        <h3>Edit Printable</h3>
-        <label>Title:</label><input id="editTitle" value="${item.title}" style="width:100%; margin-bottom:10px;">
-        <label>Teacher:</label><input id="editTeacher" value="${item.teacher || item.tags || ''}" style="width:100%; margin-bottom:10px;">
-        <label>Topic:</label>
-        <select id="editTopic" style="width:100%; margin-bottom:10px;">
-            <option value="grammar" ${item.topic === 'grammar' ? 'selected' : ''}>Grammar</option>
-            <option value="vocabulary" ${item.topic === 'vocabulary' ? 'selected' : ''}>Vocabulary</option>
-            <option value="reading" ${item.topic === 'reading' ? 'selected' : ''}>Reading</option>
-            <option value="writing" ${item.topic === 'writing' ? 'selected' : ''}>Writing</option>
-            <option value="general" ${item.topic === 'general' ? 'selected' : ''}>General</option>
-        </select>
-        <label>Age Group:</label>
-        <select id="editAge" style="width:100%; margin-bottom:10px;">
-            <option value="children" ${item.ageGroup === 'children' ? 'selected' : ''}>Children</option>
-            <option value="teens" ${item.ageGroup === 'teens' ? 'selected' : ''}>Teens</option>
-            <option value="adults" ${item.ageGroup === 'adults' ? 'selected' : ''}>Adults</option>
-        </select>
-        <button id="saveBtn" style="background:#4CAF50; color:white; width:100%; padding:10px; border:none; border-radius:5px; cursor:pointer;">Save Changes</button>
-        <button onclick="this.parentElement.remove()" style="background:#ccc; width:100%; margin-top:5px; padding:10px; border:none; border-radius:5px; cursor:pointer;">Cancel</button>
-    `;
-    document.body.appendChild(modal);
-
-    modal.querySelector('#saveBtn').onclick = async () => {
-        await updateDoc(doc(db, coll, id), {
-            title: document.getElementById('editTitle').value,
-            teacher: document.getElementById('editTeacher').value,
-            topic: document.getElementById('editTopic').value,
-            ageGroup: document.getElementById('editAge').value
-        });
-        modal.remove();
-        loadPrintables();
-    };
 }
 
 function applyPrintableFilters() {
@@ -110,10 +111,13 @@ function applyPrintableFilters() {
         const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
         const matchesTopic = !topic || (res.topic || "").toLowerCase() === topic;
         const matchesAge = !age || (res.ageGroup || "").toLowerCase() === age;
+        
         const rawTeacher = res.teacher || res.tags || "";
         const matchesTeacher = !teacherSearch || String(rawTeacher).toLowerCase().includes(teacherSearch);
+
         return matchesSearch && matchesTopic && matchesAge && matchesTeacher;
     });
+
     displayPrintables(filtered);
 }
 
