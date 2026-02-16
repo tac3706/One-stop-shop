@@ -44,7 +44,6 @@ function displayPrintables(data) {
     }
 
     data.forEach(res => {
-        // DISPLAY LOGIC: Capitalize lowercase tags for a professional look
         const teacherDisplay = res.teacher || res.tags || "Staff";
         const topicDisplay = res.topic ? res.topic.charAt(0).toUpperCase() + res.topic.slice(1) : "General";
         const ageDisplay = res.ageGroup ? res.ageGroup.charAt(0).toUpperCase() + res.ageGroup.slice(1) : "All";
@@ -70,21 +69,38 @@ function displayPrintables(data) {
         `;
 
         // EDIT BUTTON LOGIC
-        card.querySelector('.edit-btn').onclick = async () => {
-            const item = allPrintables.find(p => p.id === res.id);
-            const newTitle = prompt("Edit Title:", item.title);
-            const newTeacher = prompt("Edit Teacher:", item.teacher || item.tags);
-            
-            if (newTitle !== null) {
-                try {
-                    await updateDoc(doc(db, "printables", res.id), {
-                        title: newTitle,
-                        teacher: newTeacher
-                    });
-                    alert("Updated!");
-                    loadPrintables();
-                } catch (err) { alert("Error updating."); }
+        card.querySelector('.edit-btn').onclick = () => {
+            if (card.querySelector(".edit-panel")) return;
+
+            const allowedTopics = ["grammar","vocabulary","reading","writing","speaking","listening","phonics","exam prep","business english","general"];
+            const allowedAges = ["children","teens","adults"];
+
+            function buildSelect(options, selected) {
+                return `
+                    <select class="edit-select">
+                        ${options.map(opt => `
+                            <option value="${opt}" ${opt === (selected || "").toLowerCase() ? "selected" : ""}>
+                                ${opt.charAt(0).toUpperCase() + opt.slice(1)}
+                            </option>
+                        `).join("")}
+                    </select>
+                `;
             }
+
+            const panel = document.createElement("div");
+            panel.className = "edit-panel";
+            panel.style = "margin-top:10px; background:#f9f9f9; padding:10px; border-radius:5px;";
+
+            panel.innerHTML = `
+                <strong>Edit Mode:</strong><br>
+                Title: <input type="text" class="edit-title" value="${res.title || ""}" style="width:100%"><br>
+                Teacher: <input type="text" class="edit-teacher" value="${teacherDisplay}" style="width:100%"><br>
+                Topic: ${buildSelect(allowedTopics, res.topic)}
+                Age: ${buildSelect(allowedAges, res.ageGroup)}<br><br>
+                <button class="save-btn" style="background:green; color:white; border:none; padding:5px 10px; cursor:pointer;">Save</button>
+                <button class="cancel-btn" style="margin-left:10px; padding:5px 10px; cursor:pointer;">Cancel</button>
+            `;
+            card.appendChild(panel);
         };
 
         // DELETE BUTTON LOGIC
@@ -120,6 +136,33 @@ function applyPrintableFilters() {
 
     displayPrintables(filtered);
 }
+
+// SHARED EVENT LISTENER FOR DYNAMIC BUTTONS (SAVE/CANCEL)
+document.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("save-btn")) {
+        const card = e.target.closest(".resource-item");
+        const docId = card.querySelector(".edit-btn").dataset.id;
+        const newTitle = card.querySelector(".edit-title").value.trim();
+        const newTeacher = card.querySelector(".edit-teacher").value.trim();
+        const selects = card.querySelectorAll(".edit-select");
+
+        try {
+            await updateDoc(doc(db, "printables", docId), {
+                title: newTitle,
+                teacher: newTeacher,
+                topic: selects[0].value.toLowerCase(),
+                ageGroup: selects[1].value.toLowerCase()
+            });
+            loadPrintables();
+        } catch (err) {
+            alert("Error updating.");
+        }
+    }
+
+    if (e.target.classList.contains("cancel-btn")) {
+        e.target.closest(".edit-panel")?.remove();
+    }
+});
 
 window.addEventListener("DOMContentLoaded", () => {
     loadPrintables();
