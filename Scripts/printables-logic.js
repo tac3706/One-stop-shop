@@ -1,130 +1,114 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-    getFirestore, collection, getDocs, doc, deleteDoc, updateDoc 
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  deleteDoc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCVNUfj11PBHmjoPmDtudky9z6MHAdCsLw",
-    authDomain: "one-stop-shop-5e668.firebaseapp.com",
-    projectId: "one-stop-shop-5e668",
-    storageBucket: "one-stop-shop-5e668.firebasestorage.app",
-    messagingSenderId: "158039043020",
-    appId: "1:158039043020:web:424c94c7feda5b3004cb69"
+  apiKey: "AIzaSyCVNUfj11PBHmjoPmDtudky9z6MHAdCsLw",
+  authDomain: "one-stop-shop-5e668.firebaseapp.com",
+  projectId: "one-stop-shop-5e668",
+  storageBucket: "one-stop-shop-5e668.firebasestorage.app",
+  messagingSenderId: "158039043020",
+  appId: "1:158039043020:web:424c94c7feda5b3004cb69"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
 let allPrintables = [];
 
-async function loadPrintables() {
-    const list = document.getElementById("printableList");
-    if (!list) return;
-    list.innerHTML = "<p>Loading printables...</p>";
+function formatDisplay(value) {
+  if (!value) return "General";
+  return value.toLowerCase().split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
 
-    try {
-        const querySnapshot = await getDocs(collection(db, "printables"));
-        allPrintables = [];
-        querySnapshot.forEach((docSnap) => {
-            allPrintables.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        applyPrintableFilters();
-    } catch (error) {
-        console.error("Error:", error);
-        list.innerHTML = "<p>Error loading library.</p>";
-    }
+const allowedTopics = ["grammar","vocabulary","reading","writing","speaking","listening","phonics","exam prep","business english","general"];
+const allowedTypes = ["pdf","video","image","powerpoint","website","printable","interactive"];
+const allowedAges = ["children","teens","adults"];
+
+async function loadPrintables() {
+  const list = document.getElementById("printableList");
+  if (!list) return;
+
+  list.innerHTML = "<p>Loading...</p>";
+
+  const snapshot = await getDocs(collection(db, "printables"));
+  allPrintables = [];
+  snapshot.forEach(docSnap => {
+    allPrintables.push({ id: docSnap.id, ...docSnap.data() });
+  });
+
+  displayPrintables(allPrintables);
 }
 
 function displayPrintables(data) {
-    const list = document.getElementById("printableList");
-    list.innerHTML = "";
+  const list = document.getElementById("printableList");
+  list.innerHTML = "";
 
-    if (data.length === 0) {
-        list.innerHTML = "<p>No matching printables found.</p>";
-        return;
-    }
+  data.forEach(res => {
+    const card = document.createElement("div");
+    card.className = "resource-item";
+    card.dataset.id = res.id;
 
-    data.forEach(res => {
-        // DISPLAY LOGIC: Capitalize lowercase tags for a professional look
-        const teacherDisplay = res.teacher || res.tags || "Staff";
-        const topicDisplay = res.topic ? res.topic.charAt(0).toUpperCase() + res.topic.slice(1) : "General";
-        const ageDisplay = res.ageGroup ? res.ageGroup.charAt(0).toUpperCase() + res.ageGroup.slice(1) : "All";
+    card.innerHTML = `
+      <h3>${res.title}</h3>
+      <p>👤 Teacher: ${res.teacher}</p>
+      <p>🏷️ Topic: ${formatDisplay(res.topic)} | 🎂 Age: ${formatDisplay(res.ageGroup)}</p>
+      <a href="${res.url}" target="_blank">📥 Download</a>
+      <button class="edit-btn">Edit</button>
+      <button class="delete-btn" style="background:red;color:white;">Delete</button>
+    `;
 
-        const card = document.createElement("div");
-        card.className = "resource-item";
-        card.style = "margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;";
-
-        card.innerHTML = `
-            <h3>${res.title || "Untitled"}</h3>
-            <p>👤 Teacher: ${teacherDisplay}</p>
-            <p>🏷️ Topic: ${topicDisplay} | 🎂 Age: ${ageDisplay}</p>
-            
-            <div style="margin-top:10px;">
-                <a href="${res.url}" target="_blank" class="back-button" 
-                   style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">
-                   📥 Download PDF
-                </a>
-                
-                <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
-                <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
-            </div>
-        `;
-
-        // EDIT BUTTON LOGIC
-        card.querySelector('.edit-btn').onclick = async () => {
-            const item = allPrintables.find(p => p.id === res.id);
-            const newTitle = prompt("Edit Title:", item.title);
-            const newTeacher = prompt("Edit Teacher:", item.teacher || item.tags);
-            
-            if (newTitle !== null) {
-                try {
-                    await updateDoc(doc(db, "printables", res.id), {
-                        title: newTitle,
-                        teacher: newTeacher
-                    });
-                    alert("Updated!");
-                    loadPrintables();
-                } catch (err) { alert("Error updating."); }
-            }
-        };
-
-        // DELETE BUTTON LOGIC
-        card.querySelector('.delete-btn').onclick = async () => {
-            if (confirm("Are you sure you want to delete this printable?")) {
-                try {
-                    await deleteDoc(doc(db, "printables", res.id));
-                    loadPrintables();
-                } catch (err) { alert("Error deleting."); }
-            }
-        };
-
-        list.appendChild(card);
-    });
+    list.appendChild(card);
+  });
 }
 
-function applyPrintableFilters() {
-    const searchTerm = document.getElementById("searchInput").value.toLowerCase();
-    const topic = document.getElementById("topicFilter").value.toLowerCase();
-    const age = document.getElementById("ageFilter").value.toLowerCase();
-    const teacherSearch = document.getElementById("teacherFilter").value.toLowerCase();
+document.addEventListener("click", async (e) => {
 
-    const filtered = allPrintables.filter(res => {
-        const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
-        const matchesTopic = !topic || (res.topic || "").toLowerCase() === topic;
-        const matchesAge = !age || (res.ageGroup || "").toLowerCase() === age;
-        
-        const rawTeacher = res.teacher || res.tags || "";
-        const matchesTeacher = !teacherSearch || String(rawTeacher).toLowerCase().includes(teacherSearch);
+  const editBtn = e.target.closest(".edit-btn");
+  const deleteBtn = e.target.closest(".delete-btn");
 
-        return matchesSearch && matchesTopic && matchesAge && matchesTeacher;
+  if (editBtn) {
+    const parent = editBtn.closest(".resource-item");
+    const id = parent?.dataset.id;
+    const item = allPrintables.find(p => p.id === id);
+    if (!item) return;
+
+    const newTitle = prompt("Edit Title:", item.title);
+    if (newTitle === null) return;
+
+    const newTopic = prompt(`Topic:\n${allowedTopics.join(", ")}`, item.topic);
+    if (!allowedTopics.includes(newTopic?.toLowerCase().trim())) return alert("Invalid topic.");
+
+    const newType = prompt(`Type:\n${allowedTypes.join(", ")}`, item.type);
+    if (!allowedTypes.includes(newType?.toLowerCase().trim())) return alert("Invalid type.");
+
+    const newAge = prompt(`Age:\n${allowedAges.join(", ")}`, item.ageGroup);
+    if (!allowedAges.includes(newAge?.toLowerCase().trim())) return alert("Invalid age.");
+
+    await updateDoc(doc(db, "printables", id), {
+      title: newTitle,
+      topic: newTopic.toLowerCase().trim(),
+      type: newType.toLowerCase().trim(),
+      ageGroup: newAge.toLowerCase().trim()
     });
 
-    displayPrintables(filtered);
-}
-
-window.addEventListener("DOMContentLoaded", () => {
     loadPrintables();
-    ["searchInput", "topicFilter", "ageFilter", "teacherFilter"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener(id.includes("Filter") ? "change" : "input", applyPrintableFilters);
-    });
+  }
+
+  if (deleteBtn) {
+    const parent = deleteBtn.closest(".resource-item");
+    const id = parent?.dataset.id;
+    if (id && confirm("Delete this printable?")) {
+      await deleteDoc(doc(db, "printables", id));
+      loadPrintables();
+    }
+  }
 });
+
+window.addEventListener("DOMContentLoaded", loadPrintables);
