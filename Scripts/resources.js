@@ -1,10 +1,6 @@
-// 1. Imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-    getFirestore, collection, getDocs, doc, deleteDoc, updateDoc 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 2. Firebase Config
 const firebaseConfig = {
     apiKey: "AIzaSyCVNUfj11PBHmjoPmDtudky9z6MHAdCsLw",
     authDomain: "one-stop-shop-5e668.firebaseapp.com",
@@ -16,208 +12,94 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 let allResources = [];
 
-// 3. Load Data
 async function loadAndDisplay() {
     const list = document.getElementById("resourceList");
     if (!list) return;
-
-    list.innerHTML = "<p>Loading library...</p>";
-
+    list.innerHTML = "Loading...";
     try {
         const querySnapshot = await getDocs(collection(db, "resources"));
-        allResources = [];
-
-        querySnapshot.forEach((docSnap) => {
-            allResources.push({ id: docSnap.id, ...docSnap.data() });
-        });
-
+        allResources = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         applyFilters();
-
-    } catch (error) {
-        console.error("Database error:", error);
-        list.innerHTML = "<p>Error loading resources. Check Firebase rules.</p>";
-    }
+    } catch (e) { console.error(e); }
 }
 
-// 4. Display Logic
-function displayResources(filteredData) {
-  const list = document.getElementById("resourceList");
-  const countDisplay = document.getElementById("resultCount");
-  if (!list) return;
-
-  list.innerHTML = "";
-
-  if (countDisplay) {
-    countDisplay.innerText = `Showing ${filteredData.length} resources`;
-  }
-
-  if (filteredData.length === 0) {
-    list.innerHTML = "<p>No resources found.</p>";
-    return;
-  }
-
-  const topics = [...new Set(
-    filteredData.map(res => String(res.topic || "general").toLowerCase())
-  )];
-
-  topics.forEach(topic => {
-    const topicItems = filteredData.filter(res =>
-      String(res.topic || "general").toLowerCase() === topic
-    );
-
-    const section = document.createElement("div");
-    section.style.marginBottom = "15px";
-
-    section.innerHTML = `
-      <h2 class="topic-header"
-          style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px;">
-          ▶ ${topic.toUpperCase()} (${topicItems.length})
-      </h2>
-      <div class="topic-content" style="display:none; padding:10px;">
-        ${topicItems.map(res => {
-          // Check for 'teacher' (new) or 'tags' (old)
-          const rawTeacher = res.teacher || res.tags || "Staff";
-          const tagText = Array.isArray(rawTeacher) ? rawTeacher.join(", ") : rawTeacher;
-
-          return `
-            <div class="resource-item"
-                 data-id="${res.id}"
-                 style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
-
-              <h3>${res.title || "Untitled"}</h3>
-              <p>👤 Teacher: ${tagText}</p>
-              <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
-
-              <a href="${res.url}" target="_blank"
-                 style="background:#4CAF50; color:white; display:inline-block;
-                        padding:5px 15px; text-decoration:none; border-radius:3px;">
-                 🔗 Open
-              </a>
-
-              <div style="margin-top:10px;">
-                <button class="edit-btn"
-                        style="background:#2196F3; color:white; border:none;
-                               padding:5px 10px; cursor:pointer; border-radius:3px;">
-                  Edit Any Field
-                </button>
-
-                <button class="delete-btn"
-                        style="background:red; color:white; border:none;
-                               padding:5px 10px; cursor:pointer; margin-left:10px;
-                               border-radius:3px;">
-                  Delete
-                </button>
-              </div>
+function displayResources(data) {
+    const list = document.getElementById("resourceList");
+    list.innerHTML = "";
+    
+    // Grouping logic by Topic
+    const topics = [...new Set(data.map(r => (r.topic || "general").toLowerCase()))];
+    
+    topics.forEach(t => {
+        const items = data.filter(r => (r.topic || "general").toLowerCase() === t);
+        const section = document.createElement("div");
+        section.innerHTML = `
+            <h2 style="cursor:pointer; background:#eee; padding:10px;">▶ ${t.toUpperCase()} (${items.length})</h2>
+            <div class="content" style="display:none; padding:10px;">
+                ${items.map(item => `
+                    <div class="resource-item" style="border-bottom:1px solid #ddd; padding:10px;">
+                        <h3>${item.title}</h3>
+                        <p>👤 ${item.teacher || item.tags || 'Staff'} | 🎂 ${item.ageGroup}</p>
+                        <button onclick="openEditModal('resources', '${item.id}')">Edit</button>
+                        <button onclick="deleteItem('resources', '${item.id}')" style="color:red">Delete</button>
+                    </div>
+                `).join('')}
             </div>
-          `;
-        }).join("")}
-      </div>
+        `;
+        section.querySelector('h2').onclick = () => {
+            const c = section.querySelector('.content');
+            c.style.display = c.style.display === 'none' ? 'block' : 'none';
+        };
+        list.appendChild(section);
+    });
+}
+
+// Global functions for buttons
+window.deleteItem = async (coll, id) => {
+    if(confirm("Delete?")) {
+        await deleteDoc(doc(db, coll, id));
+        loadAndDisplay();
+    }
+};
+
+window.openEditModal = (coll, id) => {
+    const item = allResources.find(r => r.id === id);
+    const modal = document.createElement('div');
+    modal.style = "position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border:2px solid black; z-index:10000; display:flex; flex-direction:column; gap:10px;";
+    
+    modal.innerHTML = `
+        <h3>Edit Resource</h3>
+        <input id="editTitle" value="${item.title}">
+        <input id="editTeacher" value="${item.teacher || item.tags || ''}">
+        <select id="editTopic">
+            <option value="grammar" ${item.topic === 'grammar' ? 'selected' : ''}>Grammar</option>
+            <option value="vocabulary" ${item.topic === 'vocabulary' ? 'selected' : ''}>Vocabulary</option>
+            <option value="general" ${item.topic === 'general' ? 'selected' : ''}>General</option>
+        </select>
+        <select id="editAge">
+            <option value="children" ${item.ageGroup === 'children' ? 'selected' : ''}>Children</option>
+            <option value="teens" ${item.ageGroup === 'teens' ? 'selected' : ''}>Teens</option>
+            <option value="adults" ${item.ageGroup === 'adults' ? 'selected' : ''}>Adults</option>
+        </select>
+        <button id="saveEdit">Save Changes</button>
+        <button onclick="this.parentElement.remove()">Cancel</button>
     `;
-
-    section.querySelector("h2").addEventListener("click", () => {
-      const content = section.querySelector(".topic-content");
-      content.style.display = content.style.display === "none" ? "block" : "none";
-    });
-
-    list.appendChild(section);
-  });
-}
-
-// Delegated Event Listener for Buttons
-document.addEventListener("click", async (e) => {
-  const editBtn = e.target.closest(".edit-btn");
-  const deleteBtn = e.target.closest(".delete-btn");
-
-  if (editBtn) {
-    const resourceItem = editBtn.closest(".resource-item");
-    const docId = resourceItem?.dataset.id;
-    const item = allResources.find(r => r.id === docId);
-    if (!item) return;
-
-    let updatedData = {};
-    let cancelled = false;
-
-    // Dynamically edit whatever fields exist in the document
-    for (const key in item) {
-      if (key === "id" || key === "createdAt") continue;
-
-      let value = item[key];
-      if (Array.isArray(value)) value = value.join(", ");
-
-      const newValue = prompt(`Edit ${key}:`, value);
-      if (newValue === null) {
-        cancelled = true;
-        break;
-      }
-      updatedData[key] = newValue;
-    }
-
-    if (!cancelled) {
-      try {
-        const docRef = doc(db, "resources", docId);
-        await updateDoc(docRef, updatedData);
-        alert("Updated successfully!");
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('#saveEdit').onclick = async () => {
+        await updateDoc(doc(db, coll, id), {
+            title: document.getElementById('editTitle').value,
+            teacher: document.getElementById('editTeacher').value,
+            topic: document.getElementById('editTopic').value,
+            ageGroup: document.getElementById('editAge').value
+        });
+        modal.remove();
         loadAndDisplay();
-      } catch (error) {
-        console.error("Update Error:", error);
-        alert("Error updating. Check Firestore rules.");
-      }
-    }
-  }
+    };
+};
 
-  if (deleteBtn) {
-    const resourceItem = deleteBtn.closest(".resource-item");
-    const docId = resourceItem?.dataset.id;
-    if (docId && confirm("Are you sure?")) {
-      try {
-        await deleteDoc(doc(db, "resources", docId));
-        loadAndDisplay();
-      } catch (error) {
-        console.error("Delete Error:", error);
-      }
-    }
-  }
-});
-
-// 5. Filter Logic
-function applyFilters() {
-    const searchInput = document.getElementById("searchInput");
-    const topicFilter = document.getElementById("topicFilter");
-    const ageFilter = document.getElementById("ageFilter");
-    const typeFilter = document.getElementById("typeFilter");
-    const teacherFilter = document.getElementById("teacherFilter");
-
-    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
-    const topic = topicFilter ? topicFilter.value.toLowerCase() : "";
-    const age = ageFilter ? ageFilter.value : "";
-    const typeValue = typeFilter ? typeFilter.value : "";
-    const teacherSearch = teacherFilter ? teacherFilter.value.toLowerCase() : "";
-
-    const filtered = allResources.filter(res => {
-        const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
-        const matchesTopic = !topic || String(res.topic || "").toLowerCase() === topic;
-        const matchesAge = !age || res.ageGroup === age;
-        const matchesType = !typeValue || res.type === typeValue;
-
-        // Check both 'teacher' and 'tags' for filtering
-        const rawTeacher = res.teacher || res.tags || "";
-        const teacherText = Array.isArray(rawTeacher) ? rawTeacher.join(", ").toLowerCase() : String(rawTeacher).toLowerCase();
-
-        return matchesSearch && matchesTopic && matchesAge && matchesType && teacherText.includes(teacherSearch);
-    });
-
-    displayResources(filtered);
-}
-
-// 6. DOM Ready Setup
-window.addEventListener("DOMContentLoaded", () => {
-    loadAndDisplay();
-    const ids = ["searchInput", "topicFilter", "ageFilter", "typeFilter", "teacherFilter"];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener(id.includes("Filter") && id !== "teacherFilter" ? "change" : "input", applyFilters);
-    });
-});
+// ... Filter Logic (Keep your current applyFilters logic here) ...
+window.onload = loadAndDisplay;
