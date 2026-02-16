@@ -57,7 +57,7 @@ function displayPrintables(data) {
         card.querySelector('.edit-btn').onclick = () => {
             if (card.querySelector(".edit-panel")) return;
             const allowedTopics = ["grammar","vocabulary","reading","writing","speaking","listening","phonics","exam prep","business english","general"];
-            const allowedAges = ["children","teens","adults"];
+            const allowedAges = ["children","teens","adults","all"];
 
             const panel = document.createElement("div");
             panel.className = "edit-panel";
