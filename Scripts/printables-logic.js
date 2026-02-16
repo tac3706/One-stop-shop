@@ -1,7 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-    getFirestore, collection, getDocs, doc, deleteDoc, updateDoc 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCVNUfj11PBHmjoPmDtudky9z6MHAdCsLw",
@@ -19,7 +17,7 @@ let allPrintables = [];
 async function loadPrintables() {
     const list = document.getElementById("printableList");
     if (!list) return;
-    list.innerHTML = "<p>Loading printables...</p>";
+    list.innerHTML = "Loading...";
 
     try {
         const querySnapshot = await getDocs(collection(db, "printables"));
@@ -30,7 +28,6 @@ async function loadPrintables() {
         applyPrintableFilters();
     } catch (error) {
         console.error("Error:", error);
-        list.innerHTML = "<p>Error loading library.</p>";
     }
 }
 
@@ -44,6 +41,7 @@ function displayPrintables(data) {
     }
 
     data.forEach(res => {
+        // Display Logic: Handle 'teacher' field and ensure lowercase tags display nicely
         const teacherDisplay = res.teacher || res.tags || "Staff";
         const topicDisplay = res.topic ? res.topic.charAt(0).toUpperCase() + res.topic.slice(1) : "General";
         const ageDisplay = res.ageGroup ? res.ageGroup.charAt(0).toUpperCase() + res.ageGroup.slice(1) : "All";
@@ -56,63 +54,11 @@ function displayPrintables(data) {
             <h3>${res.title || "Untitled"}</h3>
             <p>👤 Teacher: ${teacherDisplay}</p>
             <p>🏷️ Topic: ${topicDisplay} | 🎂 Age: ${ageDisplay}</p>
-            
-            <div style="margin-top:10px;">
-                <a href="${res.url}" target="_blank" class="back-button" 
-                   style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">
-                   📥 Download PDF
-                </a>
-                
-                <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
-                <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
-            </div>
+            <a href="${res.url}" target="_blank" class="back-button" 
+               style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">
+               📥 Download PDF
+            </a>
         `;
-
-        // EDIT BUTTON LOGIC
-        card.querySelector('.edit-btn').onclick = () => {
-            if (card.querySelector(".edit-panel")) return;
-
-            const allowedTopics = ["grammar","vocabulary","reading","writing","speaking","listening","phonics","exam prep","business english","general"];
-            const allowedAges = ["children","teens","adults"];
-
-            function buildSelect(options, selected) {
-                return `
-                    <select class="edit-select">
-                        ${options.map(opt => `
-                            <option value="${opt}" ${opt === (selected || "").toLowerCase() ? "selected" : ""}>
-                                ${opt.charAt(0).toUpperCase() + opt.slice(1)}
-                            </option>
-                        `).join("")}
-                    </select>
-                `;
-            }
-
-            const panel = document.createElement("div");
-            panel.className = "edit-panel";
-            panel.style = "margin-top:10px; background:#f9f9f9; padding:10px; border-radius:5px;";
-
-            panel.innerHTML = `
-                <strong>Edit Mode:</strong><br>
-                Title: <input type="text" class="edit-title" value="${res.title || ""}" style="width:100%"><br>
-                Teacher: <input type="text" class="edit-teacher" value="${teacherDisplay}" style="width:100%"><br>
-                Topic: ${buildSelect(allowedTopics, res.topic)}
-                Age: ${buildSelect(allowedAges, res.ageGroup)}<br><br>
-                <button class="save-btn" style="background:green; color:white; border:none; padding:5px 10px; cursor:pointer;">Save</button>
-                <button class="cancel-btn" style="margin-left:10px; padding:5px 10px; cursor:pointer;">Cancel</button>
-            `;
-            card.appendChild(panel);
-        };
-
-        // DELETE BUTTON LOGIC
-        card.querySelector('.delete-btn').onclick = async () => {
-            if (confirm("Are you sure you want to delete this printable?")) {
-                try {
-                    await deleteDoc(doc(db, "printables", res.id));
-                    loadPrintables();
-                } catch (err) { alert("Error deleting."); }
-            }
-        };
-
         list.appendChild(card);
     });
 }
@@ -136,33 +82,6 @@ function applyPrintableFilters() {
 
     displayPrintables(filtered);
 }
-
-// SHARED EVENT LISTENER FOR DYNAMIC BUTTONS (SAVE/CANCEL)
-document.addEventListener("click", async (e) => {
-    if (e.target.classList.contains("save-btn")) {
-        const card = e.target.closest(".resource-item");
-        const docId = card.querySelector(".edit-btn").dataset.id;
-        const newTitle = card.querySelector(".edit-title").value.trim();
-        const newTeacher = card.querySelector(".edit-teacher").value.trim();
-        const selects = card.querySelectorAll(".edit-select");
-
-        try {
-            await updateDoc(doc(db, "printables", docId), {
-                title: newTitle,
-                teacher: newTeacher,
-                topic: selects[0].value.toLowerCase(),
-                ageGroup: selects[1].value.toLowerCase()
-            });
-            loadPrintables();
-        } catch (err) {
-            alert("Error updating.");
-        }
-    }
-
-    if (e.target.classList.contains("cancel-btn")) {
-        e.target.closest(".edit-panel")?.remove();
-    }
-});
 
 window.addEventListener("DOMContentLoaded", () => {
     loadPrintables();
