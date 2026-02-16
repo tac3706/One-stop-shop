@@ -38,8 +38,10 @@ function loadActivity(index) {
     `;
 }
 
+// Update this function in activities.js
 function showMenu() {
-    document.getElementById('activity-menu').style.display = 'grid';
+    // We use 'flex' to match the .section-grid class in your style.css
+    document.getElementById('activity-menu').style.display = 'flex';
     document.getElementById('game-display').style.display = 'none';
 }
 
