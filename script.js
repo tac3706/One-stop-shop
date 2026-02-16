@@ -1,29 +1,16 @@
 const flashcards = [
-    {
-        base: "go",
-        past: "went",
-        participle: "gone",
-        example: "I went to school yesterday."
-    },
-    {
-        base: "eat",
-        past: "ate",
-        participle: "eaten",
-        example: "She has eaten breakfast."
-    },
-    {
-        base: "see",
-        past: "saw",
-        participle: "seen",
-        example: "They have seen the movie."
-    }
+    { base: "go", past: "went", participle: "gone", example: "I went to school yesterday." },
+    { base: "eat", past: "ate", participle: "eaten", example: "She has eaten breakfast." },
+    { base: "see", past: "saw", participle: "seen", example: "They have seen the movie." }
 ];
 
 let currentCard = 0;
 let flipped = false;
 
 function showCard() {
+    // Moved inside the function to prevent "null" errors
     const cardContent = document.getElementById("card-content");
+    
     if (!cardContent) return; // Safety check
 
     if (!flipped) {
@@ -37,23 +24,22 @@ function showCard() {
     }
 }
 
-// Attach functions to the window so the HTML buttons can find them
-window.flipCard = function() {
+function flipCard() {
     flipped = !flipped;
     showCard();
 }
 
-window.nextCard = function() {
+function nextCard() {
     currentCard = (currentCard + 1) % flashcards.length;
     flipped = false;
     showCard();
 }
 
-window.prevCard = function() {
+function prevCard() {
     currentCard = (currentCard - 1 + flashcards.length) % flashcards.length;
     flipped = false;
     showCard();
 }
 
-// Run the first card as soon as the DOM is ready
-document.addEventListener("DOMContentLoaded", showCard);
+// Ensure the first card loads
+showCard();
