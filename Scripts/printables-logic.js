@@ -40,7 +40,7 @@ function displayPrintables(data) {
 
         const card = document.createElement("div");
         card.className = "resource-item";
-        card.style = "margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;"; // Keep it centered
+        card.style = "margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;";
 
         card.innerHTML = `
             <h3>${res.title || "Untitled"}</h3>
@@ -50,11 +50,10 @@ function displayPrintables(data) {
             <div style="margin-top:10px;">
                 <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">📥 Download</a>
                 <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
-                <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
+                <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
             </div>
         `;
 
-        // Edit Panel Trigger
         card.querySelector('.edit-btn').onclick = () => {
             if (card.querySelector(".edit-panel")) return;
             const allowedTopics = ["grammar","vocabulary","reading","writing","speaking","listening","phonics","exam prep","business english","general"];
@@ -68,10 +67,10 @@ function displayPrintables(data) {
                 <strong>Edit Mode:</strong><br>
                 <input type="text" class="edit-title" value="${res.title}" style="width:90%; margin:5px 0;"><br>
                 <input type="text" class="edit-teacher" value="${teacherDisplay}" style="width:90%; margin:5px 0;"><br>
-                <select class="edit-select" style="width:90%; margin:5px 0;">
+                <select class="edit-topic" style="width:90%; margin:5px 0;">
                     ${allowedTopics.map(t => `<option value="${t}" ${t === (res.topic || "").toLowerCase() ? "selected" : ""}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join("")}
                 </select><br>
-                <select class="edit-select" style="width:90%; margin:5px 0;">
+                <select class="edit-age" style="width:90%; margin:5px 0;">
                     ${allowedAges.map(a => `<option value="${a}" ${a === (res.ageGroup || "").toLowerCase() ? "selected" : ""}>${a.charAt(0).toUpperCase() + a.slice(1)}</option>`).join("")}
                 </select><br>
                 <button class="save-btn" style="background:green; color:white; border:none; padding:8px 20px; margin-top:10px; cursor:pointer; border-radius:4px;">Save Changes</button>
@@ -80,7 +79,6 @@ function displayPrintables(data) {
             card.appendChild(panel);
         };
 
-        // Delete Trigger
         card.querySelector('.delete-btn').onclick = async () => {
             if (confirm("Delete this printable?")) {
                 await deleteDoc(doc(db, "printables", res.id));
@@ -91,22 +89,24 @@ function displayPrintables(data) {
     });
 }
 
-// THIS SECTION WAS MISSING: Handles Save/Cancel buttons
+// Global listener to capture Save/Cancel clicks
 document.addEventListener("click", async (e) => {
     if (e.target.classList.contains("save-btn")) {
         const card = e.target.closest(".resource-item");
         const docId = card.querySelector(".edit-btn").dataset.id;
-        const selects = card.querySelectorAll("select");
-
+        
         try {
             await updateDoc(doc(db, "printables", docId), {
                 title: card.querySelector(".edit-title").value,
                 teacher: card.querySelector(".edit-teacher").value,
-                topic: selects[0].value,
-                ageGroup: selects[1].value
+                topic: card.querySelector(".edit-topic").value,
+                ageGroup: card.querySelector(".edit-age").value
             });
             loadPrintables();
-        } catch (err) { alert("Error saving."); }
+        } catch (err) { 
+            console.error(err);
+            alert("Error saving: " + err.message); 
+        }
     }
     if (e.target.classList.contains("cancel-btn")) {
         e.target.closest(".edit-panel")?.remove();
