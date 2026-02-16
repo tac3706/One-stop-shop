@@ -22,13 +22,12 @@ const flashcards = [
 let currentCard = 0;
 let flipped = false;
 
-const cardContent = document.getElementById("card-content");
-
 function showCard() {
+    const cardContent = document.getElementById("card-content");
+    if (!cardContent) return; // Safety check
+
     if (!flipped) {
-        cardContent.innerHTML = `
-            <strong>${flashcards[currentCard].base}</strong>
-        `;
+        cardContent.innerHTML = `<strong>${flashcards[currentCard].base}</strong>`;
     } else {
         cardContent.innerHTML = `
             Past: ${flashcards[currentCard].past}<br>
@@ -38,21 +37,23 @@ function showCard() {
     }
 }
 
-function flipCard() {
+// Attach functions to the window so the HTML buttons can find them
+window.flipCard = function() {
     flipped = !flipped;
     showCard();
 }
 
-function nextCard() {
+window.nextCard = function() {
     currentCard = (currentCard + 1) % flashcards.length;
     flipped = false;
     showCard();
 }
 
-function prevCard() {
+window.prevCard = function() {
     currentCard = (currentCard - 1 + flashcards.length) % flashcards.length;
     flipped = false;
     showCard();
 }
 
-showCard();
+// Run the first card as soon as the DOM is ready
+document.addEventListener("DOMContentLoaded", showCard);
