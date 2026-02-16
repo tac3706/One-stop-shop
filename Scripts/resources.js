@@ -23,201 +23,154 @@ let allResources = [];
 async function loadAndDisplay() {
     const list = document.getElementById("resourceList");
     if (!list) return;
-
     list.innerHTML = "<p>Loading library...</p>";
 
     try {
         const querySnapshot = await getDocs(collection(db, "resources"));
-        allResources = [];
-
-        querySnapshot.forEach((docSnap) => {
-            allResources.push({ id: docSnap.id, ...docSnap.data() });
-        });
-
+        allResources = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
         applyFilters();
-
     } catch (error) {
         console.error("Database error:", error);
-        list.innerHTML = "<p>Error loading resources. Check Firebase rules.</p>";
+        list.innerHTML = "<p>Error loading resources.</p>";
     }
 }
 
 // 4. Display Logic
 function displayResources(filteredData) {
-  const list = document.getElementById("resourceList");
-  const countDisplay = document.getElementById("resultCount");
-  if (!list) return;
+    const list = document.getElementById("resourceList");
+    const countDisplay = document.getElementById("resultCount");
+    if (!list) return;
 
-  list.innerHTML = "";
+    list.innerHTML = "";
+    if (countDisplay) countDisplay.innerText = `Showing ${filteredData.length} resources`;
 
-  if (countDisplay) {
-    countDisplay.innerText = `Showing ${filteredData.length} resources`;
-  }
+    if (filteredData.length === 0) {
+        list.innerHTML = "<p>No resources found.</p>";
+        return;
+    }
 
-  if (filteredData.length === 0) {
-    list.innerHTML = "<p>No resources found.</p>";
-    return;
-  }
+    const topics = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))];
 
-  const topics = [...new Set(
-    filteredData.map(res => String(res.topic || "general").toLowerCase())
-  )];
+    topics.forEach(topic => {
+        const topicItems = filteredData.filter(res => String(res.topic || "general").toLowerCase() === topic);
+        const section = document.createElement("div");
+        section.style.marginBottom = "15px";
 
-  topics.forEach(topic => {
-    const topicItems = filteredData.filter(res =>
-      String(res.topic || "general").toLowerCase() === topic
-    );
+        section.innerHTML = `
+            <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px; text-align:center;">
+                ▶ ${topic.toUpperCase()} (${topicItems.length})
+            </h2>
+            <div class="topic-content" style="display:none; padding:10px;">
+                ${topicItems.map(res => {
+                    const teacherDisplay = res.teacher || res.tags || "Staff";
+                    return `
+                        <div class="resource-item" data-id="${res.id}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
+                            <h3>${res.title || "Untitled"}</h3>
+                            <p>👤 Teacher: ${teacherDisplay}</p>
+                            <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
 
-    const section = document.createElement("div");
-    section.style.marginBottom = "15px";
-
-    section.innerHTML = `
-      <h2 class="topic-header"
-          style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px;">
-          ▶ ${topic.toUpperCase()} (${topicItems.length})
-      </h2>
-      <div class="topic-content" style="display:none; padding:10px;">
-        ${topicItems.map(res => {
-          // Check for 'teacher' (new) or 'tags' (old)
-          const rawTeacher = res.teacher || res.tags || "Staff";
-          const tagText = Array.isArray(rawTeacher) ? rawTeacher.join(", ") : rawTeacher;
-
-          return `
-            <div class="resource-item"
-                 data-id="${res.id}"
-                 style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
-
-              <h3>${res.title || "Untitled"}</h3>
-              <p>👤 Teacher: ${tagText}</p>
-              <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
-
-              <a href="${res.url}" target="_blank"
-                 style="background:#4CAF50; color:white; display:inline-block;
-                        padding:5px 15px; text-decoration:none; border-radius:3px;">
-                 🔗 Open
-              </a>
-
-              <div style="margin-top:10px;">
-                <button class="edit-btn"
-                        style="background:#2196F3; color:white; border:none;
-                               padding:5px 10px; cursor:pointer; border-radius:3px;">
-                  Edit
-                </button>
-
-                <button class="delete-btn"
-                        style="background:red; color:white; border:none;
-                               padding:5px 10px; cursor:pointer; margin-left:10px;
-                               border-radius:3px;">
-                  Delete
-                </button>
-              </div>
+                            <div style="margin-top:10px;">
+                                <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
+                                <button class="edit-btn" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
+                                <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
             </div>
-          `;
-        }).join("")}
-      </div>
-    `;
+        `;
 
-    section.querySelector("h2").addEventListener("click", () => {
-      const content = section.querySelector(".topic-content");
-      content.style.display = content.style.display === "none" ? "block" : "none";
+        section.querySelector("h2").onclick = () => {
+            const content = section.querySelector(".topic-content");
+            content.style.display = content.style.display === "none" ? "block" : "none";
+        };
+        list.appendChild(section);
     });
-
-    list.appendChild(section);
-  });
 }
 
-// Delegated Event Listener for Buttons
+// 5. Shared Click Handler for Buttons
 document.addEventListener("click", async (e) => {
-  const editBtn = e.target.closest(".edit-btn");
-  const deleteBtn = e.target.closest(".delete-btn");
+    // --- EDIT BUTTON ---
+    if (e.target.classList.contains("edit-btn")) {
+        const card = e.target.closest(".resource-item");
+        if (card.querySelector(".edit-panel")) return;
 
-  if (editBtn) {
-    const resourceItem = editBtn.closest(".resource-item");
-    const docId = resourceItem?.dataset.id;
-    const item = allResources.find(r => r.id === docId);
-    if (!item) return;
+        const docId = card.dataset.id;
+        const item = allResources.find(r => r.id === docId);
+        const allowedTopics = ["grammar","vocabulary","reading","writing","speaking","listening","phonics","exam prep","business english","general"];
+        const allowedAges = ["children","teens","adults"];
 
-    let updatedData = {};
-    let cancelled = false;
+        const panel = document.createElement("div");
+        panel.className = "edit-panel";
+        panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px; text-align: center;";
 
-    // Dynamically edit whatever fields exist in the document
-    for (const key in item) {
-      if (key === "id" || key === "createdAt") continue;
-
-      let value = item[key];
-      if (Array.isArray(value)) value = value.join(", ");
-
-      const newValue = prompt(`Edit ${key}:`, value);
-      if (newValue === null) {
-        cancelled = true;
-        break;
-      }
-      updatedData[key] = newValue;
+        panel.innerHTML = `
+            <strong>Edit Resource:</strong><br>
+            <input type="text" class="edit-title" value="${item.title}" style="width:90%; margin:5px 0;"><br>
+            <input type="text" class="edit-teacher" value="${item.teacher || item.tags || ""}" style="width:90%; margin:5px 0;"><br>
+            <select class="edit-topic" style="width:90%; margin:5px 0;">
+                ${allowedTopics.map(t => `<option value="${t}" ${t === (item.topic || "").toLowerCase() ? "selected" : ""}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join("")}
+            </select><br>
+            <select class="edit-age" style="width:90%; margin:5px 0;">
+                ${allowedAges.map(a => `<option value="${a}" ${a === (item.ageGroup || "").toLowerCase() ? "selected" : ""}>${a.charAt(0).toUpperCase() + a.slice(1)}</option>`).join("")}
+            </select><br>
+            <button class="save-btn" style="background:green; color:white; border:none; padding:8px 20px; margin-top:10px; cursor:pointer; border-radius:4px;">Save Changes</button>
+            <button class="cancel-btn" style="background:#888; color:white; border:none; padding:8px 20px; margin-left:10px; cursor:pointer; border-radius:4px;">Cancel</button>
+        `;
+        card.appendChild(panel);
     }
 
-    if (!cancelled) {
-      try {
-        const docRef = doc(db, "resources", docId);
-        await updateDoc(docRef, updatedData);
-        alert("Updated successfully!");
-        loadAndDisplay();
-      } catch (error) {
-        console.error("Update Error:", error);
-        alert("Error updating. Check Firestore rules.");
-      }
+    // --- SAVE BUTTON ---
+    if (e.target.classList.contains("save-btn")) {
+        const card = e.target.closest(".resource-item");
+        const docId = card.dataset.id;
+        try {
+            await updateDoc(doc(db, "resources", docId), {
+                title: card.querySelector(".edit-title").value,
+                teacher: card.querySelector(".edit-teacher").value,
+                topic: card.querySelector(".edit-topic").value,
+                ageGroup: card.querySelector(".edit-age").value
+            });
+            loadAndDisplay();
+        } catch (err) { alert("Error saving: " + err.message); }
     }
-  }
 
-  if (deleteBtn) {
-    const resourceItem = deleteBtn.closest(".resource-item");
-    const docId = resourceItem?.dataset.id;
-    if (docId && confirm("Are you sure?")) {
-      try {
-        await deleteDoc(doc(db, "resources", docId));
-        loadAndDisplay();
-      } catch (error) {
-        console.error("Delete Error:", error);
-      }
+    // --- CANCEL BUTTON ---
+    if (e.target.classList.contains("cancel-btn")) {
+        e.target.closest(".edit-panel")?.remove();
     }
-  }
+
+    // --- DELETE BUTTON ---
+    if (e.target.classList.contains("delete-btn")) {
+        const docId = e.target.closest(".resource-item").dataset.id;
+        if (confirm("Delete this resource?")) {
+            await deleteDoc(doc(db, "resources", docId));
+            loadAndDisplay();
+        }
+    }
 });
 
-// 5. Filter Logic
+// 6. Filter Logic
 function applyFilters() {
-    const searchInput = document.getElementById("searchInput");
-    const topicFilter = document.getElementById("topicFilter");
-    const ageFilter = document.getElementById("ageFilter");
-    const typeFilter = document.getElementById("typeFilter");
-    const teacherFilter = document.getElementById("teacherFilter");
-
-    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
-    const topic = topicFilter ? topicFilter.value.toLowerCase() : "";
-    const age = ageFilter ? ageFilter.value : "";
-    const typeValue = typeFilter ? typeFilter.value : "";
-    const teacherSearch = teacherFilter ? teacherFilter.value.toLowerCase() : "";
+    const searchTerm = document.getElementById("searchInput")?.value.toLowerCase() || "";
+    const topic = document.getElementById("topicFilter")?.value.toLowerCase() || "";
+    const age = document.getElementById("ageFilter")?.value.toLowerCase() || "";
+    const teacherSearch = document.getElementById("teacherFilter")?.value.toLowerCase() || "";
 
     const filtered = allResources.filter(res => {
-        const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
-        const matchesTopic = !topic || String(res.topic || "").toLowerCase() === topic;
-        const matchesAge = !age || res.ageGroup === age;
-        const matchesType = !typeValue || res.type === typeValue;
-
-        // Check both 'teacher' and 'tags' for filtering
-        const rawTeacher = res.teacher || res.tags || "";
-        const teacherText = Array.isArray(rawTeacher) ? rawTeacher.join(", ").toLowerCase() : String(rawTeacher).toLowerCase();
-
-        return matchesSearch && matchesTopic && matchesAge && matchesType && teacherText.includes(teacherSearch);
+        const teacherText = String(res.teacher || res.tags || "").toLowerCase();
+        return (res.title || "").toLowerCase().includes(searchTerm) &&
+               (!topic || String(res.topic || "").toLowerCase() === topic) &&
+               (!age || String(res.ageGroup || "").toLowerCase() === age) &&
+               (!teacherSearch || teacherText.includes(teacherSearch));
     });
-
     displayResources(filtered);
 }
 
-// 6. DOM Ready Setup
 window.addEventListener("DOMContentLoaded", () => {
     loadAndDisplay();
-    const ids = ["searchInput", "topicFilter", "ageFilter", "typeFilter", "teacherFilter"];
-    ids.forEach(id => {
+    ["searchInput", "topicFilter", "ageFilter", "teacherFilter"].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.addEventListener(id.includes("Filter") && id !== "teacherFilter" ? "change" : "input", applyFilters);
+        if (el) el.addEventListener(id.includes("Filter") ? "change" : "input", applyFilters);
     });
 });
