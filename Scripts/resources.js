@@ -98,7 +98,7 @@ document.addEventListener("click", async (e) => {
         const docId = card.dataset.id;
         const item = allResources.find(r => r.id === docId);
         const allowedTopics = ["grammar","vocabulary","reading","writing","speaking","listening","phonics","exam prep","business english","general"];
-        const allowedAges = ["children","teens","adults"];
+        const allowedAges = ["children","teens","adults","all"];
 
         const panel = document.createElement("div");
         panel.className = "edit-panel";
