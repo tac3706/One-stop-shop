@@ -1,5 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { 
+    getFirestore, collection, getDocs, doc, deleteDoc, updateDoc 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCVNUfj11PBHmjoPmDtudky9z6MHAdCsLw",
@@ -17,7 +19,7 @@ let allPrintables = [];
 async function loadPrintables() {
     const list = document.getElementById("printableList");
     if (!list) return;
-    list.innerHTML = "Loading...";
+    list.innerHTML = "<p>Loading printables...</p>";
 
     try {
         const querySnapshot = await getDocs(collection(db, "printables"));
@@ -28,6 +30,7 @@ async function loadPrintables() {
         applyPrintableFilters();
     } catch (error) {
         console.error("Error:", error);
+        list.innerHTML = "<p>Error loading library.</p>";
     }
 }
 
@@ -41,7 +44,7 @@ function displayPrintables(data) {
     }
 
     data.forEach(res => {
-        // Display Logic: Handle 'teacher' field and ensure lowercase tags display nicely
+        // DISPLAY LOGIC: Capitalize lowercase tags for a professional look
         const teacherDisplay = res.teacher || res.tags || "Staff";
         const topicDisplay = res.topic ? res.topic.charAt(0).toUpperCase() + res.topic.slice(1) : "General";
         const ageDisplay = res.ageGroup ? res.ageGroup.charAt(0).toUpperCase() + res.ageGroup.slice(1) : "All";
@@ -54,11 +57,46 @@ function displayPrintables(data) {
             <h3>${res.title || "Untitled"}</h3>
             <p>👤 Teacher: ${teacherDisplay}</p>
             <p>🏷️ Topic: ${topicDisplay} | 🎂 Age: ${ageDisplay}</p>
-            <a href="${res.url}" target="_blank" class="back-button" 
-               style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">
-               📥 Download PDF
-            </a>
+            
+            <div style="margin-top:10px;">
+                <a href="${res.url}" target="_blank" class="back-button" 
+                   style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">
+                   📥 Download PDF
+                </a>
+                
+                <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
+                <button class="delete-btn" data-id="${res.id}" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
+            </div>
         `;
+
+        // EDIT BUTTON LOGIC
+        card.querySelector('.edit-btn').onclick = async () => {
+            const item = allPrintables.find(p => p.id === res.id);
+            const newTitle = prompt("Edit Title:", item.title);
+            const newTeacher = prompt("Edit Teacher:", item.teacher || item.tags);
+            
+            if (newTitle !== null) {
+                try {
+                    await updateDoc(doc(db, "printables", res.id), {
+                        title: newTitle,
+                        teacher: newTeacher
+                    });
+                    alert("Updated!");
+                    loadPrintables();
+                } catch (err) { alert("Error updating."); }
+            }
+        };
+
+        // DELETE BUTTON LOGIC
+        card.querySelector('.delete-btn').onclick = async () => {
+            if (confirm("Are you sure you want to delete this printable?")) {
+                try {
+                    await deleteDoc(doc(db, "printables", res.id));
+                    loadPrintables();
+                } catch (err) { alert("Error deleting."); }
+            }
+        };
+
         list.appendChild(card);
     });
 }
