@@ -101,7 +101,7 @@ function displayResources(filteredData) {
                 <button class="edit-btn"
                         style="background:#2196F3; color:white; border:none;
                                padding:5px 10px; cursor:pointer; border-radius:3px;">
-                  Edit Any Field
+                  Edit
                 </button>
 
                 <button class="delete-btn"
