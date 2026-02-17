@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>One Stop Shop - Activities</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="activities.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Back to Home -->
+        <a href="../index.html" class="back-button">⬅ Back to Home</a>
+
+        <h1>Interactive Activities</h1>
+
+<div style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+    <form action="https://www.paypal.com/donate" method="post" target="_top">
+        <input type="hidden" name="hosted_button_id" value="H4VS859BVGF66" />
+        <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+        <img alt="" border="0" src="https://www.paypal.com/en_DE/i/scr/pixel.gif" width="1" height="1" />
+    </form>
+</div>
+
+<!-- activities.html -->
+<a href="Kids/kids.html" class="zone-card kids-card">
+  <h2>Kids Zone</h2>
+  <p>Fun learning for young learners</p>
+</a>
+
+<a href="Teens/teens.html" class="zone-card teens-card">
+  <h2>Teens Zone</h2>
+  <p>Challenging activities for older kids</p>
+</a>
+
+<a href="Adults/adults.html" class="zone-card adults-card">
+  <h2>Adults Zone</h2>
+  <p>Structured lessons for adults</p>
+</a>
+
+        <div id="game-display" style="display:none;">
+            <button onclick="showMenu()" class="back-button" style="border:none; cursor:pointer; margin-bottom:20px;">⬅ Back to Activities</button>
+            <div id="game-content"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="activities.js"></script>
+</body>
+</html>
