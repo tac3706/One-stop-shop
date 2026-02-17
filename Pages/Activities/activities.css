@@ -1,0 +1,42 @@
+.zone-card {
+  display: block;              /* important if using <a> */
+  width: 90%;                  /* responsive */
+  max-width: 500px;            /* prevents over-stretching */
+  margin: 20px auto;           /* center horizontally */
+  padding: 20px;
+  border-radius: 12px;
+  color: white;
+  text-decoration: none;       /* removes underline if <a> */
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+
+.zone-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+
+
+/* Individual zone styles */
+.kids-card {
+  background: linear-gradient(135deg, #ffb74d, #ff9800);
+}
+
+.teens-card {
+  background: linear-gradient(135deg, #64b5f6, #2196f3);
+}
+
+.adults-card {
+  background: linear-gradient(135deg, #81c784, #4caf50);
+}
+
+
+.donate-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+}
