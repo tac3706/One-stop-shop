@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>One Stop Shop - Conditionals</title>
+    <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="../adults.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Back to Activities List -->
+        <a href="../adults.html" class="back-button">⬅ Back to Activities</a>
+
+<div class="donate-container">
+    <form action="https://www.paypal.com/donate" method="post" target="_top">
+        <input type="hidden" name="hosted_button_id" value="H4VS859BVGF66" />
+        <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+        <img alt="" border="0" src="https://www.paypal.com/en_DE/i/scr/pixel.gif" width="1" height="1" />
+    </form>
+</div>
+
+        <h1>Conditional Sentences</h1>
+
+        <div id="conditional-menu" class="section-grid">
+            <button class="section-card" onclick="loadConditional(0)">Zero Conditional (100%)</button>
+            <button class="section-card" onclick="loadConditional(1)">1st Conditional (Real Possibility)</button>
+            <button class="section-card" onclick="loadConditional(2)">2nd Conditional (Hypothetical)</button>
+            <button class="section-card" onclick="loadConditional(3)">3rd Conditional (Past Regret)</button>
+        </div>
+
+        <div id="game-display" style="display:none;">
+            <button onclick="showCondMenu()" style="margin-bottom:20px;">← Back to Conditionals List</button>
+            <div id="game-content"></div>
+        </div>
+    </div>
+
+<div id="general-overview" class="explanation-box" style="background-color: #f9f9f9; border-left: 8px solid #2196f3;">
+    <h2>Grammar Overview: Conditional Sentences</h2>
+    <p>Conditional sentences consist of two halves, known as clauses[cite: 437]:</p>
+    <ul>
+        <li><strong>The "if" part (if clause):</strong> Sets the condition[cite: 438].</li>
+        <li><strong>The other part (main clause):</strong> Uses words like <em>can, will, may, might, could,</em> or <em>would</em> to show the result[cite: 439].</li>
+    </ul>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+        <div class="game-card" style="padding: 15px;">
+            <h4>Zero Conditional (100%)</h4>
+            <p>Used for general truths and scientific facts.</p>
+            <code>If + Present Simple, Present Simple</code>
+        </div>
+        
+        <div class="game-card" style="padding: 15px;">
+            <h4>1st Conditional (75%)</h4>
+            <p>Used for real possibilities in the present or future.</p>
+            <code>If + Present Simple, Will + Verb</code>
+        </div>
+        
+        <div class="game-card" style="padding: 15px;">
+            <h4>2nd Conditional (25%)</h4>
+            <p>Used for unreal or hypothetical situations[cite: 448, 449].</p>
+            <code>If + Past Simple, Would + Verb</code>
+        </div>
+        
+        <div class="game-card" style="padding: 15px;">
+            <h4>3rd Conditional (0%)</h4>
+            <p>Used for past regrets or things that did not happen[cite: 453, 454, 456].</p>
+            <code>If + Past Perfect, Would have + P.P.</code>
+        </div>
+    </div>
+
+    <p style="margin-top: 15px; font-style: italic;">
+        <strong>Tip:</strong> If the "if" clause comes first, use a comma. If it comes second, no comma is needed (e.g., "Water boils if you heat it")[cite: 467, 468, 469].
+    </p>
+</div>
+
+    <script src="/Scripts/conditionals.js"></script>
+</body>
+</html>
