@@ -9,7 +9,7 @@ body {
 
 /* Increased spacing for the whole page */
 .container {
-    padding: 20px; /* Reduced from 40px to give more room for text on narrow phones */
+    padding: 30px; /* Reduced from 40px to give more room for text on narrow phones */
     max-width: 800px;
     margin: 0 auto;
 }
