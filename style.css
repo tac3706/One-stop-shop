@@ -18,7 +18,7 @@ body {
 /* 1. Fluid Heading - Automatically shrinks on mobile, grows on desktop */
 h1 {
     font-size: clamp(1.8rem, 5vw, 3.2rem); 
-    margin-top: 5;
+    margin-top: 0;
     margin-bottom: 15px;
     line-height: 1.2;
 }
@@ -105,6 +105,7 @@ input[type="text"] {
 /* Position the donation container in the top right */
 .donate-container {
     position: fixed;
+    margin-bottom: 10px;
     top: 15px;
     right: 15px;
     z-index: 100; /* Keeps it above other elements */
