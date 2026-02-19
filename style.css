@@ -105,7 +105,7 @@ input[type="text"] {
 
 /* Position the donation container in the top right */
 .donate-container {
-    position: fixed;
+    position: absolute;
     top: 15px;
     right: 15px;
     z-index: 100; /* Keeps it above other elements */
