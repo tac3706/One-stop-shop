@@ -1,25 +1,61 @@
-body {
-    text-align: center;
-    font-family: Arial;
-    background: #fff8e1;
+/* Drawing Activity Specific Styles */
+.toolbar {
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    align-items: center;
+}
+
+.tool-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.action-btn {
+    padding: 10px 18px;
+    background-color: #ff9800;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.action-btn:hover {
+    background-color: #f57c00;
+    transform: translateY(-2px);
+}
+
+.canvas-wrapper {
+    width: 100%;
+    background: white;
+    border-radius: 15px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-sizing: border-box;
 }
 
 canvas {
-    border: 3px solid #333;
-    border-radius: 10px;
+    width: 100%; /* Makes it responsive */
+    max-width: 100%;
+    height: auto;
+    display: block;
     background: white;
-    margin-top: 20px;
-    touch-action: none; /* for mobile */
+    cursor: crosshair;
+    touch-action: none; /* Prevents scrolling while drawing */
 }
 
-.toolbar {
-    margin: 20px;
-}
-
-button {
-    padding: 8px 12px;
-    margin: 5px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
+@media (max-width: 600px) {
+    .toolbar {
+        flex-direction: column;
+        gap: 10px;
+    }
 }
