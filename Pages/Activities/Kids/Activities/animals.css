@@ -1,34 +1,84 @@
-body {
-    font-family: Arial;
-    text-align: center;
-    background-color: #e8f5e9;
-}
-
+/* Animal Quiz Specific Styles */
 .quiz-container {
-    margin-top: 40px;
+    background: white;
+    padding: 30px 20px;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    margin-top: 20px;
 }
 
-button {
-    padding: 10px 15px;
-    margin: 10px;
-    border-radius: 8px;
+.main-action-btn {
+    padding: 15px 30px;
+    font-size: 1.4rem;
+    font-weight: bold;
+    background-color: #4caf50;
+    color: white;
     border: none;
+    border-radius: 50px;
     cursor: pointer;
-    font-size: 16px;
+    transition: 0.2s;
+    margin: 20px 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.main-action-btn:hover {
+    background-color: #43a047;
+    transform: scale(1.05);
+}
+
+.choices {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin: 20px auto;
+    max-width: 400px;
 }
 
 .choice-btn {
-    display: block;
-    width: 200px;
-    margin: 10px auto;
+    padding: 18px;
+    font-size: 1.2rem;
+    font-weight: bold;
     background-color: #ffffff;
+    border: 3px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+    width: 100%;
 }
 
 .choice-btn:hover {
-    background-color: #c8e6c9;
+    background-color: #f1f8e9;
+    border-color: #81c784;
+    transform: translateY(-2px);
+}
+
+.status-box {
+    margin-top: 20px;
+    min-height: 80px;
 }
 
 #feedback {
-    font-size: 18px;
+    font-size: 1.5rem;
     font-weight: bold;
+    margin-bottom: 5px;
+}
+
+#score {
+    font-size: 1.2rem;
+    color: #666;
+}
+
+/* Correct/Incorrect styles to be added via JS if needed, but here's base */
+.correct-text { color: #4caf50; }
+.incorrect-text { color: #f44336; }
+
+@media (max-width: 600px) {
+    .main-action-btn {
+        width: 100%;
+        font-size: 1.2rem;
+    }
+    .choice-btn {
+        padding: 15px;
+        font-size: 1.1rem;
+    }
 }
