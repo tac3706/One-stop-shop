@@ -10,7 +10,7 @@ body {
 /* Increased spacing for the whole page */
 .container {
     padding: 20px; /* Reduced from 40px to give more room for text on narrow phones */
-    padding-top: 100px; /* This pushes everything down to clear the Donate button */
+    padding-top: 120px; /* This pushes everything down to clear the Donate button */
     max-width: 800px;
     margin: 0 auto;
 }
