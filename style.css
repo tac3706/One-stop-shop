@@ -10,9 +10,10 @@ body {
 /* Increased spacing for the whole page */
 .container {
     padding: 20px; /* Reduced from 40px to give more room for text on narrow phones */
-    padding-top: 150px; /* This pushes everything down to clear the Donate button */
+    padding-top: 75px; /* This pushes everything down to clear the Donate button */
     max-width: 800px;
     margin: 0 auto;
+    position: relative;
 }
 
 /* 1. Fluid Heading - Automatically shrinks on mobile, grows on desktop */
@@ -108,10 +109,4 @@ input[type="text"] {
     top: 15px;
     right: 15px;
     z-index: 100; /* Keeps it above other elements */
-}
-
-/* Ensure the main container can handle the absolute positioning */
-.container {
-    position: relative;
-    padding-top: 40px; /* Gives extra space so content doesn't overlap */
 }
