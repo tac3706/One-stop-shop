@@ -5,12 +5,18 @@ body {
     margin: 0;
 }
 
+/* Increased spacing for the whole page */
 .container {
-    padding: 40px;
+    padding: 20px; /* Reduced from 40px to give more room for text on narrow phones */
+    max-width: 800px;
+    margin: 0 auto;
 }
 
+/* Much larger Header */
 h1 {
+    font-size: 2.8rem; 
     margin-bottom: 10px;
+    line-height: 1.2;
 }
 
 /* Container for the buttons */
@@ -20,30 +26,36 @@ h1 {
     width: 100%;
 }
 
-/* The buttons themselves - Updated to match Activity Card behavior */
+/* Larger Description text */
+.container p {
+    font-size: 1.4rem;
+    margin-bottom: 40px;
+    color: #555;
+}
+
+/* Larger, easier-to-tap buttons */
 .section-card {
-    display: block;               /* Matches activity card layout */
-    width: 90%;                   
-    max-width: 500px;             /* Matches activity card max-width */
-    margin: 15px auto;            /* Centers them like activity cards */
-    padding: 20px;                /* Larger padding for that "big" button feel */
+    display: block;
+    width: 95%; /* Takes up more of the phone width */
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 25px 15px; /* Thicker padding for a bigger "button" feel */
     background: white;
-    border-radius: 12px;
+    border-radius: 15px;
     text-decoration: none;
     color: black;
-    font-size: 20px;              /* Slightly larger font */
+    font-size: 24px; /* Big, readable text */
     font-weight: bold;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     text-align: center;
 }
 
-/* Hover effect copied exactly from Activities */
+/* Enhanced Hover (also works for 'tap' on mobile) */
 .section-card:hover {
-    transform: scale(1.05);       /* The "pop out" effect you liked */
-    box-shadow: 0 6px 18px rgba(0,0,0,0.25); /* Deeper shadow on hover */
-    background-color: #e3f2fd;    /* Subtle blue tint instead of solid colors */
-    color: #1565c0;               /* Changes text color slightly on hover */
+    transform: scale(1.05);
+    background-color: #e3f2fd;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
 }
 
 .back-button {
