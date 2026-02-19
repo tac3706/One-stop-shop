@@ -15,12 +15,9 @@ h1 {
 
 /* Container for the buttons */
 .section-grid {
-    display: flex;
-    flex-direction: column; /* Forces vertical arrangement */
-    align-items: center;    /* Centers the column on the screen */
-    gap: 15px;             /* Space between buttons */
+    display: block;  /* Simplifies the stacking */
     margin-top: 30px;
-    width: 100%;           /* Ensure grid takes full width */
+    width: 100%;
 }
 
 /* The buttons themselves - Updated to match Activity Card behavior */
