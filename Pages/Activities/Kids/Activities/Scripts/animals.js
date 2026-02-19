@@ -56,9 +56,15 @@ function checkAnswer(selected) {
 }
 
 playSoundBtn.addEventListener("click", () => {
+    if (!currentAnimal) {
+        alert("Question not loaded yet!");
+        return;
+    }
+
     const audio = new Audio(currentAnimal.sound);
     audio.play();
 });
+
 
 nextBtn.addEventListener("click", loadQuestion);
 
