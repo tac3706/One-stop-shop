@@ -1,72 +1,59 @@
-const activityData = [
+const flashcards = [
     {
-        title: "Weather vs. Climate",
-        explanation: "<strong>Weather</strong> refers to specific short-term conditions (what is happening right now). <strong>Climate</strong> refers to long-term patterns (what usually happens). Label 'W' for Weather and 'C' for Climate.",
-        type: "gap-fill",
-        questions: [
-            { text: "____ Today it is 16° Celsius.", answer: "W" },
-            { text: "____ In Andalucía, the summers are hot.", answer: "C" },
-            { text: "____ In Cádiz, the winters are mild.", answer: "C" },
-            { text: "____ Yesterday it was sunny and warm.", answer: "W" },
-            { text: "____ On Saturday, it rained all day.", answer: "W" },
-            { text: "____ The coasts have mild weather in summer and winter.", answer: "C" }
-        ]
+        base: "go",
+        past: "went",
+        participle: "gone",
+        example: "I went to school yesterday."
+    },
+    {
+        base: "eat",
+        past: "ate",
+        participle: "eaten",
+        example: "She has eaten breakfast."
+    },
+    {
+        base: "see",
+        past: "saw",
+        participle: "seen",
+        example: "They have seen the movie."
     }
-    // You can add future standalone activities here (e.g., Vocabulary, Phonics)
 ];
 
-// 1. Navigation: Show/Hide the game display
-function loadActivity(index) {
-    const act = activityData[index];
-    const menu = document.getElementById('activity-menu');
-    const display = document.getElementById('game-display');
-    const content = document.getElementById('game-content');
+let currentCard = 0;
+let flipped = false;
 
-    // Toggle Visibility
-    menu.style.display = 'none';
-    display.style.display = 'block';
-    
-    // Inject Content
-    content.innerHTML = `
-        <div class="explanation-box">
-            <h3>Lesson: ${act.title}</h3>
-            <p>${act.explanation}</p>
-        </div>
-        <div class="game-card">
-            ${renderGame(act)}
-        </div>
-    `;
-}
+function showCard() {
+    const cardContent = document.getElementById("card-content");
+    if (!cardContent) return; // Safety check
 
-// Update this function in activities.js
-function showMenu() {
-    // We use 'flex' to match the .section-grid class in your style.css
-    document.getElementById('activity-menu').style.display = 'flex';
-    document.getElementById('game-display').style.display = 'none';
-}
-
-// 2. Game Rendering: Modified to include feedback spans
-function renderGame(act) {
-    return act.questions.map((q, i) => `
-        <div class="question-item">
-            <p>${q.text.replace('____', `<input type="text" id="ans-${i}" placeholder="W or C" maxlength="1" style="width: 60px;">`)}
-               <span id="feedback-${i}" class="feedback"></span>
-            </p>
-            <button onclick="checkAnswer(${i}, '${q.answer}')">Check Answer</button>
-        </div>
-    `).join('');
-}
-
-// 3. Logic: Check the user's answer
-function checkAnswer(index, correctAnswer) {
-    const userInput = document.getElementById(`ans-${index}`).value.trim().toUpperCase(); // Uppercase for W/C
-    const feedback = document.getElementById(`feedback-${index}`);
-
-    if (userInput === correctAnswer.toUpperCase()) {
-        feedback.textContent = "✓ Correct!";
-        feedback.className = "feedback correct";
+    if (!flipped) {
+        cardContent.innerHTML = `<strong>${flashcards[currentCard].base}</strong>`;
     } else {
-        feedback.textContent = `✗ Try again.`;
-        feedback.className = "feedback incorrect";
+        cardContent.innerHTML = `
+            Past: ${flashcards[currentCard].past}<br>
+            Participle: ${flashcards[currentCard].participle}<br><br>
+            <em>${flashcards[currentCard].example}</em>
+        `;
     }
 }
+
+// Attach functions to the window so the HTML buttons can find them
+window.flipCard = function() {
+    flipped = !flipped;
+    showCard();
+}
+
+window.nextCard = function() {
+    currentCard = (currentCard + 1) % flashcards.length;
+    flipped = false;
+    showCard();
+}
+
+window.prevCard = function() {
+    currentCard = (currentCard - 1 + flashcards.length) % flashcards.length;
+    flipped = false;
+    showCard();
+}
+
+// Run the first card as soon as the DOM is ready
+document.addEventListener("DOMContentLoaded", showCard);
