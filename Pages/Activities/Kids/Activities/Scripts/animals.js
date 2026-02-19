@@ -1,15 +1,15 @@
 const animals = [
     {
         name: "Lion",
-        sound: "sounds/lion.mp3"
+        sound: "../sounds/lion.mp3"
     },
     {
         name: "Elephant",
-        sound: "sounds/elephant.mp3"
+        sound: "../sounds/elephant.mp3"
     },
     {
         name: "Monkey",
-        sound: "sounds/monkey.mp3"
+        sound: "../sounds/monkey.mp3"
     }
 ];
 
