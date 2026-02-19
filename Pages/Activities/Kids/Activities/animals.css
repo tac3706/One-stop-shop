@@ -1,0 +1,34 @@
+body {
+    font-family: Arial;
+    text-align: center;
+    background-color: #e8f5e9;
+}
+
+.quiz-container {
+    margin-top: 40px;
+}
+
+button {
+    padding: 10px 15px;
+    margin: 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.choice-btn {
+    display: block;
+    width: 200px;
+    margin: 10px auto;
+    background-color: #ffffff;
+}
+
+.choice-btn:hover {
+    background-color: #c8e6c9;
+}
+
+#feedback {
+    font-size: 18px;
+    font-weight: bold;
+}
