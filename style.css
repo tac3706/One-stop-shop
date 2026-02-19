@@ -23,27 +23,30 @@ h1 {
     width: 100%;           /* Ensure grid takes full width */
 }
 
-/* The buttons themselves */
+/* The buttons themselves - Updated to match Activity Card behavior */
 .section-card {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 80px;          /* Slightly shorter for a list look */
-    width: 90%;            /* Fills most of the screen width */
-    max-width: 600px;      /* Prevents them from looking too stretched on desktop */
+    display: block;               /* Matches activity card layout */
+    width: 90%;                   
+    max-width: 500px;             /* Matches activity card max-width */
+    margin: 15px auto;            /* Centers them like activity cards */
+    padding: 20px;                /* Larger padding for that "big" button feel */
     background: white;
     border-radius: 12px;
     text-decoration: none;
     color: black;
-    font-size: 18px;
+    font-size: 20px;              /* Slightly larger font */
     font-weight: bold;
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    transition: 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    text-align: center;
 }
 
+/* Hover effect copied exactly from Activities */
 .section-card:hover {
-    transform: scale(1.02); /* Slight pop out effect */
-    background-color: #e3f2fd;
+    transform: scale(1.05);       /* The "pop out" effect you liked */
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25); /* Deeper shadow on hover */
+    background-color: #e3f2fd;    /* Subtle blue tint instead of solid colors */
+    color: #1565c0;               /* Changes text color slightly on hover */
 }
 
 .back-button {
