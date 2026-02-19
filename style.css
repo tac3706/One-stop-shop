@@ -25,23 +25,25 @@ h1 {
 
 /* The buttons themselves */
 .section-card {
-  display: block;              /* important if using <a> */
-  width: 90%;                  /* responsive */
-  max-width: 500px;            /* prevents over-stretching */
-  margin: 20px auto;           /* center horizontally */
-  padding: 20px;
-  border-radius: 12px;
-  color: white;
-  text-decoration: none;       /* removes underline if <a> */
-  text-align: center;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;          /* Slightly shorter for a list look */
+    width: 90%;            /* Fills most of the screen width */
+    max-width: 600px;      /* Prevents them from looking too stretched on desktop */
+    background: white;
+    border-radius: 12px;
+    text-decoration: none;
+    color: black;
+    font-size: 18px;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    transition: 0.2s ease;
 }
 
 .section-card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    transform: scale(1.02); /* Slight pop out effect */
+    background-color: #e3f2fd;
 }
 
 .back-button {
