@@ -1,26 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Animal Sounds Quiz</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kids Zone - Animal Sounds Quiz</title>
+    <link rel="stylesheet" href="../../../../style.css">
     <link rel="stylesheet" href="animals.css">
 </head>
 <body>
 
-<h1>Guess the Animal Sound 🐾</h1>
+<div class="donate-container">
+    <form action="https://www.paypal.com/donate" method="post" target="_top">
+        <input type="hidden" name="hosted_button_id" value="H4VS859BVGF66" />
+        <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+        <img alt="" border="0" src="https://www.paypal.com/en_DE/i/scr/pixel.gif" width="1" height="1" />
+    </form>
+</div>
 
-<div class="quiz-container">
-    <button id="playSound">🔊 Play Sound</button>
+<div class="container">
+    <a href="kids.html" class="back-button">⬅ Back to Kids Zone</a>
+    
+    <h1>Guess the Animal Sound 🐾</h1>
 
-    <div class="choices">
-        <button class="choice-btn"></button>
-        <button class="choice-btn"></button>
-        <button class="choice-btn"></button>
+    <div class="quiz-container">
+        <button id="playSound" class="main-action-btn">🔊 Play Sound</button>
+
+        <div class="choices">
+            <button class="choice-btn"></button>
+            <button class="choice-btn"></button>
+            <button class="choice-btn"></button>
+        </div>
+
+        <div class="status-box">
+            <p id="feedback"></p>
+            <p id="score">Score: 0</p>
+        </div>
+
+        <button id="nextBtn" class="main-action-btn" style="display:none;">Next Animal ➡</button>
     </div>
-
-    <p id="feedback"></p>
-    <p id="score">Score: 0</p>
-
-    <button id="nextBtn" style="display:none;">Next Animal</button>
 </div>
 
 <script src="animals.js"></script>
