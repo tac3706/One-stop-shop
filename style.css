@@ -10,7 +10,7 @@ body {
 /* Increased spacing for the whole page */
 .container {
     padding: 20px; /* Reduced from 40px to give more room for text on narrow phones */
-    padding-top: 120px; /* This pushes everything down to clear the Donate button */
+    padding-top: 150px; /* This pushes everything down to clear the Donate button */
     max-width: 800px;
     margin: 0 auto;
 }
@@ -105,7 +105,6 @@ input[type="text"] {
 /* Position the donation container in the top right */
 .donate-container {
     position: fixed;
-    margin-bottom: 10px;
     top: 15px;
     right: 15px;
     z-index: 100; /* Keeps it above other elements */
