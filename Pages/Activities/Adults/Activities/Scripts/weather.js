@@ -65,4 +65,5 @@ function checkAnswer(index, correctAnswer) {
         feedback.textContent = `✗ Try again.`;
         feedback.className = "feedback incorrect";
     }
-}
+}// This triggers the activity automatically when the script loads
+loadActivity(0);
