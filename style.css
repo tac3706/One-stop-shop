@@ -1,8 +1,10 @@
+/* GLOBAL SIZING - Applies to everything */
 body {
     font-family: Arial, sans-serif;
     text-align: center;
     background-color: #f0f4f8;
     margin: 0;
+    font-size: 18px; /* Base size increase for mobile */
 }
 
 /* Increased spacing for the whole page */
@@ -12,11 +14,12 @@ body {
     margin: 0 auto;
 }
 
-/* Much larger Header */
+/* Make headers big across the whole site */
 h1 {
-    font-size: 2.8rem; 
+    font-size: 2.8rem;
+    margin-top: 20px;
     margin-bottom: 10px;
-    line-height: 1.2;
+    padding: 0 10px;
 }
 
 /* Container for the buttons */
@@ -28,34 +31,34 @@ h1 {
 
 /* Larger Description text */
 .container p {
-    font-size: 1.4rem;
-    margin-bottom: 40px;
-    color: #555;
+    font-size: 1.3rem;
+    line-height: 1.6;
 }
 
-/* Larger, easier-to-tap buttons */
-.section-card {
+/* Standardize all buttons/cards to the larger Activity size */
+.section-card, .zone-card {
     display: block;
-    width: 95%; /* Takes up more of the phone width */
+    width: 95%;
     max-width: 500px;
     margin: 20px auto;
-    padding: 25px 15px; /* Thicker padding for a bigger "button" feel */
+    padding: 25px 15px;
     background: white;
     border-radius: 15px;
     text-decoration: none;
     color: black;
-    font-size: 24px; /* Big, readable text */
+    font-size: 22px; /* Large readable text */
     font-weight: bold;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     text-align: center;
+    border: none;
 }
 
-/* Enhanced Hover (also works for 'tap' on mobile) */
-.section-card:hover {
+/* Global Hover behavior */
+.section-card:hover, .zone-card:hover {
     transform: scale(1.05);
-    background-color: #e3f2fd;
     box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    background-color: #e3f2fd;
 }
 
 .back-button {
