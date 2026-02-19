@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Portal - Flashcard Creator</title>
+    <link rel="stylesheet" href="../../../../style.css">
+    <link rel="stylesheet" href="teacher-flashcards.css">
+</head>
+<body>
+
+<div class="donate-container">
+    <form action="https://www.paypal.com/donate" method="post" target="_top">
+        <input type="hidden" name="hosted_button_id" value="H4VS859BVGF66" />
+        <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+    </form>
+</div>
+
+<div class="container">
+    <a href="../../../upload.html" class="back-button">⬅ Back to Upload Portal</a>
+    
+    <h1>Flashcard Creator 🛠️</h1>
+    <p>Create custom flashcards with images, text, and voice!</p>
+
+    <div class="creator-box">
+        <div class="input-section">
+            <label>1. Card Label (e.g., Apple)</label>
+            <input type="text" id="cardLabel" placeholder="Enter word here...">
+
+            <label>2. Upload Image</label>
+            <input type="file" id="imageUpload" accept="image/*">
+            <div id="imagePreview"></div>
+
+            <label>3. Record Your Voice</label>
+            <div class="record-controls">
+                <button id="startRecord" class="record-btn">🎤 Start Recording</button>
+                <button id="stopRecord" class="record-btn stop" disabled>⏹️ Stop</button>
+            </div>
+            <audio id="audioPlayback" controls style="display:none; width:100%; margin-top:10px;"></audio>
+        </div>
+
+        <button id="saveCard" class="main-action-btn">✨ Add to Collection</button>
+    </div>
+
+    <hr>
+    
+    <div class="collection-header">
+        <h2>My Flashcards</h2>
+        <button id="downloadCollection" class="download-btn">💾 Download Collection as File</button>
+    </div>
+    
+    <div id="flashcardGrid" class="flashcard-display-grid">
+        <!-- Cards appear here -->
+    </div>
+</div>
+
+<script src="teacher-flashcards.js"></script>
+</body>
+</html>
