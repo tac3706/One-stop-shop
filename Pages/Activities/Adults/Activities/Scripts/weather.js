@@ -18,15 +18,11 @@ const activityData = [
 // 1. Navigation: Show/Hide the game display
 function loadActivity(index) {
     const act = activityData[index];
-    const menu = document.getElementById('activity-menu');
     const display = document.getElementById('game-display');
     const content = document.getElementById('game-content');
 
-    // Toggle Visibility
-    menu.style.display = 'none';
     display.style.display = 'block';
     
-    // Inject Content
     content.innerHTML = `
         <div class="explanation-box">
             <h3>Lesson: ${act.title}</h3>
