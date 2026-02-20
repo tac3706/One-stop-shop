@@ -37,7 +37,6 @@ async function loadAndDisplay() {
 }
 
 // 4. Display Logic
-// 4. Fixed Display Logic
 function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
     const countDisplay = document.getElementById("resultCount");
@@ -51,7 +50,6 @@ function displayResources(filteredData) {
         return;
     }
 
-    // Get unique topics for headers
     const topics = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))];
 
     topics.forEach(topic => {
@@ -59,16 +57,14 @@ function displayResources(filteredData) {
         const section = document.createElement("div");
         section.style.marginBottom = "15px";
 
-        // Create the Section/Accordion HTML
         section.innerHTML = `
             <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px; text-align:center;">
                 ▶ ${topic.toUpperCase()} (${topicItems.length})
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => {
-                    // Logic moved INSIDE the map so 'res' is correctly defined
                     const favCount = res.favoritesCount || 0;
-                    const feedback = res.feedback || [];
+                    const feedbackCount = res.feedback ? res.feedback.length : 0;
                     const teacherDisplay = res.teacher || res.tags || "Staff";
                     
                     return `
@@ -76,15 +72,14 @@ function displayResources(filteredData) {
                             <h3>${res.title || "Untitled"}</h3>
                             <p>👤 Teacher: ${teacherDisplay}</p>
                             <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
-
+                            
                             <div class="card-actions" style="margin-bottom:10px;">
-                                <button onclick="handleFavorite('resources', '${res.id}')">⭐ ${favCount}</button>
-                                <button onclick="handleFeedback('resources', '${res.id}')">💬 Feedback (${feedback.length})</button>
+                                <button class="fav-btn">⭐ ${favCount}</button>
+                                <button class="feed-btn">💬 Feedback (${feedbackCount})</button>
                             </div>
 
                             <div style="margin-top:10px;">
                                 <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
-                                <button class="edit-btn" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
                                 <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
                             </div>
                         </div>
@@ -93,7 +88,6 @@ function displayResources(filteredData) {
             </div>
         `;
 
-        // Toggle accordion logic
         section.querySelector("h2").onclick = () => {
             const content = section.querySelector(".topic-content");
             content.style.display = content.style.display === "none" ? "block" : "none";
@@ -198,11 +192,32 @@ function applyFilters() {
 
 window.addEventListener("DOMContentLoaded", () => {
     loadAndDisplay();
-    ["searchInput", "topicFilter", "ageFilter", "teacherFilter"].forEach(id => {
+
+    // 1. Setup Filters (Added 'languageFilter' here)
+    ["searchInput", "topicFilter", "ageFilter", "teacherFilter", "languageFilter"].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.addEventListener(id.includes("Filter") ? "change" : "input", applyFilters);
+        if (el) {
+            el.addEventListener(id.includes("Filter") ? "change" : "input", applyFilters);
+        }
     });
-});
+
+    // 2. Setup Button Clicks (Favorite & Feedback)
+    const resourceList = document.getElementById("resourceList");
+    if (resourceList) {
+        resourceList.addEventListener("click", (e) => {
+            const item = e.target.closest(".resource-item");
+            if (!item) return;
+            
+            const docId = item.dataset.id;
+
+            if (e.target.classList.contains("fav-btn")) {
+                handleFavorite('resources', docId);
+            } else if (e.target.classList.contains("feed-btn")) {
+                handleFeedback('resources', docId);
+            }
+        });
+    }
+}); // End of DOMContentLoaded
 
 // Function to handle Favoriting
 async function handleFavorite(col, id) {
