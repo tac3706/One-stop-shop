@@ -1,7 +1,8 @@
 // 1. Imports
+// FIXED: Cleaned up duplicate imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
-    getFirestore, collection, getDocs, doc, deleteDoc, updateDoc 
+    getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, arrayUnion, increment 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 2. Firebase Config
@@ -54,7 +55,19 @@ function displayResources(filteredData) {
     topics.forEach(topic => {
         const topicItems = filteredData.filter(res => String(res.topic || "general").toLowerCase() === topic);
         const section = document.createElement("div");
+        const favCount = res.favoritesCount || 0;
+        const comments = res.comments || [];
         section.style.marginBottom = "15px";
+
+        card.innerHTML = `
+        <div class="card-actions">
+            <button onclick="toggleFavorite('printables', '${res.id}')">⭐ ${favCount}</button>
+            <button onclick="addComment('printables', '${res.id}')">💬 Feedback (${comments.length})</button>
+        </div>
+        <div class="comments-preview">
+            ${comments.slice(-2).map(c => `<p><small><b>${c.date}:</b> ${c.text}</small></p>`).join('')}
+        </div>
+        `;
 
         section.innerHTML = `
             <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px; text-align:center;">
@@ -168,13 +181,16 @@ function applyFilters() {
     const topic = document.getElementById("topicFilter")?.value.toLowerCase() || "";
     const age = document.getElementById("ageFilter")?.value.toLowerCase() || "";
     const teacherSearch = document.getElementById("teacherFilter")?.value.toLowerCase() || "";
+    const langFilter = document.getElementById("languageFilter")?.value || "";
 
+// FIXED: One clean filter block including language
     const filtered = allResources.filter(res => {
         const teacherText = String(res.teacher || res.tags || "").toLowerCase();
         return (res.title || "").toLowerCase().includes(searchTerm) &&
                (!topic || String(res.topic || "").toLowerCase() === topic) &&
                (!age || String(res.ageGroup || "").toLowerCase() === age) &&
-               (!teacherSearch || teacherText.includes(teacherSearch));
+               (!teacherSearch || teacherText.includes(teacherSearch)) &&
+               (!langFilter || res.language === langFilter);
     });
     displayResources(filtered);
 }
@@ -186,3 +202,23 @@ window.addEventListener("DOMContentLoaded", () => {
         if (el) el.addEventListener(id.includes("Filter") ? "change" : "input", applyFilters);
     });
 });
+
+// Function to handle Favoriting
+async function handleFavorite(col, id) {
+    const docRef = doc(db, col, id);
+    await updateDoc(docRef, { favoritesCount: increment(1) });
+    alert("⭐️ Added to favorites!");
+    location.reload();
+}
+
+// Function to handle Feedback
+async function handleFeedback(col, id) {
+    const text = prompt("Enter your feedback:");
+    if(!text) return;
+    const docRef = doc(db, col, id);
+    await updateDoc(docRef, {
+        feedback: arrayUnion({ text, date: new Date().toLocaleDateString() })
+    });
+    alert("✅ Feedback added!");
+    location.reload();
+}
