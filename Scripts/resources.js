@@ -92,6 +92,11 @@ function displayResources(filteredData) {
 document.addEventListener("click", async (e) => {
     // --- EDIT BUTTON ---
     if (e.target.classList.contains("edit-btn")) {
+        const password = prompt("Enter the admin password to edit this resource:");
+        if (password !== "Go3706") {
+            alert("Incorrect password. Edit denied.");
+            return;
+        }
         const card = e.target.closest(".resource-item");
         if (card.querySelector(".edit-panel")) return;
 
@@ -140,12 +145,19 @@ document.addEventListener("click", async (e) => {
         e.target.closest(".edit-panel")?.remove();
     }
 
+// ... existing code ...
     // --- DELETE BUTTON ---
     if (e.target.classList.contains("delete-btn")) {
         const docId = e.target.closest(".resource-item").dataset.id;
-        if (confirm("Delete this resource?")) {
-            await deleteDoc(doc(db, "resources", docId));
-            loadAndDisplay();
+        const password = prompt("Enter the admin password to delete this resource:");
+
+        if (password === "Go3706") { // Replace with your desired password
+            if (confirm("Delete this resource?")) {
+                await deleteDoc(doc(db, "resources", docId));
+                loadAndDisplay();
+            }
+        } else if (password !== null) {
+            alert("Incorrect password. Deletion denied.");
         }
     }
 });
