@@ -1,152 +1,99 @@
-const canvas = document.getElementById("board");
-const ctx = canvas.getContext("2d");
-
+const board = document.getElementById("board");
 const rollBtn = document.getElementById("rollBtn");
+const diceResult = document.getElementById("diceResult");
 const questionBox = document.getElementById("questionBox");
 const questionText = document.getElementById("questionText");
 const answerInput = document.getElementById("answerInput");
 const submitAnswer = document.getElementById("submitAnswer");
+const statusText = document.getElementById("status");
 
-const diceSound = document.getElementById("diceSound");
-const correctSound = document.getElementById("correctSound");
-const snakeSound = document.getElementById("snakeSound");
-
-const p1PosText = document.getElementById("p1Pos");
-const p2PosText = document.getElementById("p2Pos");
-const currentPlayerText = document.getElementById("currentPlayer");
-
-let currentPlayer = 1;
-let positions = {1: 0, 2: 0};
+const totalSquares = 30;
+let playerPosition = 1;
 let diceValue = 0;
-let currentQuestion = null;
 
-const boardSize = 10;
-const tileSize = canvas.width / boardSize;
+// Grammar questions
+const questions = [
+    { q: "Fill in: She ____ (go) to school yesterday.", a: "went" },
+    { q: "Fill in: They ____ (play) football now.", a: "are playing" },
+    { q: "Fill in: I have ____ (eat) breakfast.", a: "eaten" },
+    { q: "Fill in: He ____ (be) happy.", a: "is" }
+];
 
-const snakes = {16: 6, 48: 30, 62: 19, 88: 24, 95: 56};
-const ladders = {2: 38, 7: 14, 15: 26, 21: 42, 28: 84};
+// Snakes and ladders
+const snakes = { 14: 7, 25: 10 };
+const ladders = { 3: 11, 8: 18 };
 
-const questions = {
-  past: [
-    {q: "Go → ?", a: "went"},
-    {q: "Eat → ?", a: "ate"},
-    {q: "See → ?", a: "saw"}
-  ],
-  present: [
-    {q: "He (go) to school.", a: "goes"},
-    {q: "She (eat) apples.", a: "eats"},
-    {q: "They (play) football.", a: "play"}
-  ],
-  articles: [
-    {q: "___ apple", a: "an"},
-    {q: "___ sun", a: "the"},
-    {q: "___ car", a: "a"}
-  ]
-};
-
-function drawBoard() {
-  for (let row = 0; row < boardSize; row++) {
-    for (let col = 0; col < boardSize; col++) {
-      ctx.fillStyle = (row + col) % 2 === 0 ? "#f9c74f" : "#90be6d";
-      ctx.fillRect(col * tileSize, row * tileSize, tileSize, tileSize);
-      ctx.strokeRect(col * tileSize, row * tileSize, tileSize, tileSize);
-    }
-  }
+// Build board
+for (let i = totalSquares; i >= 1; i--) {
+    const square = document.createElement("div");
+    square.classList.add("square");
+    square.id = "square-" + i;
+    square.textContent = i;
+    board.appendChild(square);
 }
 
-function getCoordinates(position) {
-  const row = boardSize - 1 - Math.floor((position - 1) / boardSize);
-  let col = (position - 1) % boardSize;
+function updatePlayer() {
+    document.querySelectorAll(".player").forEach(p => p.remove());
 
-  if (Math.floor((position - 1) / boardSize) % 2 === 1) {
-    col = boardSize - 1 - col;
-  }
+    const player = document.createElement("div");
+    player.classList.add("player");
 
-  return {
-    x: col * tileSize + tileSize / 2,
-    y: row * tileSize + tileSize / 2
-  };
-}
-
-function drawPlayers() {
-  Object.keys(positions).forEach(player => {
-    if (positions[player] === 0) return;
-    const {x, y} = getCoordinates(positions[player]);
-    ctx.beginPath();
-    ctx.arc(x, y, tileSize / 5, 0, Math.PI * 2);
-    ctx.fillStyle = player == 1 ? "red" : "blue";
-    ctx.fill();
-  });
-}
-
-function updateBoard() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBoard();
-  drawPlayers();
+    const currentSquare = document.getElementById("square-" + playerPosition);
+    currentSquare.appendChild(player);
 }
 
 function rollDice() {
-  diceSound.currentTime = 0;
-  diceSound.play().catch(()=>{});
-  diceValue = Math.floor(Math.random() * 6) + 1;
-  rollBtn.textContent = "🎲 " + diceValue;
-  askQuestion();
+    diceValue = Math.floor(Math.random() * 6) + 1;
+    diceResult.textContent = "You rolled: " + diceValue;
+
+    playerPosition += diceValue;
+
+    if (playerPosition > totalSquares) {
+        playerPosition = totalSquares;
+    }
+
+    askQuestion();
 }
 
 function askQuestion() {
-  const topic = document.getElementById("topicSelect").value;
-  const list = questions[topic];
-  currentQuestion = list[Math.floor(Math.random() * list.length)];
-  questionText.textContent = currentQuestion.q;
-  questionBox.classList.remove("hidden");
+    const randomQ = questions[Math.floor(Math.random() * questions.length)];
+    questionText.textContent = randomQ.q;
+    questionBox.style.display = "block";
+
+    submitAnswer.onclick = function () {
+        if (answerInput.value.toLowerCase() === randomQ.a) {
+            statusText.textContent = "✅ Correct!";
+            checkSnakesAndLadders();
+        } else {
+            statusText.textContent = "❌ Wrong! Move back.";
+            playerPosition -= diceValue;
+        }
+
+        questionBox.style.display = "none";
+        answerInput.value = "";
+        updatePlayer();
+        checkWin();
+    };
 }
 
-function movePlayer() {
-  positions[currentPlayer] += diceValue;
+function checkSnakesAndLadders() {
+    if (snakes[playerPosition]) {
+        playerPosition = snakes[playerPosition];
+        statusText.textContent += " 🐍 Snake!";
+    }
+    if (ladders[playerPosition]) {
+        playerPosition = ladders[playerPosition];
+        statusText.textContent += " 🪜 Ladder!";
+    }
+}
 
-  if (positions[currentPlayer] > 100) {
-    positions[currentPlayer] = 100;
-  }
-
-  if (snakes[positions[currentPlayer]]) {
-    snakeSound.play().catch(()=>{});
-    positions[currentPlayer] = snakes[positions[currentPlayer]];
-  }
-
-  if (ladders[positions[currentPlayer]]) {
-    positions[currentPlayer] = ladders[positions[currentPlayer]];
-  }
-
-  updateBoard();
-
-  p1PosText.textContent = positions[1];
-  p2PosText.textContent = positions[2];
-
-  if (positions[currentPlayer] === 100) {
-    setTimeout(() => {
-      alert("🎉 Player " + currentPlayer + " Wins!");
-      positions = {1: 0, 2: 0};
-      updateBoard();
-    }, 200);
-  }
-
-  currentPlayer = currentPlayer === 1 ? 2 : 1;
-  currentPlayerText.textContent = "Player " + currentPlayer;
+function checkWin() {
+    if (playerPosition === totalSquares) {
+        statusText.textContent = "🎉 You Win!";
+        rollBtn.disabled = true;
+    }
 }
 
 rollBtn.addEventListener("click", rollDice);
 
-submitAnswer.addEventListener("click", () => {
-  if (!currentQuestion) return;
-
-  if (answerInput.value.trim().toLowerCase() === currentQuestion.a) {
-    correctSound.play().catch(()=>{});
-    movePlayer();
-  }
-
-  questionBox.classList.add("hidden");
-  answerInput.value = "";
-});
-
-drawBoard();
-updateBoard();
+updatePlayer();
