@@ -112,8 +112,9 @@ input[type="text"], input[type="file"] {
 
 .custom-card img {
     width: 100%;
-    height: 120px;
-    object-fit: cover;
+    height: 150px;
+    object-fit: contain; /* Shows the full image without cutting it off */
+    background: #f0f0f0; /* Adds a light background for transparent or odd-sized images */
     border-radius: 10px;
 }
 
