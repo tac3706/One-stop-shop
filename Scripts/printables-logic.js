@@ -63,7 +63,7 @@ function displayPrintables(data) {
             </div>
 
             ${feedbackList.length > 0 ? `
-            <div class="feedback-display" style="background: #f4f4f4; padding: 8px; border-radius: 4px; margin: 10px auto; max-width: 80%; font-size: 0.85em; text-align: left; border: 1px solid #ddd;">
+            <div class="feedback-display" style="background: #f4f4f4; padding: 8px; border-radius: 4px; margin: 10px auto; max-width: 80%; font-size: 0.85em; text-align: center; border: 1px solid #ddd;">
                 ${feedbackList.map(f => `
                     <p style="border-bottom:1px dotted #ccc; margin:5px 0; padding-bottom:3px;">
                         <b>${f.date}:</b> ${f.text}
