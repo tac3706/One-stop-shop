@@ -33,27 +33,26 @@ async function loadPrintables() {
 // 2. Display Data
 function displayPrintables(data) {
     const list = document.getElementById("printableList");
+    if (!list) return;
     list.innerHTML = "";
 
     data.forEach(res => {
-        const teacherDisplay = res.teacher || res.tags || "Staff";
-        const topicDisplay = res.topic ? res.topic.charAt(0).toUpperCase() + res.topic.slice(1) : "General";
-        const ageDisplay = res.ageGroup ? res.ageGroup.charAt(0).toUpperCase() + res.ageGroup.slice(1) : "All";
+        const teacherDisplay = res.teacher || "Staff";
         const favCount = res.favoritesCount || 0;
         const feedbackList = res.feedback || [];
+        const langDisplay = res.language ? res.language.toUpperCase() : "N/A";
 
         const card = document.createElement("div");
         card.className = "resource-item";
         card.style = "margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;";
 
-        // FIX: Combined all buttons into one block so they don't overwrite each other
         card.innerHTML = `
             <h3>${res.title || "Untitled"}</h3>
-            <p>👤 Teacher: ${teacherDisplay}</p>
-            <p>🏷️ Topic: ${topicDisplay} | 🎂 Age: ${ageDisplay}</p>
+            <p>👤 Teacher: ${teacherDisplay} | 🌐 Lang: ${langDisplay}</p>
+            <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
             
             <div style="margin-top:10px;">
-                <a href="${res.url}" target="_blank" class="back-button" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">📥 Download</a>
+                <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">📥 Download</a>
                 <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
                 <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
             </div>
@@ -62,50 +61,43 @@ function displayPrintables(data) {
                 <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${favCount}</button>
                 <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${feedbackList.length})</button>
             </div>
-            <div class="comments-preview" style="font-size: 0.8em; color: #666; margin-top: 5px;">
-                ${feedbackList.slice(-2).map(c => `<p><b>${c.date}:</b> ${c.text}</p>`).join('')}
+
+            <div class="feedback-display" style="background: #f4f4f4; padding: 8px; border-radius: 4px; margin: 10px auto; max-width: 80%; font-size: 0.85em; text-align: left;">
+                ${feedbackList.length > 0 
+                    ? feedbackList.map(f => `<p style="border-bottom:1px dotted #ccc; margin:5px 0;"><b>${f.date}:</b> ${f.text}</p>`).join('') 
+                    : `<p style="color: #888; text-align:center;">No feedback yet.</p>`}
             </div>
         `;
 
-        // Favorite Button Logic
+        // Button Click Listeners
         card.querySelector('.fav-action-btn').onclick = () => handleFavorite('printables', res.id);
-        
-        // Feedback Button Logic
         card.querySelector('.feed-action-btn').onclick = () => handleFeedback('printables', res.id);
 
         // Edit Button Logic
         card.querySelector('.edit-btn').onclick = () => {
-            const password = prompt("Enter the admin password to edit this printable:");
-            if (password !== "Go3706") {
-                alert("Incorrect password. Edit denied.");
-                return;
-            }
+            const password = prompt("Enter the admin password to edit:");
+            if (password !== "Go3706") return alert("Incorrect password.");
+            
             if (card.querySelector(".edit-panel")) return;
-            const allowedTopics = ["grammar","vocabulary","reading","writing","speaking","listening","phonics","exam prep","business english","general"];
-            const allowedAges = ["children","teens","adults","all"];
-
             const panel = document.createElement("div");
             panel.className = "edit-panel";
-            panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px; text-align: center;";
+            panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px;";
             panel.innerHTML = `
-                <strong>Edit Mode:</strong><br>
                 <input type="text" class="edit-title" value="${res.title}" style="width:90%; margin:5px 0;"><br>
                 <input type="text" class="edit-teacher" value="${teacherDisplay}" style="width:90%; margin:5px 0;"><br>
                 <select class="edit-topic" style="width:90%; margin:5px 0;">
-                    ${allowedTopics.map(t => `<option value="${t}" ${t === (res.topic || "").toLowerCase() ? "selected" : ""}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join("")}
+                    <option value="grammar">Grammar</option><option value="vocabulary">Vocabulary</option>
+                    <option value="reading">Reading</option><option value="writing">Writing</option>
                 </select><br>
-                <select class="edit-age" style="width:90%; margin:5px 0;">
-                    ${allowedAges.map(a => `<option value="${a}" ${a === (res.ageGroup || "").toLowerCase() ? "selected" : ""}>${a.charAt(0).toUpperCase() + a.slice(1)}</option>`).join("")}
-                </select><br>
-                <button class="save-btn" style="background:green; color:white; border:none; padding:8px 20px; margin-top:10px; cursor:pointer; border-radius:4px;">Save Changes</button>
-                <button class="cancel-btn" style="background:#888; color:white; border:none; padding:8px 20px; margin-left:10px; cursor:pointer; border-radius:4px;">Cancel</button>
+                <button class="save-btn" style="background:green; color:white; padding:5px 15px; margin-top:10px; border-radius:4px;">Save</button>
+                <button class="cancel-btn" style="background:#888; color:white; padding:5px 15px; border-radius:4px;">Cancel</button>
             `;
             card.appendChild(panel);
         };
 
         // Delete Button Logic
         card.querySelector('.delete-btn').onclick = async () => {
-            const password = prompt("Enter the admin password to delete this printable:");
+            const password = prompt("Enter the admin password to delete:");
             if (password === "Go3706") {
                 if (confirm("Are you sure? This cannot be undone.")) {
                     await deleteDoc(doc(db, "printables", res.id));
@@ -129,8 +121,7 @@ document.addEventListener("click", async (e) => {
             await updateDoc(doc(db, "printables", docId), {
                 title: card.querySelector(".edit-title").value,
                 teacher: card.querySelector(".edit-teacher").value,
-                topic: card.querySelector(".edit-topic").value,
-                ageGroup: card.querySelector(".edit-age").value
+                topic: card.querySelector(".edit-topic").value
             });
             loadPrintables();
         } catch (err) { 
@@ -149,25 +140,32 @@ function applyPrintableFilters() {
     const age = document.getElementById("ageFilter")?.value.toLowerCase() || "";
     const teacherSearch = document.getElementById("teacherFilter")?.value.toLowerCase() || "";
     const langFilter = document.getElementById("languageFilter")?.value || "";
+    const favOnly = document.getElementById("favOnlyFilter")?.checked || false;
 
-// FIXED: Removed duplicate 'const filtered' and added language sorting
     const filtered = allPrintables.filter(res => {
-        return (res.title || "").toLowerCase().includes(searchTerm) &&
-               (!topic || (res.topic || "").toLowerCase() === topic) &&
-               (!age || (res.ageGroup || "").toLowerCase() === age) &&
-               (!teacherSearch || String(res.teacher || "").toLowerCase().includes(teacherSearch)) &&
-               (!langFilter || res.language === langFilter);
+        const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
+        const matchesTopic = !topic || String(res.topic || "").toLowerCase() === topic;
+        const matchesAge = !age || String(res.ageGroup || "").toLowerCase() === age;
+        const matchesTeacher = !teacherSearch || String(res.teacher || "").toLowerCase().includes(teacherSearch);
+        const matchesLang = !langFilter || res.language === langFilter;
+        const matchesFav = !favOnly || (res.favoritesCount > 0);
+
+        return matchesSearch && matchesTopic && matchesAge && matchesTeacher && matchesLang && matchesFav;
     });
+
     displayPrintables(filtered);
 }
 
-// 5. Setup
+// 5. Setup Listeners
 window.addEventListener("DOMContentLoaded", () => {
     loadPrintables();
-    ["searchInput", "topicFilter", "ageFilter", "teacherFilter", "languageFilter"].forEach(id => {
+    const filterIds = ["searchInput", "topicFilter", "ageFilter", "teacherFilter", "languageFilter", "favOnlyFilter"];
+    filterIds.forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.addEventListener("input", applyPrintableFilters);
-        if (el) el.addEventListener("change", applyPrintableFilters);
+        if (el) {
+            const eventType = (el.type === "checkbox" || el.tagName === "SELECT") ? "change" : "input";
+            el.addEventListener(eventType, applyPrintableFilters);
+        }
     });
 });
 
@@ -176,7 +174,7 @@ async function handleFavorite(col, id) {
     const docRef = doc(db, col, id);
     await updateDoc(docRef, { favoritesCount: increment(1) });
     alert("⭐️ Added to favorites!");
-    loadPrintables(); // Refresh UI without full page reload
+    loadPrintables(); 
 }
 
 async function handleFeedback(col, id) {
@@ -187,5 +185,5 @@ async function handleFeedback(col, id) {
         feedback: arrayUnion({ text, date: new Date().toLocaleDateString() })
     });
     alert("✅ Feedback added!");
-    loadPrintables(); // Refresh UI
+    loadPrintables(); 
 }
