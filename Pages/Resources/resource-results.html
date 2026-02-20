@@ -24,6 +24,19 @@
         <div class="filter-controls">
             <input type="text" id="searchInput" placeholder="Search resources...">
             
+            <div id="favoritesSection">
+                <h2>⭐️ My Saved Favorites</h2>
+                <div id="favoritesList"></div>
+            </div>
+
+            <select id="languageSort" onchange="applyFilters()">
+                <option value="">Sort by Language</option>
+                <option value="english">English</option>
+                <option value="german">German</option>
+                <option value="spanish">Spanish</option>
+                <option value="french">French</option>
+            </select>
+
             <select id="topicFilter">
                 <option value="">All Topics</option>
                 <option value="grammar">Grammar</option>
