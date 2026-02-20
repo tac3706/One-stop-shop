@@ -55,6 +55,11 @@ function displayPrintables(data) {
         `;
 
         card.querySelector('.edit-btn').onclick = () => {
+            const password = prompt("Enter the admin password to edit this printable:");
+            if (password !== "Go3706") {
+                alert("Incorrect password. Edit denied.");
+                return;
+            }
             if (card.querySelector(".edit-panel")) return;
             const allowedTopics = ["grammar","vocabulary","reading","writing","speaking","listening","phonics","exam prep","business english","general"];
             const allowedAges = ["children","teens","adults","all"];
@@ -79,10 +84,16 @@ function displayPrintables(data) {
             card.appendChild(panel);
         };
 
-        card.querySelector('.delete-btn').onclick = async () => {
-            if (confirm("Delete this printable?")) {
-                await deleteDoc(doc(db, "printables", res.id));
-                loadPrintables();
+            card.querySelector('.delete-btn').onclick = async () => {
+            const password = prompt("Enter the admin password to delete this printable:");
+            
+            if (password === "Go3706") { // Replace with your desired password
+                if (confirm("Are you sure? This cannot be undone.")) {
+                    await deleteDoc(doc(db, "printables", res.id));
+                    loadPrintables();
+                }
+            } else if (password !== null) {
+                alert("Incorrect password. Deletion denied.");
             }
         };
         list.appendChild(card);
