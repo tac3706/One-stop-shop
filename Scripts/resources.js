@@ -1,5 +1,4 @@
 // 1. Imports
-// FIXED: Cleaned up duplicate imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
     getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, arrayUnion, increment 
@@ -64,7 +63,7 @@ function displayResources(filteredData) {
             <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => {
                     const favCount = res.favoritesCount || 0;
-                    const feedback = res.feedback || []; // Use 'feedback' to match handleFeedback function
+                    const feedbackList = res.feedback || []; // CHANGED: named it feedbackList to match logic below
                     const langDisplay = res.language ? res.language.toUpperCase() : "N/A";
                     
                     return `
@@ -73,20 +72,20 @@ function displayResources(filteredData) {
                             <p>👤 Teacher: ${res.teacher || "Staff"} | 🌐 Lang: ${langDisplay}</p>
                             <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
 
-                            <div class="card-actions" style="margin-bottom:10px;">
-                                <button class="fav-btn">⭐ ${favCount}</button>
-                                <button class="feed-btn">💬 Feedback (${feedback.length})</button>
+                            <div class="card-actions" style="margin-top:10px;">
+                                <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${favCount}</button>
+                                <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${feedbackList.length})</button>
                             </div>
 
                             ${feedbackList.length > 0 ? `
-                            <div class="feedback-display" style="background: #f4f4f4; padding: 8px; border-radius: 4px; margin: 10px auto; max-width: 80%; font-size: 0.85em; text-align: left; border: 1px solid #ddd;">
-                                ${feedbackList.map(f => `
-                                    <p style="border-bottom:1px dotted #ccc; margin:5px 0; padding-bottom:3px;">
-                                        <b>${f.date}:</b> ${f.text}
-                                    </p>
-                                `).join('')}
-                            </div>
-                    ` :     ''}
+                                <div class="feedback-display" style="background: #f4f4f4; padding: 8px; border-radius: 4px; margin: 10px auto; max-width: 80%; font-size: 0.85em; text-align: left; border: 1px solid #ddd;">
+                                    ${feedbackList.map(f => `
+                                        <p style="border-bottom:1px dotted #ccc; margin:5px 0; padding-bottom:3px;">
+                                            <b>${f.date}:</b> ${f.text}
+                                        </p>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
 
                             <div style="margin-top:10px;">
                                 <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
@@ -112,10 +111,8 @@ document.addEventListener("click", async (e) => {
     // --- EDIT BUTTON ---
     if (e.target.classList.contains("edit-btn")) {
         const password = prompt("Enter the admin password to edit this resource:");
-        if (password !== "Go3706") {
-            alert("Incorrect password. Edit denied.");
-            return;
-        }
+        if (password !== "Go3706") return alert("Incorrect password.");
+        
         const card = e.target.closest(".resource-item");
         if (card.querySelector(".edit-panel")) return;
 
@@ -131,7 +128,7 @@ document.addEventListener("click", async (e) => {
         panel.innerHTML = `
             <strong>Edit Resource:</strong><br>
             <input type="text" class="edit-title" value="${item.title}" style="width:90%; margin:5px 0;"><br>
-            <input type="text" class="edit-teacher" value="${item.teacher || item.tags || ""}" style="width:90%; margin:5px 0;"><br>
+            <input type="text" class="edit-teacher" value="${item.teacher || ""}" style="width:90%; margin:5px 0;"><br>
             <select class="edit-topic" style="width:90%; margin:5px 0;">
                 ${allowedTopics.map(t => `<option value="${t}" ${t === (item.topic || "").toLowerCase() ? "selected" : ""}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join("")}
             </select><br>
@@ -164,20 +161,28 @@ document.addEventListener("click", async (e) => {
         e.target.closest(".edit-panel")?.remove();
     }
 
-// ... existing code ...
     // --- DELETE BUTTON ---
     if (e.target.classList.contains("delete-btn")) {
         const docId = e.target.closest(".resource-item").dataset.id;
-        const password = prompt("Enter the admin password to delete this resource:");
-
-        if (password === "Go3706") { // Replace with your desired password
+        const password = prompt("Enter the admin password to delete:");
+        if (password === "Go3706") {
             if (confirm("Delete this resource?")) {
                 await deleteDoc(doc(db, "resources", docId));
                 loadAndDisplay();
             }
-        } else if (password !== null) {
-            alert("Incorrect password. Deletion denied.");
         }
+    }
+
+    // --- FAVORITE ACTION ---
+    if (e.target.classList.contains("fav-action-btn")) {
+        const docId = e.target.closest(".resource-item").dataset.id;
+        handleFavorite('resources', docId);
+    }
+
+    // --- FEEDBACK ACTION ---
+    if (e.target.classList.contains("feed-action-btn")) {
+        const docId = e.target.closest(".resource-item").dataset.id;
+        handleFeedback('resources', docId);
     }
 });
 
@@ -192,52 +197,33 @@ function applyFilters() {
 
     const filtered = allResources.filter(res => {
         const teacherText = String(res.teacher || "").toLowerCase();
-        
         return (res.title || "").toLowerCase().includes(searchTerm) &&
                (!topic || String(res.topic || "").toLowerCase() === topic) &&
                (!age || String(res.ageGroup || "").toLowerCase() === age) &&
                (!teacherSearch || teacherText.includes(teacherSearch)) &&
                (!langFilter || res.language === langFilter) &&
-               (!favOnly || (res.favoritesCount > 0)); // Only show if favCount > 0
+               (!favOnly || (res.favoritesCount > 0));
     });
     displayResources(filtered);
 }
 
 window.addEventListener("DOMContentLoaded", () => {
     loadAndDisplay();
-    
-    // Listen for changes on ALL filter elements
     ["searchInput", "topicFilter", "ageFilter", "teacherFilter", "languageFilter", "favOnlyFilter"].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-        
         const eventType = (el.type === "checkbox" || el.tagName === "SELECT") ? "change" : "input";
         el.addEventListener(eventType, applyFilters);
     });
-
-    // Setup Click Listeners for Favorite/Feedback buttons
-    document.getElementById("resourceList").addEventListener("click", (e) => {
-        const item = e.target.closest(".resource-item");
-        if (!item) return;
-        const docId = item.dataset.id;
-
-        if (e.target.classList.contains("fav-btn")) {
-            handleFavorite('resources', docId);
-        } else if (e.target.classList.contains("feed-btn")) {
-            handleFeedback('resources', docId);
-        }
-    });
 });
 
-// Function to handle Favoriting
 async function handleFavorite(col, id) {
     const docRef = doc(db, col, id);
     await updateDoc(docRef, { favoritesCount: increment(1) });
     alert("⭐️ Added to favorites!");
-    location.reload();
+    loadAndDisplay();
 }
 
-// Function to handle Feedback
 async function handleFeedback(col, id) {
     const text = prompt("Enter your feedback:");
     if(!text) return;
@@ -246,5 +232,5 @@ async function handleFeedback(col, id) {
         feedback: arrayUnion({ text, date: new Date().toLocaleDateString() })
     });
     alert("✅ Feedback added!");
-    location.reload();
+    loadAndDisplay();
 }
