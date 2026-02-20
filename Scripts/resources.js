@@ -73,17 +73,20 @@ function displayResources(filteredData) {
                             <p>👤 Teacher: ${res.teacher || "Staff"} | 🌐 Lang: ${langDisplay}</p>
                             <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
 
-                            <div class="card-actions" style="margin-bottom:10px;">
-                                <button class="fav-btn">⭐ ${favCount}</button>
-                                <button class="feed-btn">💬 Feedback (${feedback.length})</button>
+                            <div class="card-actions" style="margin-top:10px;">
+                                <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${favCount}</button>
+                                <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${feedbackList.length})</button>
                             </div>
 
-                            <div class="feedback-list" style="background: #f9f9f9; padding: 10px; border-radius: 5px; margin: 10px auto; max-width: 80%; text-align: left; font-size: 0.9em;">
-                                ${feedback.length > 0 
-                                    ? feedback.map(f => `<p style="border-bottom: 1px dotted #ccc; padding: 5px 0;"><b>${f.date}:</b> ${f.text}</p>`).join('') 
-                                    : `<p style="color: #999; text-align: center;">No feedback yet.</p>`
-                                }
+                            ${feedbackList.length > 0 ? `
+                            <div class="feedback-display" style="background: #f4f4f4; padding: 8px; border-radius: 4px; margin: 10px auto; max-width: 80%; font-size: 0.85em; text-align: left; border: 1px solid #ddd;">
+                                ${feedbackList.map(f => `
+                                    <p style="border-bottom:1px dotted #ccc; margin:5px 0; padding-bottom:3px;">
+                                        <b>${f.date}:</b> ${f.text}
+                                    </p>
+                                `).join('')}
                             </div>
+                    ` :     ''}
 
                             <div style="margin-top:10px;">
                                 <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
