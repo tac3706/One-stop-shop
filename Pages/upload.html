@@ -29,7 +29,6 @@
 
             <label>Material Type:</label>
             <select id="fileType" style="width:100%; margin-bottom:10px;">
-                <option value="">All Types</option>
                 <option value="PDF">PDF / Worksheet</option>
                 <option value="website">Website</option>
                 <option value="printable">Printable</option>
@@ -116,37 +115,33 @@
         const categorySelect = document.getElementById('resourceCategory');
         const fileSection = document.getElementById('fileUploadSection');
         const linkSection = document.getElementById('linkUploadSection');
+        const fileTypeDropdown = document.getElementById('fileType');
 
-        // Update both addDoc sections (for 'printables' and 'resources') to include:
-        await addDoc(collection(db, "printables"), {
-            title, topic, teacher, type, ageGroup: age, language, // Added language here
-            url: downloadURL, storagePath, createdAt: new Date()
-        });
+        // FIXED: Removed the stray addDoc that was here before.
 
-        // 4. Toggle visibility based on category choice
+        // 1. Toggle visibility logic
         categorySelect.addEventListener('change', (e) => {
             const isLink = e.target.value === 'link';
-            const fileTypeDropdown = document.getElementById('fileType');
             
-            // Toggle input sections
+            // Show/Hide sections
             fileSection.style.display = isLink ? 'none' : 'block';
             linkSection.style.display = isLink ? 'block' : 'none';
 
-            // Automatically set Material Type to 'website' if Link is chosen
+            // Auto-switch Material Type
             if (isLink) {
                 fileTypeDropdown.value = 'website';
             } else {
-                fileTypeDropdown.value = 'PDF'; // Default back to PDF for files
+                fileTypeDropdown.value = 'PDF';
             }
         });
 
-        // 5. Unified Upload Logic
+        // 2. Upload Logic
         uploadBtn.addEventListener('click', async () => {
             const category = categorySelect.value;
             const title = document.getElementById('fileTitle').value;
             const topic = document.getElementById('fileTopic').value;
             const teacher = document.getElementById('teacherName').value;
-            const type = document.getElementById('fileType').value;
+            const type = fileTypeDropdown.value;
             const age = document.getElementById('fileAge').value;
             const language = document.getElementById('fileLanguage').value;
 
@@ -160,28 +155,23 @@
 
             try {
                 if (category === 'file') {
-                    // --- FILE MODE: Upload to Storage ---
                     const file = document.getElementById('filePicker').files[0];
                     if (!file) throw new Error("Please select a file.");
-                    if (file.size > 5 * 1024 * 1024) throw new Error("File too big (Max 5MB).");
-
+                    
                     const storagePath = `printables/${Date.now()}_${file.name}`;
                     const storageRef = ref(storage, storagePath);
                     const snapshot = await uploadBytes(storageRef, file);
                     const downloadURL = await getDownloadURL(snapshot.ref);
 
-                    // Save to 'printables' collection
                     await addDoc(collection(db, "printables"), {
-                        title, topic, teacher, type, ageGroup: age, language: language, favoritesCount: 0, feedback: [],
+                        title, topic, teacher, type, ageGroup: age, language,
+                        favoritesCount: 0, feedback: [],
                         url: downloadURL, storagePath, createdAt: new Date()
                     });
                 } else {
-                    // --- LINK MODE: Save URL directly ---
                     const linkUrl = document.getElementById('externalUrl').value;
                     if (!linkUrl) throw new Error("Please paste a URL.");
 
-                    // Save to 'resources' collection for your YouTube library
-                    // FIXED: Using linkUrl instead of downloadURL and removing storagePath
                     await addDoc(collection(db, "resources"), {
                         title, topic, teacher, type, ageGroup: age, language,
                         favoritesCount: 0, feedback: [],
@@ -191,7 +181,7 @@
 
                 status.innerText = "✅ Success! Added to the library.";
                 document.getElementById('fileTitle').value = "";
-                if(document.getElementById('externalUrl')) document.getElementById('externalUrl').value = "";
+                document.getElementById('externalUrl').value = "";
                 
             } catch (error) {
                 console.error(error);
