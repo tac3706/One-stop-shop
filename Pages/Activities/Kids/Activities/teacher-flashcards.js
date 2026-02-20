@@ -105,7 +105,7 @@ downloadBtn.onclick = () => {
             body { font-family: sans-serif; text-align: center; background: #f0f4f8; padding: 20px; }
             .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
             .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-            img { width: 100%; height: 150px; object-fit: cover; border-radius: 10px; }
+            img { width: 100%; height: 200px; object-fit: contain; background: #fafafa; border-radius: 10px; }
             button { width: 100%; padding: 10px; background: #2196f3; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; font-weight: bold; }
         </style>
     </head>
