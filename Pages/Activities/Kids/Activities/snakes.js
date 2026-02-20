@@ -1,140 +1,99 @@
-const canvas = document.getElementById("board");
-const ctx = canvas.getContext("2d");
-
+const board = document.getElementById("board");
 const rollBtn = document.getElementById("rollBtn");
+const diceResult = document.getElementById("diceResult");
 const questionBox = document.getElementById("questionBox");
 const questionText = document.getElementById("questionText");
 const answerInput = document.getElementById("answerInput");
 const submitAnswer = document.getElementById("submitAnswer");
+const statusText = document.getElementById("status");
 
-const diceSound = document.getElementById("diceSound");
-const correctSound = document.getElementById("correctSound");
-const snakeSound = document.getElementById("snakeSound");
-
-const p1PosText = document.getElementById("p1Pos");
-const p2PosText = document.getElementById("p2Pos");
-const currentPlayerText = document.getElementById("currentPlayer");
-
-let currentPlayer = 1;
-let positions = {1: 0, 2: 0};
+const totalSquares = 30;
+let playerPosition = 1;
 let diceValue = 0;
 
-const snakes = {16: 6, 48: 30, 62: 19, 88: 24, 95: 56};
-const ladders = {2: 38, 7: 14, 15: 26, 21: 42, 28: 84};
+// Grammar questions
+const questions = [
+    { q: "Fill in: She ____ (go) to school yesterday.", a: "went" },
+    { q: "Fill in: They ____ (play) football now.", a: "are playing" },
+    { q: "Fill in: I have ____ (eat) breakfast.", a: "eaten" },
+    { q: "Fill in: He ____ (be) happy.", a: "is" }
+];
 
-const questions = {
-  past: [
-    {q: "Go → ?", a: "went"},
-    {q: "Eat → ?", a: "ate"},
-    {q: "See → ?", a: "saw"}
-  ],
-  present: [
-    {q: "He (go) to school.", a: "goes"},
-    {q: "She (eat) apples.", a: "eats"},
-    {q: "They (play) football.", a: "play"}
-  ],
-  articles: [
-    {q: "___ apple", a: "an"},
-    {q: "___ sun", a: "the"},
-    {q: "___ car", a: "a"}
-  ]
-};
+// Snakes and ladders
+const snakes = { 14: 7, 25: 10 };
+const ladders = { 3: 11, 8: 18 };
 
-function drawBoard() {
-  const size = 50;
-  for (let row = 0; row < 10; row++) {
-    for (let col = 0; col < 10; col++) {
-      let x = col * size;
-      let y = row * size;
-      ctx.fillStyle = (row + col) % 2 === 0 ? "#f9c74f" : "#90be6d";
-      ctx.fillRect(x, y, size, size);
-      ctx.strokeRect(x, y, size, size);
-    }
-  }
+// Build board
+for (let i = totalSquares; i >= 1; i--) {
+    const square = document.createElement("div");
+    square.classList.add("square");
+    square.id = "square-" + i;
+    square.textContent = i;
+    board.appendChild(square);
 }
 
-function drawPlayer(position, color) {
-  if (position === 0) return;
-  const size = 50;
-  let row = 9 - Math.floor((position - 1) / 10);
-  let col = (position - 1) % 10;
-  if (Math.floor((position - 1) / 10) % 2 === 1) {
-    col = 9 - col;
-  }
-  ctx.beginPath();
-  ctx.arc(col * size + 25, row * size + 25, 10, 0, 2 * Math.PI);
-  ctx.fillStyle = color;
-  ctx.fill();
+function updatePlayer() {
+    document.querySelectorAll(".player").forEach(p => p.remove());
+
+    const player = document.createElement("div");
+    player.classList.add("player");
+
+    const currentSquare = document.getElementById("square-" + playerPosition);
+    currentSquare.appendChild(player);
 }
 
-function updateBoard() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBoard();
-  drawPlayer(positions[1], "red");
-  drawPlayer(positions[2], "blue");
-}
-
-function rollDiceAnimation(callback) {
-  let rolls = 10;
-  let interval = setInterval(() => {
+function rollDice() {
     diceValue = Math.floor(Math.random() * 6) + 1;
-    rollBtn.textContent = "🎲 " + diceValue;
-    rolls--;
-    if (rolls === 0) {
-      clearInterval(interval);
-      callback();
-    }
-  }, 100);
-}
+    diceResult.textContent = "You rolled: " + diceValue;
 
-rollBtn.onclick = () => {
-  diceSound.play();
-  rollDiceAnimation(() => {
+    playerPosition += diceValue;
+
+    if (playerPosition > totalSquares) {
+        playerPosition = totalSquares;
+    }
+
     askQuestion();
-  });
-};
+}
 
 function askQuestion() {
-  const topic = document.getElementById("topicSelect").value;
-  const randomQ = questions[topic][Math.floor(Math.random() * questions[topic].length)];
-  questionText.textContent = randomQ.q;
-  questionBox.classList.remove("hidden");
+    const randomQ = questions[Math.floor(Math.random() * questions.length)];
+    questionText.textContent = randomQ.q;
+    questionBox.style.display = "block";
 
-  submitAnswer.onclick = () => {
-    if (answerInput.value.toLowerCase() === randomQ.a) {
-      correctSound.play();
-      movePlayer();
+    submitAnswer.onclick = function () {
+        if (answerInput.value.toLowerCase() === randomQ.a) {
+            statusText.textContent = "✅ Correct!";
+            checkSnakesAndLadders();
+        } else {
+            statusText.textContent = "❌ Wrong! Move back.";
+            playerPosition -= diceValue;
+        }
+
+        questionBox.style.display = "none";
+        answerInput.value = "";
+        updatePlayer();
+        checkWin();
+    };
+}
+
+function checkSnakesAndLadders() {
+    if (snakes[playerPosition]) {
+        playerPosition = snakes[playerPosition];
+        statusText.textContent += " 🐍 Snake!";
     }
-    questionBox.classList.add("hidden");
-    answerInput.value = "";
-  };
+    if (ladders[playerPosition]) {
+        playerPosition = ladders[playerPosition];
+        statusText.textContent += " 🪜 Ladder!";
+    }
 }
 
-function movePlayer() {
-  positions[currentPlayer] += diceValue;
-  if (positions[currentPlayer] > 100) positions[currentPlayer] = 100;
-
-  if (snakes[positions[currentPlayer]]) {
-    snakeSound.play();
-    positions[currentPlayer] = snakes[positions[currentPlayer]];
-  }
-
-  if (ladders[positions[currentPlayer]]) {
-    positions[currentPlayer] = ladders[positions[currentPlayer]];
-  }
-
-  updateBoard();
-  p1PosText.textContent = positions[1];
-  p2PosText.textContent = positions[2];
-
-  if (positions[currentPlayer] === 100) {
-    alert("🎉 Player " + currentPlayer + " Wins!");
-    positions = {1: 0, 2: 0};
-  }
-
-  currentPlayer = currentPlayer === 1 ? 2 : 1;
-  currentPlayerText.textContent = "Player " + currentPlayer;
+function checkWin() {
+    if (playerPosition === totalSquares) {
+        statusText.textContent = "🎉 You Win!";
+        rollBtn.disabled = true;
+    }
 }
 
-drawBoard();
-updateBoard();
+rollBtn.addEventListener("click", rollDice);
+
+updatePlayer();
