@@ -37,7 +37,7 @@ async function loadAndDisplay() {
 }
 
 // 4. Display Logic
-// 4. Corrected Display Logic
+// 4. Fixed Display Logic
 function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
     const countDisplay = document.getElementById("resultCount");
@@ -51,7 +51,7 @@ function displayResources(filteredData) {
         return;
     }
 
-    // Get unique topics for the accordion headers
+    // Get unique topics for headers
     const topics = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))];
 
     topics.forEach(topic => {
@@ -66,8 +66,9 @@ function displayResources(filteredData) {
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => {
+                    // Logic moved INSIDE the map so 'res' is correctly defined
                     const favCount = res.favoritesCount || 0;
-                    const feedbackCount = (res.feedback && res.feedback.length) || 0;
+                    const feedback = res.feedback || [];
                     const teacherDisplay = res.teacher || res.tags || "Staff";
                     
                     return `
@@ -78,7 +79,7 @@ function displayResources(filteredData) {
 
                             <div class="card-actions" style="margin-bottom:10px;">
                                 <button onclick="handleFavorite('resources', '${res.id}')">⭐ ${favCount}</button>
-                                <button onclick="handleFeedback('resources', '${res.id}')">💬 Feedback (${feedbackCount})</button>
+                                <button onclick="handleFeedback('resources', '${res.id}')">💬 Feedback (${feedback.length})</button>
                             </div>
 
                             <div style="margin-top:10px;">
@@ -92,7 +93,7 @@ function displayResources(filteredData) {
             </div>
         `;
 
-        // Add the click listener to toggle the accordion
+        // Toggle accordion logic
         section.querySelector("h2").onclick = () => {
             const content = section.querySelector(".topic-content");
             content.style.display = content.style.display === "none" ? "block" : "none";
