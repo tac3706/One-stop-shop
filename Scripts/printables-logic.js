@@ -62,11 +62,15 @@ function displayPrintables(data) {
                 <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${feedbackList.length})</button>
             </div>
 
-            <div class="feedback-display" style="background: #f4f4f4; padding: 8px; border-radius: 4px; margin: 10px auto; max-width: 80%; font-size: 0.85em; text-align: left;">
-                ${feedbackList.length > 0 
-                    ? feedbackList.map(f => `<p style="border-bottom:1px dotted #ccc; margin:5px 0;"><b>${f.date}:</b> ${f.text}</p>`).join('') 
-                    : `<p style="color: #888; text-align:center;">No feedback yet.</p>`}
+            ${feedbackList.length > 0 ? `
+            <div class="feedback-display" style="background: #f4f4f4; padding: 8px; border-radius: 4px; margin: 10px auto; max-width: 80%; font-size: 0.85em; text-align: left; border: 1px solid #ddd;">
+                ${feedbackList.map(f => `
+                    <p style="border-bottom:1px dotted #ccc; margin:5px 0; padding-bottom:3px;">
+                        <b>${f.date}:</b> ${f.text}
+                    </p>
+                `).join('')}
             </div>
+    ` :     ''}
         `;
 
         // Button Click Listeners
