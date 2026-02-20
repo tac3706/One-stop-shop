@@ -65,14 +65,14 @@ function displayResources(filteredData) {
                 ${topicItems.map(res => {
                     const favCount = res.favoritesCount || 0;
                     const feedbackCount = res.feedback ? res.feedback.length : 0;
-                    const teacherDisplay = res.teacher || res.tags || "Staff";
+                    const langDisplay = res.language ? res.language.toUpperCase() : "N/A";
                     
                     return `
                         <div class="resource-item" data-id="${res.id}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
                             <h3>${res.title || "Untitled"}</h3>
-                            <p>👤 Teacher: ${teacherDisplay}</p>
+                            <p>👤 Teacher: ${res.teacher || "Staff"} | 🌐 Lang: ${langDisplay}</p>
                             <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
-                            
+
                             <div class="card-actions" style="margin-bottom:10px;">
                                 <button class="fav-btn">⭐ ${favCount}</button>
                                 <button class="feed-btn">💬 Feedback (${feedbackCount})</button>
@@ -80,7 +80,8 @@ function displayResources(filteredData) {
 
                             <div style="margin-top:10px;">
                                 <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
-                                <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
+                                <button class="edit-btn" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:4px; margin-left:5px;">Edit</button>
+                                <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:4px; margin-left:5px;">Delete</button>
                             </div>
                         </div>
                     `;
@@ -177,47 +178,46 @@ function applyFilters() {
     const age = document.getElementById("ageFilter")?.value.toLowerCase() || "";
     const teacherSearch = document.getElementById("teacherFilter")?.value.toLowerCase() || "";
     const langFilter = document.getElementById("languageFilter")?.value || "";
+    const favOnly = document.getElementById("favOnlyFilter")?.checked || false;
 
-// FIXED: One clean filter block including language
     const filtered = allResources.filter(res => {
-        const teacherText = String(res.teacher || res.tags || "").toLowerCase();
+        const teacherText = String(res.teacher || "").toLowerCase();
+        
         return (res.title || "").toLowerCase().includes(searchTerm) &&
                (!topic || String(res.topic || "").toLowerCase() === topic) &&
                (!age || String(res.ageGroup || "").toLowerCase() === age) &&
                (!teacherSearch || teacherText.includes(teacherSearch)) &&
-               (!langFilter || res.language === langFilter);
+               (!langFilter || res.language === langFilter) &&
+               (!favOnly || (res.favoritesCount > 0)); // Only show if favCount > 0
     });
     displayResources(filtered);
 }
 
 window.addEventListener("DOMContentLoaded", () => {
     loadAndDisplay();
-
-    // 1. Setup Filters (Added 'languageFilter' here)
-    ["searchInput", "topicFilter", "ageFilter", "teacherFilter", "languageFilter"].forEach(id => {
+    
+    // Listen for changes on ALL filter elements
+    ["searchInput", "topicFilter", "ageFilter", "teacherFilter", "languageFilter", "favOnlyFilter"].forEach(id => {
         const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener(id.includes("Filter") ? "change" : "input", applyFilters);
-        }
+        if (!el) return;
+        
+        const eventType = (el.type === "checkbox" || el.tagName === "SELECT") ? "change" : "input";
+        el.addEventListener(eventType, applyFilters);
     });
 
-    // 2. Setup Button Clicks (Favorite & Feedback)
-    const resourceList = document.getElementById("resourceList");
-    if (resourceList) {
-        resourceList.addEventListener("click", (e) => {
-            const item = e.target.closest(".resource-item");
-            if (!item) return;
-            
-            const docId = item.dataset.id;
+    // Setup Click Listeners for Favorite/Feedback buttons
+    document.getElementById("resourceList").addEventListener("click", (e) => {
+        const item = e.target.closest(".resource-item");
+        if (!item) return;
+        const docId = item.dataset.id;
 
-            if (e.target.classList.contains("fav-btn")) {
-                handleFavorite('resources', docId);
-            } else if (e.target.classList.contains("feed-btn")) {
-                handleFeedback('resources', docId);
-            }
-        });
-    }
-}); // End of DOMContentLoaded
+        if (e.target.classList.contains("fav-btn")) {
+            handleFavorite('resources', docId);
+        } else if (e.target.classList.contains("feed-btn")) {
+            handleFeedback('resources', docId);
+        }
+    });
+});
 
 // Function to handle Favoriting
 async function handleFavorite(col, id) {
