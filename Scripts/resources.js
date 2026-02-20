@@ -37,6 +37,7 @@ async function loadAndDisplay() {
 }
 
 // 4. Display Logic
+// 4. Corrected Display Logic
 function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
     const countDisplay = document.getElementById("resultCount");
@@ -50,37 +51,35 @@ function displayResources(filteredData) {
         return;
     }
 
+    // Get unique topics for the accordion headers
     const topics = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))];
 
     topics.forEach(topic => {
         const topicItems = filteredData.filter(res => String(res.topic || "general").toLowerCase() === topic);
         const section = document.createElement("div");
-        const favCount = res.favoritesCount || 0;
-        const comments = res.comments || [];
         section.style.marginBottom = "15px";
 
-        card.innerHTML = `
-        <div class="card-actions">
-            <button onclick="toggleFavorite('printables', '${res.id}')">⭐ ${favCount}</button>
-            <button onclick="addComment('printables', '${res.id}')">💬 Feedback (${comments.length})</button>
-        </div>
-        <div class="comments-preview">
-            ${comments.slice(-2).map(c => `<p><small><b>${c.date}:</b> ${c.text}</small></p>`).join('')}
-        </div>
-        `;
-
+        // Create the Section/Accordion HTML
         section.innerHTML = `
             <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px; text-align:center;">
                 ▶ ${topic.toUpperCase()} (${topicItems.length})
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => {
+                    const favCount = res.favoritesCount || 0;
+                    const feedbackCount = (res.feedback && res.feedback.length) || 0;
                     const teacherDisplay = res.teacher || res.tags || "Staff";
+                    
                     return `
                         <div class="resource-item" data-id="${res.id}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
                             <h3>${res.title || "Untitled"}</h3>
                             <p>👤 Teacher: ${teacherDisplay}</p>
                             <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
+
+                            <div class="card-actions" style="margin-bottom:10px;">
+                                <button onclick="handleFavorite('resources', '${res.id}')">⭐ ${favCount}</button>
+                                <button onclick="handleFeedback('resources', '${res.id}')">💬 Feedback (${feedbackCount})</button>
+                            </div>
 
                             <div style="margin-top:10px;">
                                 <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
@@ -93,6 +92,7 @@ function displayResources(filteredData) {
             </div>
         `;
 
+        // Add the click listener to toggle the accordion
         section.querySelector("h2").onclick = () => {
             const content = section.querySelector(".topic-content");
             content.style.display = content.style.display === "none" ? "block" : "none";
