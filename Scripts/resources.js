@@ -64,7 +64,7 @@ function displayResources(filteredData) {
             <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => {
                     const favCount = res.favoritesCount || 0;
-                    const feedbackCount = res.feedback ? res.feedback.length : 0;
+                    const feedback = res.feedback || []; // Use 'feedback' to match handleFeedback function
                     const langDisplay = res.language ? res.language.toUpperCase() : "N/A";
                     
                     return `
@@ -75,7 +75,14 @@ function displayResources(filteredData) {
 
                             <div class="card-actions" style="margin-bottom:10px;">
                                 <button class="fav-btn">⭐ ${favCount}</button>
-                                <button class="feed-btn">💬 Feedback (${feedbackCount})</button>
+                                <button class="feed-btn">💬 Feedback (${feedback.length})</button>
+                            </div>
+
+                            <div class="feedback-list" style="background: #f9f9f9; padding: 10px; border-radius: 5px; margin: 10px auto; max-width: 80%; text-align: left; font-size: 0.9em;">
+                                ${feedback.length > 0 
+                                    ? feedback.map(f => `<p style="border-bottom: 1px dotted #ccc; padding: 5px 0;"><b>${f.date}:</b> ${f.text}</p>`).join('') 
+                                    : `<p style="color: #999; text-align: center;">No feedback yet.</p>`
+                                }
                             </div>
 
                             <div style="margin-top:10px;">
