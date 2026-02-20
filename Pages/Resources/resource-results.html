@@ -23,14 +23,13 @@
 
         <div class="filter-controls">
             <input type="text" id="searchInput" placeholder="Search resources...">
-            
-            <div id="favoritesSection">
-                <h2>⭐️ My Saved Favorites</h2>
-                <div id="favoritesList"></div>
-            </div>
 
-            <select id="languageSort" onchange="applyFilters()">
-                <option value="">Sort by Language</option>
+            <label style="margin-left: 10px; font-weight: bold;">
+                <input type="checkbox" id="favOnlyFilter"> ⭐ Favorites Only
+            </label>
+
+            <select id="languageFilter">
+                <option value="">All Languages</option>
                 <option value="english">English</option>
                 <option value="german">German</option>
                 <option value="spanish">Spanish</option>
