@@ -58,12 +58,6 @@
             <label>Teacher Name:</label>
             <input type="text" id="teacherName" placeholder="Your Name" style="width:100%; margin-bottom:20px;">
 
-            <label>Resource Category:</label>
-            <select id="resourceCategory" style="width:100%; margin-bottom:10px;">
-                <option value="file">📄 Printable File (PDF/Docs)</option>
-                <option value="link">🎥 YouTube or External Link</option>
-            </select>
-
             <label>Material Type:</label>
             <select id="fileType" style="width:100%; margin-bottom:10px;">
                 <option value="">All Types</option>
@@ -74,6 +68,12 @@
                 <option value="video">Video</option>
                 <option value="image">Infographic</option>
                 <option value="PowerPoint">PowerPoint</option>
+            </select>
+
+            <label>Resource Category:</label>
+            <select id="resourceCategory" style="width:100%; margin-bottom:10px;">
+                <option value="file">📄 Printable File (PDF/Docs)</option>
+                <option value="link">🎥 YouTube or External Link</option>
             </select>
 
             <div id="fileUploadSection">
@@ -117,8 +117,6 @@
         const fileSection = document.getElementById('fileUploadSection');
         const linkSection = document.getElementById('linkUploadSection');
 
-        const language = document.getElementById('fileLanguage').value;
-
         // Update both addDoc sections (for 'printables' and 'resources') to include:
         await addDoc(collection(db, "printables"), {
             title, topic, teacher, type, ageGroup: age, language, // Added language here
@@ -128,19 +126,29 @@
         // 4. Toggle visibility based on category choice
         categorySelect.addEventListener('change', (e) => {
             const isLink = e.target.value === 'link';
+            const fileTypeDropdown = document.getElementById('fileType');
+            
+            // Toggle input sections
             fileSection.style.display = isLink ? 'none' : 'block';
             linkSection.style.display = isLink ? 'block' : 'none';
+
+            // Automatically set Material Type to 'website' if Link is chosen
+            if (isLink) {
+                fileTypeDropdown.value = 'website';
+            } else {
+                fileTypeDropdown.value = 'PDF'; // Default back to PDF for files
+            }
         });
 
         // 5. Unified Upload Logic
         uploadBtn.addEventListener('click', async () => {
-            const language = document.getElementById('fileLanguage').value;
             const category = categorySelect.value;
             const title = document.getElementById('fileTitle').value;
             const topic = document.getElementById('fileTopic').value;
             const teacher = document.getElementById('teacherName').value;
             const type = document.getElementById('fileType').value;
             const age = document.getElementById('fileAge').value;
+            const language = document.getElementById('fileLanguage').value;
 
             if (!title || !teacher) {
                 alert("Please fill in the title and your name!");
@@ -173,9 +181,11 @@
                     if (!linkUrl) throw new Error("Please paste a URL.");
 
                     // Save to 'resources' collection for your YouTube library
+                    // FIXED: Using linkUrl instead of downloadURL and removing storagePath
                     await addDoc(collection(db, "resources"), {
-                        title, topic, teacher, type, ageGroup: age, language: language, favoritesCount: 0, feedback: [],
-                        url: downloadURL, storagePath, createdAt: new Date()
+                        title, topic, teacher, type, ageGroup: age, language,
+                        favoritesCount: 0, feedback: [],
+                        url: linkUrl, createdAt: new Date()
                     });
                 }
 
