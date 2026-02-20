@@ -84,14 +84,35 @@ input[type="text"], input[type="file"] {
     gap: 10px;
 }
 
+/* Target both the button and the link by their shared class */
 .download-btn {
+    /* 1. Force them to behave like the same type of box */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box; /* This ensures padding doesn't grow the button */
+
+    /* 2. Visual Styles */
     background-color: #2196f3;
-    color: white;
-    border: none;
-    padding: 10px 20px;
+    color: white !important; /* Forces link text to be white */
+    text-decoration: none;   /* Removes underline from the link */
+    
+    /* 3. Matching Dimensions */
+    height: 45px;            /* Fixes the height so they are identical */
+    padding: 0 20px;
+    border: none;            /* Removes default button borders */
     border-radius: 8px;
+    
+    /* 4. Text Styles */
+    font-family: Arial, sans-serif;
+    font-size: 16px;
     font-weight: bold;
     cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.download-btn:hover {
+    background-color: #1976d2;
 }
 
 .flashcard-display-grid {
