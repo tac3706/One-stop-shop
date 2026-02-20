@@ -100,7 +100,7 @@ downloadBtn.onclick = () => {
     <!DOCTYPE html>
     <html>
     <head>
-        <title>My Flashcards</title>
+        <meta charset="UTF-8">  <title>My Flashcards</title>
         <style>
             body { font-family: sans-serif; text-align: center; background: #f0f4f8; padding: 20px; }
             .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
