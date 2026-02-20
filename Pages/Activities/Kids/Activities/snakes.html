@@ -1,26 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Grammar Snakes & Ladders</title>
-    <link rel="stylesheet" href="snakes.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grammar Snakes & Ladders</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<h1>Grammar Snakes & Ladders 🐍</h1>
+<h1>🐍 Grammar Snakes & Ladders 🎲</h1>
 
-<div class="board" id="board"></div>
-
-<button id="rollBtn">🎲 Roll Dice</button>
-<p id="diceResult"></p>
-
-<div id="questionBox" class="question-box" style="display:none;">
-    <p id="questionText"></p>
-    <input type="text" id="answerInput">
-    <button id="submitAnswer">Submit</button>
+<div class="controls">
+  <select id="topicSelect">
+    <option value="past">Past Tense</option>
+    <option value="present">Present Tense</option>
+    <option value="articles">Articles</option>
+  </select>
+  <button id="rollBtn">🎲 Roll Dice</button>
 </div>
 
-<p id="status"></p>
+<div class="game-container">
+  <canvas id="board" width="500" height="500"></canvas>
+  <div id="questionBox" class="hidden">
+    <p id="questionText"></p>
+    <input type="text" id="answerInput" />
+    <button id="submitAnswer">Submit</button>
+  </div>
+</div>
 
-<script src="snakes.js"></script>
+<div class="scoreboard">
+  <p>Player 1 Position: <span id="p1Pos">0</span></p>
+  <p>Player 2 Position: <span id="p2Pos">0</span></p>
+  <p>Current Turn: <span id="currentPlayer">Player 1</span></p>
+</div>
+
+<audio id="diceSound" src="https://assets.mixkit.co/sfx/preview/mixkit-dice-rolling-1996.mp3"></audio>
+<audio id="correctSound" src="https://assets.mixkit.co/sfx/preview/mixkit-game-level-completed-2059.mp3"></audio>
+<audio id="snakeSound" src="https://assets.mixkit.co/sfx/preview/mixkit-ominous-drums-227.mp3"></audio>
+
+<script src="script.js"></script>
 </body>
 </html>
