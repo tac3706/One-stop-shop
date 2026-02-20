@@ -73,9 +73,9 @@ function displayResources(filteredData) {
                             <p>👤 Teacher: ${res.teacher || "Staff"} | 🌐 Lang: ${langDisplay}</p>
                             <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
 
-                            <div class="card-actions" style="margin-top:10px;">
-                                <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${favCount}</button>
-                                <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${feedbackList.length})</button>
+                            <div class="card-actions" style="margin-bottom:10px;">
+                                <button class="fav-btn">⭐ ${favCount}</button>
+                                <button class="feed-btn">💬 Feedback (${feedback.length})</button>
                             </div>
 
                             ${feedbackList.length > 0 ? `
