@@ -21,6 +21,12 @@
         
         <div id="uploadForm" class="explanation-box" style="text-align: left;">
 
+            <label>Resource Category:</label>
+            <select id="resourceCategory" style="width:100%; margin-bottom:10px;">
+                <option value="file">📄 Printable File (PDF/Docs)</option>
+                <option value="link">🎥 YouTube or External Link</option>
+            </select>
+
             <label>Resource Title:</label>
             <input type="text" id="fileTitle" placeholder="e.g. Irregular Verbs List" style="width:100%; margin-bottom:10px;">
 
@@ -68,12 +74,6 @@
                 <option value="video">Video</option>
                 <option value="image">Infographic</option>
                 <option value="PowerPoint">PowerPoint</option>
-            </select>
-
-            <label>Resource Category:</label>
-            <select id="resourceCategory" style="width:100%; margin-bottom:10px;">
-                <option value="file">📄 Printable File (PDF/Docs)</option>
-                <option value="link">🎥 YouTube or External Link</option>
             </select>
 
             <div id="fileUploadSection">
