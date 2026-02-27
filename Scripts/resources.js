@@ -127,11 +127,14 @@ const card = e.target.closest(".resource-item");
     if (card.querySelector(".edit-panel")) return;
 
     const docId = card.dataset.id;
+    // FIND THE ITEM SAFELY
     const item = allResources.find(r => r.id === docId);
+    
+    if (!item) {
+        return alert("Error: Could not find resource data. Try refreshing the page.");
+    }
 
-    // Fields we handle with specific UI (datalists/inputs)
     const standardFields = ['title', 'teacher', 'topic', 'ageGroup', 'language', 'url'];
-    // Fields we don't want to edit (IDs, timestamps, feedback arrays)
     const hiddenFields = ['id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath'];
 
     const panel = document.createElement("div");
@@ -140,23 +143,20 @@ const card = e.target.closest(".resource-item");
 
     let panelHTML = `<strong>Edit Resource:</strong><br>`;
 
-    // 1. Add Standard Inputs
-    panelHTML += `
-        <label>Title:</label><input type="text" class="edit-field" data-key="title" value="${item.title || ''}" style="width:90%; margin:5px 0;"><br>
-        <label>Teacher:</label><input type="text" class="edit-field" data-key="teacher" value="${item.teacher || ''}" style="width:90%; margin:5px 0;"><br>
-        <label>Topic:</label><input type="text" class="edit-field" data-key="topic" list="topicSuggestions" value="${item.topic || ''}" style="width:90%; margin:5px 0;"><br>
-        <label>Age:</label><input type="text" class="edit-field" data-key="ageGroup" list="ageSuggestions" value="${item.ageGroup || ''}" style="width:90%; margin:5px 0;"><br>
-        <label>Language:</label><input type="text" class="edit-field" data-key="language" list="langSuggestions" value="${item.language || ''}" style="width:90%; margin:5px 0;"><br>
-    `;
-
-    // 2. DYNAMICALLY ADD EXTRA FIELDS found in Firebase
+    // Loop through EVERY key present in the document to ensure old/unexpected fields show up
     Object.keys(item).forEach(key => {
-        if (!standardFields.includes(key) && !hiddenFields.includes(key)) {
-            panelHTML += `
-                <label>${key.charAt(0).toUpperCase() + key.slice(1)}:</label>
-                <input type="text" class="edit-field" data-key="${key}" value="${item[key]}" style="width:90%; margin:5px 0;"><br>
-            `;
-        }
+        if (hiddenFields.includes(key)) return;
+
+        const val = item[key] || "";
+        const isStandard = standardFields.includes(key);
+        const listAttr = key === 'topic' ? 'list="topicSuggestions"' : 
+                         key === 'ageGroup' ? 'list="ageSuggestions"' : 
+                         key === 'language' ? 'list="langSuggestions"' : '';
+
+        panelHTML += `
+            <label style="font-size:0.8em; color:gray;">${key.toUpperCase()}:</label><br>
+            <input type="text" class="edit-field" data-key="${key}" ${listAttr} value="${val}" style="width:90%; margin:5px 0;"><br>
+        `;
     });
 
     panelHTML += `
