@@ -16,7 +16,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 let allPrintables = [];
 
-// 1. Load Data
+// 1. Load Data & Build Filters
 async function loadPrintables() {
     const list = document.getElementById("printableList");
     if (!list) return;
@@ -24,10 +24,26 @@ async function loadPrintables() {
     try {
         const querySnapshot = await getDocs(collection(db, "printables"));
         allPrintables = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+
+        populateFilterDropdown("topicFilter", "topic");
+        populateFilterDropdown("ageFilter", "ageGroup");
+        populateFilterDropdown("languageFilter", "language");
+
         applyPrintableFilters();
     } catch (error) {
         list.innerHTML = "<p>Error loading library.</p>";
     }
+}
+
+function populateFilterDropdown(elementId, fieldName) {
+    const select = document.getElementById(elementId);
+    if (!select) return;
+    const uniqueValues = [...new Set(allPrintables.map(res => res[fieldName]?.trim().toLowerCase()).filter(Boolean))].sort();
+    const originalLabel = select.options[0].text;
+    select.innerHTML = `<option value="">${originalLabel}</option>`;
+    uniqueValues.forEach(val => {
+        select.innerHTML += `<option value="${val}">${val.charAt(0).toUpperCase() + val.slice(1)}</option>`;
+    });
 }
 
 // 2. Display Data
@@ -38,12 +54,12 @@ function displayPrintables(data) {
 
     data.forEach(res => {
         const teacherDisplay = res.teacher || "Staff";
-        const favCount = res.favoritesCount || 0;
         const feedbackList = res.feedback || [];
         const langDisplay = res.language ? res.language.toUpperCase() : "N/A";
 
         const card = document.createElement("div");
         card.className = "resource-item";
+        card.dataset.id = res.id;
         card.style = "margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;";
 
         card.innerHTML = `
@@ -53,62 +69,41 @@ function displayPrintables(data) {
             
             <div style="margin-top:10px;">
                 <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">📥 Download</a>
-                <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
+                <button class="edit-btn" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
                 <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
             </div>
 
             <div class="card-actions" style="margin-top:10px;">
-                <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${favCount}</button>
+                <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${res.favoritesCount || 0}</button>
                 <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${feedbackList.length})</button>
             </div>
-
-            ${feedbackList.length > 0 ? `
-            <div class="feedback-display" style="background: #f4f4f4; padding: 8px; border-radius: 4px; margin: 10px auto; max-width: 80%; font-size: 0.85em; text-align: center; border: 1px solid #ddd;">
-                ${feedbackList.map(f => `
-                    <p style="border-bottom:1px dotted #ccc; margin:5px 0; padding-bottom:3px;">
-                        <b>${f.date}:</b> ${f.text}
-                    </p>
-                `).join('')}
-            </div>
-    ` :     ''}
         `;
 
-        // Button Click Listeners
         card.querySelector('.fav-action-btn').onclick = () => handleFavorite('printables', res.id);
         card.querySelector('.feed-action-btn').onclick = () => handleFeedback('printables', res.id);
 
-        // Edit Button Logic
         card.querySelector('.edit-btn').onclick = () => {
-            const password = prompt("Enter the admin password to edit:");
-            if (password !== "Go3706") return alert("Incorrect password.");
-            
+            if (prompt("Admin password:") !== "Go3706") return alert("Denied.");
             if (card.querySelector(".edit-panel")) return;
             const panel = document.createElement("div");
             panel.className = "edit-panel";
-            panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px;";
+            panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px;";
             panel.innerHTML = `
-                <input type="text" class="edit-title" value="${res.title}" style="width:90%; margin:5px 0;"><br>
-                <input type="text" class="edit-teacher" value="${teacherDisplay}" style="width:90%; margin:5px 0;"><br>
-                <select class="edit-topic" style="width:90%; margin:5px 0;">
-                    <option value="grammar">Grammar</option><option value="vocabulary">Vocabulary</option>
-                    <option value="reading">Reading</option><option value="writing">Writing</option>
-                </select><br>
+                Title: <input type="text" class="edit-title" value="${res.title}" style="width:90%; margin:5px 0;"><br>
+                Teacher: <input type="text" class="edit-teacher" value="${teacherDisplay}" style="width:90%; margin:5px 0;"><br>
+                Topic: <input type="text" class="edit-topic" value="${res.topic || ""}" style="width:90%; margin:5px 0;"><br>
+                Age: <input type="text" class="edit-age" value="${res.ageGroup || ""}" style="width:90%; margin:5px 0;"><br>
+                Lang: <input type="text" class="edit-lang" value="${res.language || ""}" style="width:90%; margin:5px 0;"><br>
                 <button class="save-btn" style="background:green; color:white; padding:5px 15px; margin-top:10px; border-radius:4px;">Save</button>
                 <button class="cancel-btn" style="background:#888; color:white; padding:5px 15px; border-radius:4px;">Cancel</button>
             `;
             card.appendChild(panel);
         };
 
-        // Delete Button Logic
         card.querySelector('.delete-btn').onclick = async () => {
-            const password = prompt("Enter the admin password to delete:");
-            if (password === "Go3706") {
-                if (confirm("Are you sure? This cannot be undone.")) {
-                    await deleteDoc(doc(db, "printables", res.id));
-                    loadPrintables();
-                }
-            } else if (password !== null) {
-                alert("Incorrect password. Deletion denied.");
+            if (prompt("Admin password:") === "Go3706" && confirm("Delete?")) {
+                await deleteDoc(doc(db, "printables", res.id));
+                loadPrintables();
             }
         };
 
@@ -120,21 +115,19 @@ function displayPrintables(data) {
 document.addEventListener("click", async (e) => {
     if (e.target.classList.contains("save-btn")) {
         const card = e.target.closest(".resource-item");
-        const docId = card.querySelector(".edit-btn").dataset.id;
+        const docId = card.dataset.id;
         try {
             await updateDoc(doc(db, "printables", docId), {
-                title: card.querySelector(".edit-title").value,
-                teacher: card.querySelector(".edit-teacher").value,
-                topic: card.querySelector(".edit-topic").value
+                title: card.querySelector(".edit-title").value.trim(),
+                teacher: card.querySelector(".edit-teacher").value.trim(),
+                topic: card.querySelector(".edit-topic").value.trim().toLowerCase(),
+                ageGroup: card.querySelector(".edit-age").value.trim().toLowerCase(),
+                language: card.querySelector(".edit-lang").value.trim().toLowerCase()
             });
             loadPrintables();
-        } catch (err) { 
-            alert("Error saving: " + err.message); 
-        }
+        } catch (err) { alert("Error: " + err.message); }
     }
-    if (e.target.classList.contains("cancel-btn")) {
-        e.target.closest(".edit-panel")?.remove();
-    }
+    if (e.target.classList.contains("cancel-btn")) e.target.closest(".edit-panel")?.remove();
 });
 
 // 4. Filtering Logic
@@ -147,47 +140,34 @@ function applyPrintableFilters() {
     const favOnly = document.getElementById("favOnlyFilter")?.checked || false;
 
     const filtered = allPrintables.filter(res => {
-        const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
-        const matchesTopic = !topic || String(res.topic || "").toLowerCase() === topic;
-        const matchesAge = !age || String(res.ageGroup || "").toLowerCase() === age;
-        const matchesTeacher = !teacherSearch || String(res.teacher || "").toLowerCase().includes(teacherSearch);
-        const matchesLang = !langFilter || res.language === langFilter;
-        const matchesFav = !favOnly || (res.favoritesCount > 0);
-
-        return matchesSearch && matchesTopic && matchesAge && matchesTeacher && matchesLang && matchesFav;
+        return (res.title || "").toLowerCase().includes(searchTerm) &&
+               (!topic || String(res.topic || "").toLowerCase() === topic) &&
+               (!age || String(res.ageGroup || "").toLowerCase() === age) &&
+               (!teacherSearch || String(res.teacher || "").toLowerCase().includes(teacherSearch)) &&
+               (!langFilter || String(res.language || "").toLowerCase() === langFilter) &&
+               (!favOnly || (res.favoritesCount > 0));
     });
-
     displayPrintables(filtered);
 }
 
-// 5. Setup Listeners
 window.addEventListener("DOMContentLoaded", () => {
     loadPrintables();
-    const filterIds = ["searchInput", "topicFilter", "ageFilter", "teacherFilter", "languageFilter", "favOnlyFilter"];
-    filterIds.forEach(id => {
+    ["searchInput", "topicFilter", "ageFilter", "teacherFilter", "languageFilter", "favOnlyFilter"].forEach(id => {
         const el = document.getElementById(id);
-        if (el) {
-            const eventType = (el.type === "checkbox" || el.tagName === "SELECT") ? "change" : "input";
-            el.addEventListener(eventType, applyPrintableFilters);
-        }
+        if (el) el.addEventListener(el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input", applyPrintableFilters);
     });
 });
 
-// 6. Interactive Helpers
 async function handleFavorite(col, id) {
-    const docRef = doc(db, col, id);
-    await updateDoc(docRef, { favoritesCount: increment(1) });
-    alert("⭐️ Added to favorites!");
+    await updateDoc(doc(db, col, id), { favoritesCount: increment(1) });
     loadPrintables(); 
 }
 
 async function handleFeedback(col, id) {
-    const text = prompt("Enter your feedback:");
+    const text = prompt("Enter feedback:");
     if(!text) return;
-    const docRef = doc(db, col, id);
-    await updateDoc(docRef, {
+    await updateDoc(doc(db, col, id), {
         feedback: arrayUnion({ text, date: new Date().toLocaleDateString() })
     });
-    alert("✅ Feedback added!");
     loadPrintables(); 
 }
