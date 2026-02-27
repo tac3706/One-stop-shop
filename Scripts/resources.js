@@ -131,6 +131,8 @@ const card = e.target.closest(".resource-item");
     const item = allResources.find(r => r.id === docId);
     
     if (!item) {
+// Log the IDs to the console to help you debug what's missing
+        console.log("Searching for:", docId, "Available IDs:", allResources.map(r => r.id));
         return alert("Error: Could not find resource data. Try refreshing the page.");
     }
 
