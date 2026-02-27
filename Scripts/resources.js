@@ -1,10 +1,8 @@
-// 1. Imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
     getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, arrayUnion, increment 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 2. Firebase Config
 const firebaseConfig = {
     apiKey: "AIzaSyCVNUfj11PBHmjoPmDtudky9z6MHAdCsLw",
     authDomain: "one-stop-shop-5e668.firebaseapp.com",
@@ -19,7 +17,7 @@ const db = getFirestore(app);
 
 let allResources = [];
 
-// 3. Load Data
+// 3. Load Data & Dynamically Build Filters
 async function loadAndDisplay() {
     const list = document.getElementById("resourceList");
     if (!list) return;
@@ -28,11 +26,33 @@ async function loadAndDisplay() {
     try {
         const querySnapshot = await getDocs(collection(db, "resources"));
         allResources = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+
+        // Update dropdown filters automatically based on DB content
+        populateFilterDropdown("topicFilter", "topic");
+        populateFilterDropdown("ageFilter", "ageGroup");
+        populateFilterDropdown("languageFilter", "language");
+
         applyFilters();
     } catch (error) {
         console.error("Database error:", error);
         list.innerHTML = "<p>Error loading resources.</p>";
     }
+}
+
+// Helper to fill dropdowns with unique tags from the database
+function populateFilterDropdown(elementId, fieldName) {
+    const select = document.getElementById(elementId);
+    if (!select) return;
+    
+    const uniqueValues = [...new Set(allResources.map(res => res[fieldName]?.trim().toLowerCase()).filter(Boolean))].sort();
+    
+    const originalLabel = select.options[0].text; // Keep "All Topics", etc.
+    select.innerHTML = `<option value="">${originalLabel}</option>`;
+    
+    uniqueValues.forEach(val => {
+        const displayVal = val.charAt(0).toUpperCase() + val.slice(1);
+        select.innerHTML += `<option value="${val}">${displayVal}</option>`;
+    });
 }
 
 // 4. Display Logic
@@ -63,7 +83,7 @@ function displayResources(filteredData) {
             <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => {
                     const favCount = res.favoritesCount || 0;
-                    const feedbackList = res.feedback || []; // CHANGED: named it feedbackList to match logic below
+                    const feedbackList = res.feedback || [];
                     const langDisplay = res.language ? res.language.toUpperCase() : "N/A";
                     
                     return `
@@ -76,16 +96,6 @@ function displayResources(filteredData) {
                                 <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${favCount}</button>
                                 <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${feedbackList.length})</button>
                             </div>
-
-                            ${feedbackList.length > 0 ? `
-                                <div class="feedback-display" style="background: #f4f4f4; padding: 8px; border-radius: 4px; margin: 10px auto; max-width: 80%; font-size: 0.85em; text-align: center; border: 1px solid #ddd;">
-                                    ${feedbackList.map(f => `
-                                        <p style="border-bottom:1px dotted #ccc; margin:5px 0; padding-bottom:3px;">
-                                            <b>${f.date}:</b> ${f.text}
-                                        </p>
-                                    `).join('')}
-                                </div>
-                            ` : ''}
 
                             <div style="margin-top:10px;">
                                 <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
@@ -106,11 +116,11 @@ function displayResources(filteredData) {
     });
 }
 
-// 5. Shared Click Handler for Buttons
+// 5. Shared Click Handler
 document.addEventListener("click", async (e) => {
     // --- EDIT BUTTON ---
     if (e.target.classList.contains("edit-btn")) {
-        const password = prompt("Enter the admin password to edit this resource:");
+        const password = prompt("Admin password:");
         if (password !== "Go3706") return alert("Incorrect password.");
         
         const card = e.target.closest(".resource-item");
@@ -118,24 +128,19 @@ document.addEventListener("click", async (e) => {
 
         const docId = card.dataset.id;
         const item = allResources.find(r => r.id === docId);
-        const allowedTopics = ["grammar","vocabulary","reading","writing","speaking","listening","phonics","exam prep","business english","general"];
-        const allowedAges = ["children","teens","adults","all"];
 
         const panel = document.createElement("div");
         panel.className = "edit-panel";
-        panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px; text-align: center;";
+        panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; text-align: center;";
 
         panel.innerHTML = `
             <strong>Edit Resource:</strong><br>
-            <input type="text" class="edit-title" value="${item.title}" style="width:90%; margin:5px 0;"><br>
-            <input type="text" class="edit-teacher" value="${item.teacher || ""}" style="width:90%; margin:5px 0;"><br>
-            <select class="edit-topic" style="width:90%; margin:5px 0;">
-                ${allowedTopics.map(t => `<option value="${t}" ${t === (item.topic || "").toLowerCase() ? "selected" : ""}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join("")}
-            </select><br>
-            <select class="edit-age" style="width:90%; margin:5px 0;">
-                ${allowedAges.map(a => `<option value="${a}" ${a === (item.ageGroup || "").toLowerCase() ? "selected" : ""}>${a.charAt(0).toUpperCase() + a.slice(1)}</option>`).join("")}
-            </select><br>
-            <button class="save-btn" style="background:green; color:white; border:none; padding:8px 20px; margin-top:10px; cursor:pointer; border-radius:4px;">Save Changes</button>
+            Title: <input type="text" class="edit-title" value="${item.title}" style="width:90%; margin:5px 0;"><br>
+            Teacher: <input type="text" class="edit-teacher" value="${item.teacher || ""}" style="width:90%; margin:5px 0;"><br>
+            Topic: <input type="text" class="edit-topic" value="${item.topic || ""}" style="width:90%; margin:5px 0;"><br>
+            Age: <input type="text" class="edit-age" value="${item.ageGroup || ""}" style="width:90%; margin:5px 0;"><br>
+            Lang: <input type="text" class="edit-lang" value="${item.language || ""}" style="width:90%; margin:5px 0;"><br>
+            <button class="save-btn" style="background:green; color:white; border:none; padding:8px 20px; margin-top:10px; cursor:pointer; border-radius:4px;">Save</button>
             <button class="cancel-btn" style="background:#888; color:white; border:none; padding:8px 20px; margin-left:10px; cursor:pointer; border-radius:4px;">Cancel</button>
         `;
         card.appendChild(panel);
@@ -147,46 +152,30 @@ document.addEventListener("click", async (e) => {
         const docId = card.dataset.id;
         try {
             await updateDoc(doc(db, "resources", docId), {
-                title: card.querySelector(".edit-title").value,
-                teacher: card.querySelector(".edit-teacher").value,
-                topic: card.querySelector(".edit-topic").value,
-                ageGroup: card.querySelector(".edit-age").value
+                title: card.querySelector(".edit-title").value.trim(),
+                teacher: card.querySelector(".edit-teacher").value.trim(),
+                topic: card.querySelector(".edit-topic").value.trim().toLowerCase(),
+                ageGroup: card.querySelector(".edit-age").value.trim().toLowerCase(),
+                language: card.querySelector(".edit-lang").value.trim().toLowerCase()
             });
             loadAndDisplay();
-        } catch (err) { alert("Error saving: " + err.message); }
+        } catch (err) { alert("Error: " + err.message); }
     }
 
-    // --- CANCEL BUTTON ---
-    if (e.target.classList.contains("cancel-btn")) {
-        e.target.closest(".edit-panel")?.remove();
-    }
+    if (e.target.classList.contains("cancel-btn")) e.target.closest(".edit-panel")?.remove();
 
-    // --- DELETE BUTTON ---
     if (e.target.classList.contains("delete-btn")) {
         const docId = e.target.closest(".resource-item").dataset.id;
-        const password = prompt("Enter the admin password to delete:");
-        if (password === "Go3706") {
-            if (confirm("Delete this resource?")) {
-                await deleteDoc(doc(db, "resources", docId));
-                loadAndDisplay();
-            }
+        if (prompt("Admin password:") === "Go3706" && confirm("Delete?")) {
+            await deleteDoc(doc(db, "resources", docId));
+            loadAndDisplay();
         }
     }
 
-    // --- FAVORITE ACTION ---
-    if (e.target.classList.contains("fav-action-btn")) {
-        const docId = e.target.closest(".resource-item").dataset.id;
-        handleFavorite('resources', docId);
-    }
-
-    // --- FEEDBACK ACTION ---
-    if (e.target.classList.contains("feed-action-btn")) {
-        const docId = e.target.closest(".resource-item").dataset.id;
-        handleFeedback('resources', docId);
-    }
+    if (e.target.classList.contains("fav-action-btn")) handleFavorite('resources', e.target.closest(".resource-item").dataset.id);
+    if (e.target.classList.contains("feed-action-btn")) handleFeedback('resources', e.target.closest(".resource-item").dataset.id);
 });
 
-// 6. Filter Logic
 function applyFilters() {
     const searchTerm = document.getElementById("searchInput")?.value.toLowerCase() || "";
     const topic = document.getElementById("topicFilter")?.value.toLowerCase() || "";
@@ -196,12 +185,11 @@ function applyFilters() {
     const favOnly = document.getElementById("favOnlyFilter")?.checked || false;
 
     const filtered = allResources.filter(res => {
-        const teacherText = String(res.teacher || "").toLowerCase();
         return (res.title || "").toLowerCase().includes(searchTerm) &&
                (!topic || String(res.topic || "").toLowerCase() === topic) &&
                (!age || String(res.ageGroup || "").toLowerCase() === age) &&
-               (!teacherSearch || teacherText.includes(teacherSearch)) &&
-               (!langFilter || res.language === langFilter) &&
+               (!teacherSearch || String(res.teacher || "").toLowerCase().includes(teacherSearch)) &&
+               (!langFilter || String(res.language || "").toLowerCase() === langFilter) &&
                (!favOnly || (res.favoritesCount > 0));
     });
     displayResources(filtered);
@@ -211,26 +199,20 @@ window.addEventListener("DOMContentLoaded", () => {
     loadAndDisplay();
     ["searchInput", "topicFilter", "ageFilter", "teacherFilter", "languageFilter", "favOnlyFilter"].forEach(id => {
         const el = document.getElementById(id);
-        if (!el) return;
-        const eventType = (el.type === "checkbox" || el.tagName === "SELECT") ? "change" : "input";
-        el.addEventListener(eventType, applyFilters);
+        if (el) el.addEventListener(el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input", applyFilters);
     });
 });
 
 async function handleFavorite(col, id) {
-    const docRef = doc(db, col, id);
-    await updateDoc(docRef, { favoritesCount: increment(1) });
-    alert("⭐️ Added to favorites!");
+    await updateDoc(doc(db, col, id), { favoritesCount: increment(1) });
     loadAndDisplay();
 }
 
 async function handleFeedback(col, id) {
-    const text = prompt("Enter your feedback:");
+    const text = prompt("Enter feedback:");
     if(!text) return;
-    const docRef = doc(db, col, id);
-    await updateDoc(docRef, {
+    await updateDoc(doc(db, col, id), {
         feedback: arrayUnion({ text, date: new Date().toLocaleDateString() })
     });
-    alert("✅ Feedback added!");
     loadAndDisplay();
 }
