@@ -129,23 +129,30 @@ document.addEventListener("click", async (e) => {
 });
 
 // 3. Global listener for Save/Cancel inside Edit Panels
+// --- Replace all "document.addEventListener("click"..." blocks with this ONE version ---
 document.addEventListener("click", async (e) => {
+    // Handling the Dynamic Save Button
     if (e.target.classList.contains("save-btn")) {
         const card = e.target.closest(".resource-item");
-        const docId = card.dataset.id;
+        const docId = card.dataset.id; // Correctly pulls the ID from the card
+        const updatedData = {};
+        
+        // This collects values from EVERY input created in your edit panel
+        card.querySelectorAll(".edit-field").forEach(input => {
+            const key = input.getAttribute("data-key");
+            updatedData[key] = input.value.trim();
+        });
+
         try {
-            await updateDoc(doc(db, "printables", docId), {
-                title: card.querySelector(".edit-title").value.trim(),
-                teacher: card.querySelector(".edit-teacher").value.trim(),
-                topic: card.querySelector(".edit-topic").value,
-                ageGroup: card.querySelector(".edit-age").value,
-                language: card.querySelector(".edit-lang").value
-            });
+            await updateDoc(doc(db, "printables", docId), updatedData);
             alert("Updated successfully!");
-            loadPrintables();
-        } catch (err) { alert("Error saving: " + err.message); }
+            loadPrintables(); // Refresh the list
+        } catch (err) { 
+            alert("Error saving: " + err.message); 
+        }
     }
     
+    // Handling the Cancel Button
     if (e.target.classList.contains("cancel-btn")) {
         e.target.closest(".edit-panel")?.remove();
     }
