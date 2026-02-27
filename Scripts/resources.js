@@ -129,22 +129,39 @@ document.addEventListener("click", async (e) => {
         const docId = card.dataset.id;
         const item = allResources.find(r => r.id === docId);
 
-        const panel = document.createElement("div");
-        panel.className = "edit-panel";
-        panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; text-align: center;";
+// DYNAMIC TAG FETCHING:
+    // This looks at every item currently in your library and finds all unique topics and ages
+    const existingTopics = [...new Set(allResources.map(r => (r.topic || "").toLowerCase()))].filter(Boolean);
+    const existingAges = [...new Set(allResources.map(r => (r.ageGroup || "").toLowerCase()))].filter(Boolean);
 
-        panel.innerHTML = `
-            <strong>Edit Resource:</strong><br>
-            Title: <input type="text" class="edit-title" value="${item.title}" style="width:90%; margin:5px 0;"><br>
-            Teacher: <input type="text" class="edit-teacher" value="${item.teacher || ""}" style="width:90%; margin:5px 0;"><br>
-            Topic: <input type="text" class="edit-topic" value="${item.topic || ""}" style="width:90%; margin:5px 0;"><br>
-            Age: <input type="text" class="edit-age" value="${item.ageGroup || ""}" style="width:90%; margin:5px 0;"><br>
-            Lang: <input type="text" class="edit-lang" value="${item.language || ""}" style="width:90%; margin:5px 0;"><br>
-            <button class="save-btn" style="background:green; color:white; border:none; padding:8px 20px; margin-top:10px; cursor:pointer; border-radius:4px;">Save</button>
-            <button class="cancel-btn" style="background:#888; color:white; border:none; padding:8px 20px; margin-left:10px; cursor:pointer; border-radius:4px;">Cancel</button>
-        `;
-        card.appendChild(panel);
-    }
+    // Combine with your standard defaults just in case the DB is empty
+    const allowedTopics = [...new Set(["grammar", "vocabulary", "reading", "writing", "speaking", "listening", "phonics", "exam prep", "business english", "general", ...existingTopics])].sort();
+    const allowedAges = [...new Set(["children", "teens", "adults", "all", ...existingAges])].sort();
+
+    const panel = document.createElement("div");
+    panel.className = "edit-panel";
+    panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px; text-align: center;";
+
+    panel.innerHTML = `
+        <strong>Edit Resource:</strong><br>
+        <input type="text" class="edit-title" value="${item.title}" style="width:90%; margin:5px 0;"><br>
+        <input type="text" class="edit-teacher" value="${item.teacher || ""}" style="width:90%; margin:5px 0;"><br>
+        
+        <label>Topic:</label><br>
+        <select class="edit-topic" style="width:90%; margin:5px 0;">
+            ${allowedTopics.map(t => `<option value="${t}" ${t === (item.topic || "").toLowerCase() ? "selected" : ""}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join("")}
+        </select><br>
+        
+        <label>Age Group:</label><br>
+        <select class="edit-age" style="width:90%; margin:5px 0;">
+            ${allowedAges.map(a => `<option value="${a}" ${a === (item.ageGroup || "").toLowerCase() ? "selected" : ""}>${a.charAt(0).toUpperCase() + a.slice(1)}</option>`).join("")}
+        </select><br>
+        
+        <button class="save-btn" style="background:green; color:white; border:none; padding:8px 20px; margin-top:10px; cursor:pointer; border-radius:4px;">Save Changes</button>
+        <button class="cancel-btn" style="background:#888; color:white; border:none; padding:8px 20px; margin-left:10px; cursor:pointer; border-radius:4px;">Cancel</button>
+    `;
+    card.appendChild(panel);
+}
 
     // --- SAVE BUTTON ---
     if (e.target.classList.contains("save-btn")) {
