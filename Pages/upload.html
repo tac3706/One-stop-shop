@@ -20,82 +20,52 @@
         </div>
         
         <div id="uploadForm" class="explanation-box" style="text-align: left;">
-
             <label>Resource Category:</label>
             <select id="resourceCategory" style="width:100%; margin-bottom:10px;">
-                <option value="file">📄 Printable File (PDF/Docs)</option>
-                <option value="link">🎥 YouTube or External Link</option>
-            </select>
-
-            <label>Material Type:</label>
-            <select id="fileType" style="width:100%; margin-bottom:10px;">
-                <option value="PDF">PDF / Worksheet</option>
-                <option value="website">Website</option>
-                <option value="printable">Printable</option>
-                <option value="interactive">Interactive</option>
-                <option value="video">Video</option>
-                <option value="image">Infographic</option>
-                <option value="PowerPoint">PowerPoint</option>
+                <option value="external">YouTube / External Link</option>
+                <option value="printable">Printable (PDF/PowerPoint/Image)</option>
             </select>
 
             <label>Resource Title:</label>
-            <input type="text" id="fileTitle" placeholder="e.g. Irregular Verbs List" style="width:100%; margin-bottom:10px;">
+            <input type="text" id="fileTitle" placeholder="e.g. Present Perfect Worksheet" style="width:100%; margin-bottom:10px; padding: 8px;">
 
-            <label>Topic:</label>
-            <select id="fileTopic" style="width:100%; margin-bottom:10px;">
-                <option value="">All Topics</option>
-                <option value="grammar">Grammar</option>
-                <option value="vocabulary">Vocabulary</option>
-                <option value="reading">Reading</option>
-                <option value="writing">Writing</option>
-                <option value="speaking">Speaking</option>
-                <option value="listening">Listening</option>
-                <option value="phonics">Phonics</option>
-                <option value="exam prep">Exam Prep</option>
-                <option value="business english">Business English</option>
-                <option value="general">General</option>
-            </select>
+            <label>Topic / Subject:</label>
+            <input type="text" id="fileTopic" list="topicSuggestions" placeholder="e.g. Grammar, Business, Phonics" style="width:100%; margin-bottom:10px; padding: 8px;">
+            <datalist id="topicSuggestions"></datalist>
+
+            <label>Age Group:</label>
+            <input type="text" id="fileAge" list="ageSuggestions" placeholder="e.g. Adults, Teens, Children" style="width:100%; margin-bottom:10px; padding: 8px;">
+            <datalist id="ageSuggestions"></datalist>
+
+            <label>Teacher / Source:</label>
+            <input type="text" id="fileTeacher" placeholder="Your name or source website" style="width:100%; margin-bottom:10px; padding: 8px;">
 
             <label>Language:</label>
-            <select id="fileLanguage" style="width:100%; margin-bottom:10px;">
-                <option value="english">English</option>
-                <option value="german">German</option>
-                <option value="spanish">Spanish</option>
-                <option value="french">French</option>
-            </select>
+            <input type="text" id="fileLanguage" list="langSuggestions" placeholder="e.g. English, German, Spanish" style="width:100%; margin-bottom:10px; padding: 8px;">
+            <datalist id="langSuggestions"></datalist>
 
-            <label>Target Age Group:</label>
-            <select id="fileAge" style="width:100%; margin-bottom:10px;">
-                <option value="all">All Ages</option>
-                <option value="children">Children</option>
-                <option value="teens">Teens</option>
-                <option value="adults">Adults</option>
-            </select>
-
-            <label>Teacher Name:</label>
-            <input type="text" id="teacherName" placeholder="Your Name" style="width:100%; margin-bottom:20px;">
-
-            <div id="fileUploadSection">
-                <label>Select File (Max 5MB):</label>
-                <input type="file" id="filePicker" accept=".pdf,.doc,.docx,.png,.jpg" style="margin-bottom:10px;">
+            <div id="linkInputSection">
+                <label>External URL:</label>
+                <input type="url" id="externalUrl" placeholder="https://youtube.com/..." style="width:100%; margin-bottom:10px; padding: 8px;">
             </div>
 
-            <div id="linkUploadSection" style="display:none;">
-                <label>Paste Link (YouTube or Website):</label>
-                <input type="url" id="externalUrl" placeholder="https://www.youtube.com/watch?v=..." style="width:100%; margin-bottom:10px;">
+            <div id="fileInputSection" style="display:none;">
+                <label>Upload File:</label>
+                <input type="file" id="filePicker" style="width:100%; margin-bottom:10px;">
+                <small>Max size: 50MB (PDF, PPTX, JPG, PNG)</small>
             </div>
 
-            <button id="uploadBtn" style="width:100%; padding:10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                🚀 Add to Library
+            <button id="uploadBtn" style="width:100%; padding:12px; background-color:#28a745; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">
+                🚀 Upload to Library
             </button>
-            <p id="status" style="margin-top:10px; font-weight:bold;"></p>
+            <p id="status" style="margin-top:10px; text-align:center; font-weight:bold;"></p>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCVNUfj11PBHmjoPmDtudky9z6MHAdCsLw",
@@ -107,84 +77,81 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const storage = getStorage(app);
         const db = getFirestore(app);
+        const storage = getStorage(app);
 
-        const uploadBtn = document.getElementById('uploadBtn');
-        const status = document.getElementById('status');
+        // --- POPULATE SUGGESTIONS FROM DATABASE ---
+        async function populateSuggestions() {
+            try {
+                const resSnap = await getDocs(collection(db, "resources"));
+                const printSnap = await getDocs(collection(db, "printables"));
+                const allData = [...resSnap.docs, ...printSnap.docs].map(d => d.data());
+
+                const getUnique = (key) => [...new Set(allData.map(item => item[key]?.trim().toLowerCase()).filter(Boolean))].sort();
+
+                const topics = getUnique('topic');
+                const ages = getUnique('ageGroup');
+                const langs = getUnique('language'); // Added this
+
+                document.getElementById('topicSuggestions').innerHTML = topics.map(t => `<option value="${t.charAt(0).toUpperCase() + t.slice(1)}">`).join('');
+                document.getElementById('ageSuggestions').innerHTML = ages.map(a => `<option value="${a.charAt(0).toUpperCase() + a.slice(1)}">`).join('');
+                document.getElementById('langSuggestions').innerHTML = langs.map(l => `<option value="${l.charAt(0).toUpperCase() + l.slice(1)}">`).join(''); // Added this
+            } catch (e) { console.error("Suggestions error:", e); }
+        }
+        populateSuggestions();
+
+        // --- UI TOGGLE ---
         const categorySelect = document.getElementById('resourceCategory');
-        const fileSection = document.getElementById('fileUploadSection');
-        const linkSection = document.getElementById('linkUploadSection');
-        const fileTypeDropdown = document.getElementById('fileType');
-
-        // FIXED: Removed the stray addDoc that was here before.
-
-        // 1. Toggle visibility logic
-        categorySelect.addEventListener('change', (e) => {
-            const isLink = e.target.value === 'link';
-            
-            // Show/Hide sections
-            fileSection.style.display = isLink ? 'none' : 'block';
-            linkSection.style.display = isLink ? 'block' : 'none';
-
-            // Auto-switch Material Type
-            if (isLink) {
-                fileTypeDropdown.value = 'website';
-            } else {
-                fileTypeDropdown.value = 'PDF';
-            }
+        categorySelect.addEventListener('change', () => {
+            const isPrintable = categorySelect.value === 'printable';
+            document.getElementById('fileInputSection').style.display = isPrintable ? 'block' : 'none';
+            document.getElementById('linkInputSection').style.display = isPrintable ? 'none' : 'block';
         });
 
-        // 2. Upload Logic
+        // --- UPLOAD LOGIC ---
+        const uploadBtn = document.getElementById('uploadBtn');
         uploadBtn.addEventListener('click', async () => {
-            const category = categorySelect.value;
             const title = document.getElementById('fileTitle').value;
-            const topic = document.getElementById('fileTopic').value;
-            const teacher = document.getElementById('teacherName').value;
-            const type = fileTypeDropdown.value;
-            const age = document.getElementById('fileAge').value;
-            const language = document.getElementById('fileLanguage').value;
+            const topic = document.getElementById('fileTopic').value.trim().toLowerCase();
+            const age = document.getElementById('fileAge').value.trim().toLowerCase();
+            const teacher = document.getElementById('fileTeacher').value;
+            const language = document.getElementById('fileLanguage').value.trim().toLowerCase();
+            const status = document.getElementById('status');
 
-            if (!title || !teacher) {
-                alert("Please fill in the title and your name!");
-                return;
-            }
+            if (!title || !topic || !age) return alert("Please fill in Title, Topic, and Age.");
 
             uploadBtn.disabled = true;
-            status.innerText = "⏳ Processing... please wait.";
+            status.innerText = "⏳ Processing upload...";
 
             try {
-                if (category === 'file') {
+                if (categorySelect.value === 'printable') {
                     const file = document.getElementById('filePicker').files[0];
                     if (!file) throw new Error("Please select a file.");
-                    
+
                     const storagePath = `printables/${Date.now()}_${file.name}`;
                     const storageRef = ref(storage, storagePath);
                     const snapshot = await uploadBytes(storageRef, file);
                     const downloadURL = await getDownloadURL(snapshot.ref);
 
                     await addDoc(collection(db, "printables"), {
-                        title, topic, teacher, type, ageGroup: age, language,
-                        favoritesCount: 0, feedback: [],
-                        url: downloadURL, storagePath, createdAt: new Date()
+                        title, topic, teacher, ageGroup: age, language,
+                        url: downloadURL, storagePath, createdAt: new Date(),
+                        favoritesCount: 0, feedback: []
                     });
                 } else {
                     const linkUrl = document.getElementById('externalUrl').value;
                     if (!linkUrl) throw new Error("Please paste a URL.");
 
                     await addDoc(collection(db, "resources"), {
-                        title, topic, teacher, type, ageGroup: age, language,
-                        favoritesCount: 0, feedback: [],
-                        url: linkUrl, createdAt: new Date()
+                        title, topic, teacher, ageGroup: age, language,
+                        url: linkUrl, createdAt: new Date(),
+                        favoritesCount: 0, feedback: []
                     });
                 }
 
                 status.innerText = "✅ Success! Added to the library.";
-                document.getElementById('fileTitle').value = "";
-                document.getElementById('externalUrl').value = "";
-                
+                populateSuggestions(); // Refresh suggestions for next upload
             } catch (error) {
-                console.error(error);
                 status.innerText = "❌ Error: " + error.message;
             } finally {
                 uploadBtn.disabled = false;
