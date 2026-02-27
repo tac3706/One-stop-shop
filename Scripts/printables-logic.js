@@ -83,22 +83,29 @@ function displayPrintables(data) {
         card.querySelector('.feed-action-btn').onclick = () => handleFeedback('printables', res.id);
 
         card.querySelector('.edit-btn').onclick = () => {
-            if (prompt("Admin password:") !== "Go3706") return alert("Denied.");
-            if (card.querySelector(".edit-panel")) return;
-            const panel = document.createElement("div");
-            panel.className = "edit-panel";
-            panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px;";
-            panel.innerHTML = `
-                Title: <input type="text" class="edit-title" value="${res.title}" style="width:90%; margin:5px 0;"><br>
-                Teacher: <input type="text" class="edit-teacher" value="${teacherDisplay}" style="width:90%; margin:5px 0;"><br>
-                Topic: <input type="text" class="edit-topic" value="${res.topic || ""}" style="width:90%; margin:5px 0;"><br>
-                Age: <input type="text" class="edit-age" value="${res.ageGroup || ""}" style="width:90%; margin:5px 0;"><br>
-                Lang: <input type="text" class="edit-lang" value="${res.language || ""}" style="width:90%; margin:5px 0;"><br>
-                <button class="save-btn" style="background:green; color:white; padding:5px 15px; margin-top:10px; border-radius:4px;">Save</button>
-                <button class="cancel-btn" style="background:#888; color:white; padding:5px 15px; border-radius:4px;">Cancel</button>
-            `;
-            card.appendChild(panel);
-        };
+            const password = prompt("Enter the admin password to edit:");
+                if (password !== "Go3706") return alert("Incorrect password.");
+                
+                if (card.querySelector(".edit-panel")) return;
+
+                // DYNAMIC TAG FETCHING:
+                const existingTopics = [...new Set(allPrintables.map(p => (p.topic || "").toLowerCase()))].filter(Boolean);
+                const allowedTopics = [...new Set(["grammar", "vocabulary", "reading", "writing", ...existingTopics])].sort();
+
+                const panel = document.createElement("div");
+                panel.className = "edit-panel";
+                panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px;";
+                panel.innerHTML = `
+                    <input type="text" class="edit-title" value="${res.title}" style="width:90%; margin:5px 0;"><br>
+                    <input type="text" class="edit-teacher" value="${teacherDisplay}" style="width:90%; margin:5px 0;"><br>
+                    <select class="edit-topic" style="width:90%; margin:5px 0;">
+                        ${allowedTopics.map(t => `<option value="${t}" ${t === (res.topic || "").toLowerCase() ? "selected" : ""}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join("")}
+                    </select><br>
+                    <button class="save-btn" style="background:green; color:white; padding:5px 15px; margin-top:10px; border-radius:4px;">Save</button>
+                    <button class="cancel-btn" style="background:#888; color:white; padding:5px 15px; border-radius:4px;">Cancel</button>
+                `;
+                card.appendChild(panel);
+            };
 
         card.querySelector('.delete-btn').onclick = async () => {
             if (prompt("Admin password:") === "Go3706" && confirm("Delete?")) {
