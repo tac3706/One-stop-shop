@@ -182,8 +182,9 @@ if (e.target.classList.contains("save-btn")) {
         updatedData[key] = input.value.trim();
     });
 
-    try {
+try {
         await updateDoc(doc(db, "resources", docId), updatedData);
+        alert("Resource Updated!");
         loadAndDisplay();
     } catch (err) { alert("Error: " + err.message); }
 }
