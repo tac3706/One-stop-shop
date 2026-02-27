@@ -128,11 +128,11 @@ const card = e.target.closest(".resource-item");
 
     const docId = card.dataset.id;
     // FIND THE ITEM SAFELY
-    const item = allResources.find(r => r.id === docId);
+    const item = allResources.find(r => String(r.id) === String(docId));
     
     if (!item) {
-// Log the IDs to the console to help you debug what's missing
-        console.log("Searching for:", docId, "Available IDs:", allResources.map(r => r.id));
+        console.log("Searching for:", docId, "Type:", typeof docId);
+        console.log("Available IDs:", allResources.map(r => r.id));
         return alert("Error: Could not find resource data. Try refreshing the page.");
     }
 
