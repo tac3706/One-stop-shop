@@ -47,109 +47,86 @@ function populateFilterDropdown(elementId, fieldName) {
 }
 
 // 2. Display Data
+// --- Replace your existing displayPrintables function ---
 function displayPrintables(data) {
     const list = document.getElementById("printableList");
     if (!list) return;
     list.innerHTML = "";
 
     data.forEach(res => {
-        const teacherDisplay = res.teacher || "Staff";
-        const feedbackList = res.feedback || [];
-        const langDisplay = res.language ? res.language.toUpperCase() : "N/A";
-
         const card = document.createElement("div");
         card.className = "resource-item";
-        card.dataset.id = res.id;
+        card.dataset.id = res.id; // Crucial for identifying the document
         card.style = "margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;";
 
         card.innerHTML = `
             <h3>${res.title || "Untitled"}</h3>
-            <p>👤 Teacher: ${teacherDisplay} | 🌐 Lang: ${langDisplay}</p>
+            <p>👤 Teacher: ${res.teacher || "Staff"} | 🌐 Lang: ${res.language ? res.language.toUpperCase() : "N/A"}</p>
             <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
             
             <div style="margin-top:10px;">
                 <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">📥 Download</a>
-                <button class="edit-btn" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
+                <button class="edit-btn" data-id="${res.id}" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
                 <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
             </div>
-
             <div class="card-actions" style="margin-top:10px;">
-                <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${res.favoritesCount || 0}</button>
-                <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${feedbackList.length})</button>
+                <button class="fav-action-btn">⭐ ${res.favoritesCount || 0}</button>
+                <button class="feed-action-btn">💬 Feedback (${(res.feedback || []).length})</button>
             </div>
         `;
 
-        // Click Listeners
-        card.querySelector('.fav-action-btn').onclick = () => handleFavorite('printables', res.id);
-        card.querySelector('.feed-action-btn').onclick = () => handleFeedback('printables', res.id);
-        
-        card.querySelector('.delete-btn').onclick = async () => {
-            if (prompt("Admin password:") === "Go3706" && confirm("Delete?")) {
-                await deleteDoc(doc(db, "printables", res.id));
-                loadPrintables();
-            }
-        };
-
+        // Handle Edit Button Click
         card.querySelector('.edit-btn').onclick = () => {
-            const password = prompt("Enter the admin password to edit:");
-            if (password !== "Go3706") return alert("Incorrect password.");
+            if (prompt("Admin password:") !== "Go3706") return alert("Incorrect password.");
             if (card.querySelector(".edit-panel")) return;
 
-const hiddenFields = ['id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath', 'url'];
+            const hiddenFields = ['id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath', 'url'];
+            const panel = document.createElement("div");
+            panel.className = "edit-panel";
+            panel.style = "margin:15px auto; padding:15px; background:#f9f9f9; border:1px solid #ccc; border-radius:8px; max-width:400px; text-align:left;";
 
-    const panel = document.createElement("div");
-    panel.className = "edit-panel";
-    panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px; text-align: left;";
+            let html = `<strong>Edit Printable:</strong><br>`;
+            Object.keys(res).forEach(key => {
+                if (hiddenFields.includes(key)) return;
+                const listAttr = key === 'topic' ? 'list="topicSuggestions"' : 
+                                 key === 'ageGroup' ? 'list="ageSuggestions"' : 
+                                 key === 'language' ? 'list="langSuggestions"' : '';
 
-    let html = `<strong>Edit Printable:</strong><br>`;
-    
-    // Loop through EVERY key present in this specific document
-    Object.keys(res).forEach(key => {
-        if (hiddenFields.includes(key)) return;
+                html += `<label style="font-size:0.8em; color:gray;">${key.toUpperCase()}:</label><br>
+                         <input type="text" class="edit-field" data-key="${key}" ${listAttr} value="${res[key] || ""}" style="width:90%; margin:5px 0;"><br>`;
+            });
 
-        // Use datalists for standard fields, but keep them as text inputs
-        const listAttr = key === 'topic' ? 'list="topicSuggestions"' : 
-                         key === 'ageGroup' ? 'list="ageSuggestions"' : 
-                         key === 'language' ? 'list="langSuggestions"' : '';
-
-        html += `<label style="font-size:0.8em; color:gray;">${key.toUpperCase()}:</label><br>
-                 <input type="text" class="edit-field" data-key="${key}" ${listAttr} value="${res[key] || ""}" style="width:90%; margin:5px 0;"><br>`;
+            html += `<div style="text-align:center;">
+                        <button class="save-btn" style="background:green; color:white; padding:8px 20px; border:none; border-radius:4px; cursor:pointer;">Save</button>
+                        <button class="cancel-btn" style="background:#888; color:white; padding:8px 20px; margin-left:10px; border:none; border-radius:4px; cursor:pointer;">Cancel</button>
+                     </div>`;
+            panel.innerHTML = html;
+            card.appendChild(panel);
+        };
+        
+        list.appendChild(card);
     });
+}
 
-    html += `<div style="text-align:center;">
-                <button class="save-btn" style="background:green; color:white; padding:8px 20px; margin-top:10px; border:none; border-radius:4px; cursor:pointer;">Save</button>
-                <button class="cancel-btn" style="background:#888; color:white; padding:8px 20px; margin-left:10px; border:none; border-radius:4px; cursor:pointer;">Cancel</button>
-             </div>`;
-    
-    panel.innerHTML = html;
-    card.appendChild(panel);
-};
-
-// --- Update the Save Logic (Global Listener) ---
+// --- CLEANED UP GLOBAL LISTENER (Remove the duplicate one you have) ---
 document.addEventListener("click", async (e) => {
     if (e.target.classList.contains("save-btn")) {
         const card = e.target.closest(".resource-item");
-        const docId = card.querySelector(".edit-btn").dataset.id;
+        const docId = card.dataset.id; // Fetch from card, not the button
         const updatedData = {};
         
-        // This collects values from EVERY input created above, regardless of the field name
         card.querySelectorAll(".edit-field").forEach(input => {
-            const key = input.getAttribute("data-key");
-            updatedData[key] = input.value.trim();
+            updatedData[input.getAttribute("data-key")] = input.value.trim();
         });
 
         try {
             await updateDoc(doc(db, "printables", docId), updatedData);
-            alert("Updated successfully!");
+            alert("Updated!");
             loadPrintables();
         } catch (err) { alert("Error: " + err.message); }
     }
     if (e.target.classList.contains("cancel-btn")) e.target.closest(".edit-panel")?.remove();
 });
-
-        list.appendChild(card);
-    });
-}
 
 // 3. Global listener for Save/Cancel inside Edit Panels
 document.addEventListener("click", async (e) => {
