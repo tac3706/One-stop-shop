@@ -129,57 +129,63 @@ const card = e.target.closest(".resource-item");
     const docId = card.dataset.id;
     const item = allResources.find(r => r.id === docId);
 
-    // DYNAMIC TAG FETCHING: Get every unique value currently in the database
-    const existingTopics = [...new Set(allResources.map(r => (r.topic || "").toLowerCase()))].filter(Boolean);
-    const existingAges = [...new Set(allResources.map(r => (r.ageGroup || "").toLowerCase()))].filter(Boolean);
-    const existingLangs = [...new Set(allResources.map(r => (r.language || "").toLowerCase()))].filter(Boolean);
-
-    // Merge with defaults and sort
-    const allowedTopics = [...new Set(["grammar", "vocabulary", "reading", "writing", "speaking", "listening", "phonics", "exam prep", "business english", "general", ...existingTopics])].sort();
-    const allowedAges = [...new Set(["children", "teens", "adults", "all", ...existingAges])].sort();
-    const allowedLangs = [...new Set(["english", "spanish", "german", "french", ...existingLangs])].sort();
+    // Fields we handle with specific UI (datalists/inputs)
+    const standardFields = ['title', 'teacher', 'topic', 'ageGroup', 'language', 'url'];
+    // Fields we don't want to edit (IDs, timestamps, feedback arrays)
+    const hiddenFields = ['id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath'];
 
     const panel = document.createElement("div");
     panel.className = "edit-panel";
-    panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px; text-align: center;";
+    panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px; text-align: left;";
 
-    panel.innerHTML = `
-        <strong>Edit Resource:</strong><br>
-        Title: <input type="text" class="edit-title" value="${item.title}" style="width:90%; margin:5px 0;"><br>
-        Teacher: <input type="text" class="edit-teacher" value="${item.teacher || ""}" style="width:90%; margin:5px 0;"><br>
-        
-        Topic: <select class="edit-topic" style="width:90%; margin:5px 0;">
-            ${allowedTopics.map(t => `<option value="${t}" ${t === (item.topic || "").toLowerCase() ? "selected" : ""}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join("")}
-        </select><br>
-        
-        Age: <select class="edit-age" style="width:90%; margin:5px 0;">
-            ${allowedAges.map(a => `<option value="${a}" ${a === (item.ageGroup || "").toLowerCase() ? "selected" : ""}>${a.charAt(0).toUpperCase() + a.slice(1)}</option>`).join("")}
-        </select><br>
+    let panelHTML = `<strong>Edit Resource:</strong><br>`;
 
-        Language: <select class="edit-lang" style="width:90%; margin:5px 0;">
-            ${allowedLangs.map(l => `<option value="${l}" ${l === (item.language || "").toLowerCase() ? "selected" : ""}>${l.charAt(0).toUpperCase() + l.slice(1)}</option>`).join("")}
-        </select><br>
-        
-        <button class="save-btn" style="background:green; color:white; border:none; padding:8px 20px; margin-top:10px; cursor:pointer; border-radius:4px;">Save Changes</button>
-        <button class="cancel-btn" style="background:#888; color:white; border:none; padding:8px 20px; margin-left:10px; cursor:pointer; border-radius:4px;">Cancel</button>
+    // 1. Add Standard Inputs
+    panelHTML += `
+        <label>Title:</label><input type="text" class="edit-field" data-key="title" value="${item.title || ''}" style="width:90%; margin:5px 0;"><br>
+        <label>Teacher:</label><input type="text" class="edit-field" data-key="teacher" value="${item.teacher || ''}" style="width:90%; margin:5px 0;"><br>
+        <label>Topic:</label><input type="text" class="edit-field" data-key="topic" list="topicSuggestions" value="${item.topic || ''}" style="width:90%; margin:5px 0;"><br>
+        <label>Age:</label><input type="text" class="edit-field" data-key="ageGroup" list="ageSuggestions" value="${item.ageGroup || ''}" style="width:90%; margin:5px 0;"><br>
+        <label>Language:</label><input type="text" class="edit-field" data-key="language" list="langSuggestions" value="${item.language || ''}" style="width:90%; margin:5px 0;"><br>
     `;
+
+    // 2. DYNAMICALLY ADD EXTRA FIELDS found in Firebase
+    Object.keys(item).forEach(key => {
+        if (!standardFields.includes(key) && !hiddenFields.includes(key)) {
+            panelHTML += `
+                <label>${key.charAt(0).toUpperCase() + key.slice(1)}:</label>
+                <input type="text" class="edit-field" data-key="${key}" value="${item[key]}" style="width:90%; margin:5px 0;"><br>
+            `;
+        }
+    });
+
+    panelHTML += `
+        <div style="text-align:center;">
+            <button class="save-btn" style="background:green; color:white; border:none; padding:8px 20px; margin-top:10px; cursor:pointer; border-radius:4px;">Save</button>
+            <button class="cancel-btn" style="background:#888; color:white; border:none; padding:8px 20px; margin-left:10px; cursor:pointer; border-radius:4px;">Cancel</button>
+        </div>
+    `;
+    
+    panel.innerHTML = panelHTML;
     card.appendChild(panel);
 }
 
-// --- Update the SAVE logic as well ---
+// --- Updated SAVE Logic to collect all fields ---
 if (e.target.classList.contains("save-btn")) {
     const card = e.target.closest(".resource-item");
     const docId = card.dataset.id;
+    const updatedData = {};
+    
+    // Collect every input value based on its data-key attribute
+    card.querySelectorAll(".edit-field").forEach(input => {
+        const key = input.getAttribute("data-key");
+        updatedData[key] = input.value.trim();
+    });
+
     try {
-        await updateDoc(doc(db, "resources", docId), {
-            title: card.querySelector(".edit-title").value.trim(),
-            teacher: card.querySelector(".edit-teacher").value.trim(),
-            topic: card.querySelector(".edit-topic").value,
-            ageGroup: card.querySelector(".edit-age").value,
-            language: card.querySelector(".edit-lang").value // Now saved correctly
-        });
+        await updateDoc(doc(db, "resources", docId), updatedData);
         loadAndDisplay();
-    } catch (err) { alert("Error saving: " + err.message); }
+    } catch (err) { alert("Error: " + err.message); }
 }
 
     if (e.target.classList.contains("cancel-btn")) e.target.closest(".edit-panel")?.remove();
