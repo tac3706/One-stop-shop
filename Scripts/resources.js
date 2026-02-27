@@ -171,27 +171,22 @@ const card = e.target.closest(".resource-item");
 }
 
 // --- Updated SAVE Logic to collect all fields ---
-// --- Use this logic ONLY for the Save Button in resources.js ---
 if (e.target.classList.contains("save-btn")) {
     const card = e.target.closest(".resource-item");
-    const docId = card.dataset.id; // Make sure your card has: <div class="resource-item" data-id="${res.id}">
-    
-    if (!docId) return alert("Error: No Document ID found for this file.");
-
+    const docId = card.dataset.id;
     const updatedData = {};
+    
+    // Collect every input value based on its data-key attribute
     card.querySelectorAll(".edit-field").forEach(input => {
         const key = input.getAttribute("data-key");
         updatedData[key] = input.value.trim();
     });
 
-    try {
+try {
         await updateDoc(doc(db, "resources", docId), updatedData);
         alert("Resource Updated!");
-        loadAndDisplay(); // Refresh the list
-    } catch (err) { 
-        console.error("Firebase Update Error:", err);
-        alert("Error: " + err.message); 
-    }
+        loadAndDisplay();
+    } catch (err) { alert("Error: " + err.message); }
 }
 
     if (e.target.classList.contains("cancel-btn")) e.target.closest(".edit-panel")?.remove();
