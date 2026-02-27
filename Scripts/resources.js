@@ -123,20 +123,21 @@ document.addEventListener("click", async (e) => {
         const password = prompt("Admin password:");
         if (password !== "Go3706") return alert("Incorrect password.");
         
-        const card = e.target.closest(".resource-item");
-        if (card.querySelector(".edit-panel")) return;
+const card = e.target.closest(".resource-item");
+    if (card.querySelector(".edit-panel")) return;
 
-        const docId = card.dataset.id;
-        const item = allResources.find(r => r.id === docId);
+    const docId = card.dataset.id;
+    const item = allResources.find(r => r.id === docId);
 
-// DYNAMIC TAG FETCHING:
-    // This looks at every item currently in your library and finds all unique topics and ages
+    // DYNAMIC TAG FETCHING: Get every unique value currently in the database
     const existingTopics = [...new Set(allResources.map(r => (r.topic || "").toLowerCase()))].filter(Boolean);
     const existingAges = [...new Set(allResources.map(r => (r.ageGroup || "").toLowerCase()))].filter(Boolean);
+    const existingLangs = [...new Set(allResources.map(r => (r.language || "").toLowerCase()))].filter(Boolean);
 
-    // Combine with your standard defaults just in case the DB is empty
+    // Merge with defaults and sort
     const allowedTopics = [...new Set(["grammar", "vocabulary", "reading", "writing", "speaking", "listening", "phonics", "exam prep", "business english", "general", ...existingTopics])].sort();
     const allowedAges = [...new Set(["children", "teens", "adults", "all", ...existingAges])].sort();
+    const allowedLangs = [...new Set(["english", "spanish", "german", "french", ...existingLangs])].sort();
 
     const panel = document.createElement("div");
     panel.className = "edit-panel";
@@ -144,17 +145,19 @@ document.addEventListener("click", async (e) => {
 
     panel.innerHTML = `
         <strong>Edit Resource:</strong><br>
-        <input type="text" class="edit-title" value="${item.title}" style="width:90%; margin:5px 0;"><br>
-        <input type="text" class="edit-teacher" value="${item.teacher || ""}" style="width:90%; margin:5px 0;"><br>
+        Title: <input type="text" class="edit-title" value="${item.title}" style="width:90%; margin:5px 0;"><br>
+        Teacher: <input type="text" class="edit-teacher" value="${item.teacher || ""}" style="width:90%; margin:5px 0;"><br>
         
-        <label>Topic:</label><br>
-        <select class="edit-topic" style="width:90%; margin:5px 0;">
+        Topic: <select class="edit-topic" style="width:90%; margin:5px 0;">
             ${allowedTopics.map(t => `<option value="${t}" ${t === (item.topic || "").toLowerCase() ? "selected" : ""}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join("")}
         </select><br>
         
-        <label>Age Group:</label><br>
-        <select class="edit-age" style="width:90%; margin:5px 0;">
+        Age: <select class="edit-age" style="width:90%; margin:5px 0;">
             ${allowedAges.map(a => `<option value="${a}" ${a === (item.ageGroup || "").toLowerCase() ? "selected" : ""}>${a.charAt(0).toUpperCase() + a.slice(1)}</option>`).join("")}
+        </select><br>
+
+        Language: <select class="edit-lang" style="width:90%; margin:5px 0;">
+            ${allowedLangs.map(l => `<option value="${l}" ${l === (item.language || "").toLowerCase() ? "selected" : ""}>${l.charAt(0).toUpperCase() + l.slice(1)}</option>`).join("")}
         </select><br>
         
         <button class="save-btn" style="background:green; color:white; border:none; padding:8px 20px; margin-top:10px; cursor:pointer; border-radius:4px;">Save Changes</button>
@@ -163,21 +166,21 @@ document.addEventListener("click", async (e) => {
     card.appendChild(panel);
 }
 
-    // --- SAVE BUTTON ---
-    if (e.target.classList.contains("save-btn")) {
-        const card = e.target.closest(".resource-item");
-        const docId = card.dataset.id;
-        try {
-            await updateDoc(doc(db, "resources", docId), {
-                title: card.querySelector(".edit-title").value.trim(),
-                teacher: card.querySelector(".edit-teacher").value.trim(),
-                topic: card.querySelector(".edit-topic").value.trim().toLowerCase(),
-                ageGroup: card.querySelector(".edit-age").value.trim().toLowerCase(),
-                language: card.querySelector(".edit-lang").value.trim().toLowerCase()
-            });
-            loadAndDisplay();
-        } catch (err) { alert("Error: " + err.message); }
-    }
+// --- Update the SAVE logic as well ---
+if (e.target.classList.contains("save-btn")) {
+    const card = e.target.closest(".resource-item");
+    const docId = card.dataset.id;
+    try {
+        await updateDoc(doc(db, "resources", docId), {
+            title: card.querySelector(".edit-title").value.trim(),
+            teacher: card.querySelector(".edit-teacher").value.trim(),
+            topic: card.querySelector(".edit-topic").value,
+            ageGroup: card.querySelector(".edit-age").value,
+            language: card.querySelector(".edit-lang").value // Now saved correctly
+        });
+        loadAndDisplay();
+    } catch (err) { alert("Error saving: " + err.message); }
+}
 
     if (e.target.classList.contains("cancel-btn")) e.target.closest(".edit-panel")?.remove();
 
