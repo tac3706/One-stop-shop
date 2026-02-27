@@ -39,7 +39,7 @@ function populateFilterDropdown(elementId, fieldName) {
     const select = document.getElementById(elementId);
     if (!select) return;
     const uniqueValues = [...new Set(allPrintables.map(res => res[fieldName]?.trim().toLowerCase()).filter(Boolean))].sort();
-    const originalLabel = select.options[0].text;
+    const originalLabel = select.options[0] ? select.options[0].text : "Select";
     select.innerHTML = `<option value="">${originalLabel}</option>`;
     uniqueValues.forEach(val => {
         select.innerHTML += `<option value="${val}">${val.charAt(0).toUpperCase() + val.slice(1)}</option>`;
@@ -79,34 +79,10 @@ function displayPrintables(data) {
             </div>
         `;
 
+        // Click Listeners
         card.querySelector('.fav-action-btn').onclick = () => handleFavorite('printables', res.id);
         card.querySelector('.feed-action-btn').onclick = () => handleFeedback('printables', res.id);
-
-        card.querySelector('.edit-btn').onclick = () => {
-            const password = prompt("Enter the admin password to edit:");
-                if (password !== "Go3706") return alert("Incorrect password.");
-                
-                if (card.querySelector(".edit-panel")) return;
-
-                // DYNAMIC TAG FETCHING:
-                const existingTopics = [...new Set(allPrintables.map(p => (p.topic || "").toLowerCase()))].filter(Boolean);
-                const allowedTopics = [...new Set(["grammar", "vocabulary", "reading", "writing", ...existingTopics])].sort();
-
-                const panel = document.createElement("div");
-                panel.className = "edit-panel";
-                panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px;";
-                panel.innerHTML = `
-                    <input type="text" class="edit-title" value="${res.title}" style="width:90%; margin:5px 0;"><br>
-                    <input type="text" class="edit-teacher" value="${teacherDisplay}" style="width:90%; margin:5px 0;"><br>
-                    <select class="edit-topic" style="width:90%; margin:5px 0;">
-                        ${allowedTopics.map(t => `<option value="${t}" ${t === (res.topic || "").toLowerCase() ? "selected" : ""}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join("")}
-                    </select><br>
-                    <button class="save-btn" style="background:green; color:white; padding:5px 15px; margin-top:10px; border-radius:4px;">Save</button>
-                    <button class="cancel-btn" style="background:#888; color:white; padding:5px 15px; border-radius:4px;">Cancel</button>
-                `;
-                card.appendChild(panel);
-            };
-
+        
         card.querySelector('.delete-btn').onclick = async () => {
             if (prompt("Admin password:") === "Go3706" && confirm("Delete?")) {
                 await deleteDoc(doc(db, "printables", res.id));
@@ -114,11 +90,53 @@ function displayPrintables(data) {
             }
         };
 
+        card.querySelector('.edit-btn').onclick = () => {
+            const password = prompt("Enter the admin password to edit:");
+            if (password !== "Go3706") return alert("Incorrect password.");
+            if (card.querySelector(".edit-panel")) return;
+
+            // DYNAMIC TAG FETCHING
+            const existingTopics = [...new Set(allPrintables.map(p => (p.topic || "").toLowerCase()))].filter(Boolean);
+            const existingAges = [...new Set(allPrintables.map(p => (p.ageGroup || "").toLowerCase()))].filter(Boolean);
+            const existingLangs = [...new Set(allPrintables.map(p => (p.language || "").toLowerCase()))].filter(Boolean);
+
+            const allowedTopics = [...new Set(["grammar", "vocabulary", "reading", "writing", ...existingTopics])].sort();
+            const allowedAges = [...new Set(["children", "teens", "adults", "all", ...existingAges])].sort();
+            const allowedLangs = [...new Set(["english", "spanish", "german", "french", ...existingLangs])].sort();
+
+            const panel = document.createElement("div");
+            panel.className = "edit-panel";
+            panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px; text-align: left;";
+            panel.innerHTML = `
+                <label>Title:</label> <input type="text" class="edit-title" value="${res.title}" style="width:90%; margin:5px 0;"><br>
+                <label>Teacher:</label> <input type="text" class="edit-teacher" value="${teacherDisplay}" style="width:90%; margin:5px 0;"><br>
+                
+                <label>Topic:</label>
+                <select class="edit-topic" style="width:90%; margin:5px 0;">
+                    ${allowedTopics.map(t => `<option value="${t}" ${t === (res.topic || "").toLowerCase() ? "selected" : ""}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join("")}
+                </select><br>
+
+                <label>Age Group:</label>
+                <select class="edit-age" style="width:90%; margin:5px 0;">
+                    ${allowedAges.map(a => `<option value="${a}" ${a === (res.ageGroup || "").toLowerCase() ? "selected" : ""}>${a.charAt(0).toUpperCase() + a.slice(1)}</option>`).join("")}
+                </select><br>
+
+                <label>Language:</label>
+                <select class="edit-lang" style="width:90%; margin:5px 0;">
+                    ${allowedLangs.map(l => `<option value="${l}" ${l === (res.language || "").toLowerCase() ? "selected" : ""}>${l.charAt(0).toUpperCase() + l.slice(1)}</option>`).join("")}
+                </select><br>
+
+                <button class="save-btn" style="background:green; color:white; padding:5px 15px; margin-top:10px; border:none; cursor:pointer; border-radius:4px;">Save</button>
+                <button class="cancel-btn" style="background:#888; color:white; padding:5px 15px; margin-left:10px; border:none; cursor:pointer; border-radius:4px;">Cancel</button>
+            `;
+            card.appendChild(panel);
+        };
+
         list.appendChild(card);
     });
 }
 
-// 3. Global listener for Save/Cancel
+// 3. Global listener for Save/Cancel inside Edit Panels
 document.addEventListener("click", async (e) => {
     if (e.target.classList.contains("save-btn")) {
         const card = e.target.closest(".resource-item");
@@ -127,14 +145,18 @@ document.addEventListener("click", async (e) => {
             await updateDoc(doc(db, "printables", docId), {
                 title: card.querySelector(".edit-title").value.trim(),
                 teacher: card.querySelector(".edit-teacher").value.trim(),
-                topic: card.querySelector(".edit-topic").value.trim().toLowerCase(),
-                ageGroup: card.querySelector(".edit-age").value.trim().toLowerCase(),
-                language: card.querySelector(".edit-lang").value.trim().toLowerCase()
+                topic: card.querySelector(".edit-topic").value,
+                ageGroup: card.querySelector(".edit-age").value,
+                language: card.querySelector(".edit-lang").value
             });
+            alert("Updated successfully!");
             loadPrintables();
-        } catch (err) { alert("Error: " + err.message); }
+        } catch (err) { alert("Error saving: " + err.message); }
     }
-    if (e.target.classList.contains("cancel-btn")) e.target.closest(".edit-panel")?.remove();
+    
+    if (e.target.classList.contains("cancel-btn")) {
+        e.target.closest(".edit-panel")?.remove();
+    }
 });
 
 // 4. Filtering Logic
