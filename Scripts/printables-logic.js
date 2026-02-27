@@ -95,8 +95,7 @@ function displayPrintables(data) {
             if (password !== "Go3706") return alert("Incorrect password.");
             if (card.querySelector(".edit-panel")) return;
 
-const standardFields = ['title', 'teacher', 'topic', 'ageGroup', 'language', 'url'];
-    const hiddenFields = ['id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath'];
+const hiddenFields = ['id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath', 'url'];
 
     const panel = document.createElement("div");
     panel.className = "edit-panel";
@@ -104,26 +103,49 @@ const standardFields = ['title', 'teacher', 'topic', 'ageGroup', 'language', 'ur
 
     let html = `<strong>Edit Printable:</strong><br>`;
     
-    // Standard inputs (re-using the same loop logic for simplicity)
-    const allKeys = [...new Set([...standardFields, ...Object.keys(res)])];
-    
-    allKeys.forEach(key => {
+    // Loop through EVERY key present in this specific document
+    Object.keys(res).forEach(key => {
         if (hiddenFields.includes(key)) return;
-        const val = res[key] || "";
+
+        // Use datalists for standard fields, but keep them as text inputs
         const listAttr = key === 'topic' ? 'list="topicSuggestions"' : 
                          key === 'ageGroup' ? 'list="ageSuggestions"' : 
                          key === 'language' ? 'list="langSuggestions"' : '';
 
-        html += `<label>${key}:</label><br>
-                 <input type="text" class="edit-field" data-key="${key}" ${listAttr} value="${val}" style="width:90%; margin:5px 0;"><br>`;
+        html += `<label style="font-size:0.8em; color:gray;">${key.toUpperCase()}:</label><br>
+                 <input type="text" class="edit-field" data-key="${key}" ${listAttr} value="${res[key] || ""}" style="width:90%; margin:5px 0;"><br>`;
     });
 
-    html += `<button class="save-btn" style="background:green; color:white; padding:5px 15px; margin-top:10px;">Save</button>
-             <button class="cancel-btn" style="background:#888; color:white; padding:5px 15px; margin-left:5px;">Cancel</button>`;
+    html += `<div style="text-align:center;">
+                <button class="save-btn" style="background:green; color:white; padding:8px 20px; margin-top:10px; border:none; border-radius:4px; cursor:pointer;">Save</button>
+                <button class="cancel-btn" style="background:#888; color:white; padding:8px 20px; margin-left:10px; border:none; border-radius:4px; cursor:pointer;">Cancel</button>
+             </div>`;
     
     panel.innerHTML = html;
     card.appendChild(panel);
 };
+
+// --- Update the Save Logic (Global Listener) ---
+document.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("save-btn")) {
+        const card = e.target.closest(".resource-item");
+        const docId = card.querySelector(".edit-btn").dataset.id;
+        const updatedData = {};
+        
+        // This collects values from EVERY input created above, regardless of the field name
+        card.querySelectorAll(".edit-field").forEach(input => {
+            const key = input.getAttribute("data-key");
+            updatedData[key] = input.value.trim();
+        });
+
+        try {
+            await updateDoc(doc(db, "printables", docId), updatedData);
+            alert("Updated successfully!");
+            loadPrintables();
+        } catch (err) { alert("Error: " + err.message); }
+    }
+    if (e.target.classList.contains("cancel-btn")) e.target.closest(".edit-panel")?.remove();
+});
 
         list.appendChild(card);
     });
