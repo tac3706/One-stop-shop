@@ -95,42 +95,35 @@ function displayPrintables(data) {
             if (password !== "Go3706") return alert("Incorrect password.");
             if (card.querySelector(".edit-panel")) return;
 
-            // DYNAMIC TAG FETCHING
-            const existingTopics = [...new Set(allPrintables.map(p => (p.topic || "").toLowerCase()))].filter(Boolean);
-            const existingAges = [...new Set(allPrintables.map(p => (p.ageGroup || "").toLowerCase()))].filter(Boolean);
-            const existingLangs = [...new Set(allPrintables.map(p => (p.language || "").toLowerCase()))].filter(Boolean);
+const standardFields = ['title', 'teacher', 'topic', 'ageGroup', 'language', 'url'];
+    const hiddenFields = ['id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath'];
 
-            const allowedTopics = [...new Set(["grammar", "vocabulary", "reading", "writing", ...existingTopics])].sort();
-            const allowedAges = [...new Set(["children", "teens", "adults", "all", ...existingAges])].sort();
-            const allowedLangs = [...new Set(["english", "spanish", "german", "french", ...existingLangs])].sort();
+    const panel = document.createElement("div");
+    panel.className = "edit-panel";
+    panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px; text-align: left;";
 
-            const panel = document.createElement("div");
-            panel.className = "edit-panel";
-            panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px; text-align: left;";
-            panel.innerHTML = `
-                <label>Title:</label> <input type="text" class="edit-title" value="${res.title}" style="width:90%; margin:5px 0;"><br>
-                <label>Teacher:</label> <input type="text" class="edit-teacher" value="${teacherDisplay}" style="width:90%; margin:5px 0;"><br>
-                
-                <label>Topic:</label>
-                <select class="edit-topic" style="width:90%; margin:5px 0;">
-                    ${allowedTopics.map(t => `<option value="${t}" ${t === (res.topic || "").toLowerCase() ? "selected" : ""}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join("")}
-                </select><br>
+    let html = `<strong>Edit Printable:</strong><br>`;
+    
+    // Standard inputs (re-using the same loop logic for simplicity)
+    const allKeys = [...new Set([...standardFields, ...Object.keys(res)])];
+    
+    allKeys.forEach(key => {
+        if (hiddenFields.includes(key)) return;
+        const val = res[key] || "";
+        const listAttr = key === 'topic' ? 'list="topicSuggestions"' : 
+                         key === 'ageGroup' ? 'list="ageSuggestions"' : 
+                         key === 'language' ? 'list="langSuggestions"' : '';
 
-                <label>Age Group:</label>
-                <select class="edit-age" style="width:90%; margin:5px 0;">
-                    ${allowedAges.map(a => `<option value="${a}" ${a === (res.ageGroup || "").toLowerCase() ? "selected" : ""}>${a.charAt(0).toUpperCase() + a.slice(1)}</option>`).join("")}
-                </select><br>
+        html += `<label>${key}:</label><br>
+                 <input type="text" class="edit-field" data-key="${key}" ${listAttr} value="${val}" style="width:90%; margin:5px 0;"><br>`;
+    });
 
-                <label>Language:</label>
-                <select class="edit-lang" style="width:90%; margin:5px 0;">
-                    ${allowedLangs.map(l => `<option value="${l}" ${l === (res.language || "").toLowerCase() ? "selected" : ""}>${l.charAt(0).toUpperCase() + l.slice(1)}</option>`).join("")}
-                </select><br>
-
-                <button class="save-btn" style="background:green; color:white; padding:5px 15px; margin-top:10px; border:none; cursor:pointer; border-radius:4px;">Save</button>
-                <button class="cancel-btn" style="background:#888; color:white; padding:5px 15px; margin-left:10px; border:none; cursor:pointer; border-radius:4px;">Cancel</button>
-            `;
-            card.appendChild(panel);
-        };
+    html += `<button class="save-btn" style="background:green; color:white; padding:5px 15px; margin-top:10px;">Save</button>
+             <button class="cancel-btn" style="background:#888; color:white; padding:5px 15px; margin-left:5px;">Cancel</button>`;
+    
+    panel.innerHTML = html;
+    card.appendChild(panel);
+};
 
         list.appendChild(card);
     });
