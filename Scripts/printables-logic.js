@@ -23,8 +23,11 @@ async function loadPrintables() {
     list.innerHTML = "<p>Loading printables...</p>";
     try {
         const querySnapshot = await getDocs(collection(db, "printables"));
-        // Ensure we capture the Firebase Document ID correctly
-        allPrintables = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+        // FIX: Capture the real Firebase Document ID as docId
+        allPrintables = querySnapshot.docs.map(docSnap => ({ 
+            docId: docSnap.id, 
+            ...docSnap.data() 
+        }));
 
         populateFilterDropdown("topicFilter", "topic");
         populateFilterDropdown("ageFilter", "ageGroup");
@@ -56,7 +59,8 @@ function displayPrintables(data) {
     data.forEach(res => {
         const card = document.createElement("div");
         card.className = "resource-item";
-        card.dataset.id = res.id; 
+        // FIX: Ensure data-id uses the true Firebase docId
+        card.dataset.id = res.docId || res.id; 
         card.style = "margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;";
 
         card.innerHTML = `
@@ -78,26 +82,23 @@ function displayPrintables(data) {
     });
 }
 
-// 3. Shared Click Handler (Unified)
+// 3. Shared Click Handler
 document.addEventListener("click", async (e) => {
     const card = e.target.closest(".resource-item");
     const docId = card ? card.dataset.id : null;
 
-    // --- ADD CUSTOM FIELD BUTTON ---
+    // --- ADD CUSTOM FIELD ---
     if (e.target.classList.contains("add-field-btn")) {
-        const newFieldName = prompt("Enter the name for the new field (e.g., Level, Duration):");
+        const newFieldName = prompt("Enter the name for the new field:");
         if (!newFieldName) return;
-        
         const cleanKey = newFieldName.trim().replace(/\s+/g, '_'); 
         const container = e.target.closest(".edit-panel").querySelector(".new-fields-container");
-        
-        const newFieldHTML = `
+        container.insertAdjacentHTML('beforeend', `
             <div style="margin-top:10px; border-left:3px solid #673AB7; padding-left:10px;">
                 <label style="font-size:0.8em; color:#673AB7; font-weight:bold;">${cleanKey.toUpperCase()} (New):</label><br>
-                <input type="text" class="edit-field" data-key="${cleanKey}" placeholder="Enter value..." style="width:90%; margin:5px 0;">
+                <input type="text" class="edit-field" data-key="${cleanKey}" placeholder="Value..." style="width:90%; margin:5px 0;">
             </div>
-        `;
-        container.insertAdjacentHTML('beforeend', newFieldHTML);
+        `);
     }
 
     // --- EDIT BUTTON ---
@@ -105,17 +106,16 @@ document.addEventListener("click", async (e) => {
         if (prompt("Admin password:") !== "Go3706") return alert("Incorrect password.");
         if (card.querySelector(".edit-panel")) return;
 
-        // String conversion logic to handle numeric IDs (like 73)
-        const res = allPrintables.find(r => String(r.id) === String(docId));
+        // FIX: Flexible search using both docId and internal id
+        const res = allPrintables.find(r => r.docId === docId || String(r.id) === String(docId));
         if (!res) return alert("Error: Could not find printable data.");
 
-        const hiddenFields = ['id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath', 'url'];
+        const hiddenFields = ['id', 'docId', 'createdAt', 'feedback', 'favoritesCount', 'storagePath', 'url'];
         const panel = document.createElement("div");
         panel.className = "edit-panel";
         panel.style = "margin:15px auto; padding:15px; background:#f9f9f9; border:1px solid #ccc; border-radius:8px; max-width:400px; text-align:left;";
 
         let html = `<strong>Edit Printable:</strong><br><div class="existing-fields">`;
-        
         Object.keys(res).forEach(key => {
             if (hiddenFields.includes(key)) return;
             const listAttr = key === 'topic' ? 'list="topicSuggestions"' : 
@@ -126,14 +126,12 @@ document.addEventListener("click", async (e) => {
                      <input type="text" class="edit-field" data-key="${key}" ${listAttr} value="${res[key] || ""}" style="width:90%; margin:5px 0;"><br>`;
         });
 
-        html += `</div><div class="new-fields-container"></div>`;
-        html += `
+        html += `</div><div class="new-fields-container"></div>
             <button type="button" class="add-field-btn" style="background:#673AB7; color:white; border:none; padding:5px 10px; margin:10px 0; cursor:pointer; border-radius:4px; font-size:0.8em;">➕ Add Custom Field</button>
             <div style="text-align:center; border-top:1px solid #ccc; padding-top:10px;">
                 <button class="save-btn" style="background:green; color:white; padding:8px 20px; border:none; border-radius:4px; cursor:pointer;">Save All Changes</button>
                 <button class="cancel-btn" style="background:#888; color:white; padding:8px 20px; margin-left:10px; border:none; border-radius:4px; cursor:pointer;">Cancel</button>
             </div>`;
-        
         panel.innerHTML = html;
         card.appendChild(panel);
     }
@@ -147,20 +145,17 @@ document.addEventListener("click", async (e) => {
         });
 
         try {
+            // FIX: Uses docId from the card dataset, which is now the real Firebase ID
             await updateDoc(doc(db, "printables", docId), updatedData);
             alert("Updated successfully!");
             loadPrintables();
         } catch (err) { alert("Error saving: " + err.message); }
     }
 
-    // --- CANCEL BUTTON ---
-    if (e.target.classList.contains("cancel-btn")) {
-        e.target.closest(".edit-panel")?.remove();
-    }
-
-    // --- DELETE BUTTON ---
+    // --- CANCEL & DELETE ---
+    if (e.target.classList.contains("cancel-btn")) e.target.closest(".edit-panel")?.remove();
     if (e.target.classList.contains("delete-btn")) {
-        if (prompt("Admin password:") === "Go3706" && confirm("Are you sure you want to delete this?")) {
+        if (prompt("Admin password:") === "Go3706" && confirm("Delete?")) {
             try {
                 await deleteDoc(doc(db, "printables", docId));
                 loadPrintables();
