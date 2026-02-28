@@ -91,7 +91,7 @@ document.addEventListener("click", async (e) => {
     if (e.target.classList.contains("add-field-btn")) {
         const newFieldName = prompt("Enter the name for the new field:");
         if (!newFieldName) return;
-        const cleanKey = newFieldName.trim().replace(/\s+/g, '_'); 
+        const cleanKey = newFieldName.trim().replace(/\s+/g, '_').toLowerCase();
         const container = e.target.closest(".edit-panel").querySelector(".new-fields-container");
         container.insertAdjacentHTML('beforeend', `
             <div style="margin-top:10px; border-left:3px solid #673AB7; padding-left:10px;">
