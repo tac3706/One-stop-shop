@@ -121,6 +121,13 @@ function displayPrintables(data) {
                 <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${res.favoritesCount || 0}</button>
                 <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${(res.feedback || []).length})</button>
             </div>
+            
+            ${(res.feedback && res.feedback.length > 0) ? `
+                    <div class="feedback-list" style="font-size:0.85em; color:#555; background:#fefefe; padding:10px; margin-top:10px; border-radius:5px; text-align:left; border:1px dashed #ccc; width:90%; margin-left:auto; margin-right:auto;">
+                        ${res.feedback.map(f => `<p style="margin:4px 0;"><strong>${f.date}:</strong> ${f.text}</p>`).join('')}
+                    </div>
+                ` : ''}
+
         `;
         list.appendChild(card);
     });
