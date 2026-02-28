@@ -136,52 +136,46 @@ function displayPrintables(data) {
 
 // 3. Shared Click Handler
 document.addEventListener("click", async (e) => {
+    // 1. Identify the card and the ID
     const card = e.target.closest(".resource-item");
-    const docId = card ? card.dataset.id : null;
+    if (!card) return; // Exit if click wasn't inside a card
 
-    // --- ADD CUSTOM FIELD ---
-    if (e.target.classList.contains("add-field-btn")) {
-        const newFieldName = prompt("Enter the name for the new field:");
-        if (!newFieldName) return;
-        const cleanKey = newFieldName.trim().replace(/\s+/g, '_').toLowerCase();
-        const container = e.target.closest(".edit-panel").querySelector(".new-fields-container");
-        container.insertAdjacentHTML('beforeend', `
-            <div style="margin-top:10px; border-left:3px solid #673AB7; padding-left:10px;">
-                <label style="font-size:0.8em; color:#673AB7; font-weight:bold;">${cleanKey.toUpperCase()} (New):</label><br>
-                <input type="text" class="edit-field" data-key="${cleanKey}" placeholder="Value..." style="width:90%; margin:5px 0;">
-            </div>
-        `);
-    }
+    const docId = card.dataset.id; // This is the Firebase Doc ID
 
     // --- DELETE A SPECIFIC FIELD KEY ---
     if (e.target.classList.contains("remove-field-key-btn")) {
         const keyToDelete = e.target.dataset.key;
-        
-        // Safety check so you don't accidentally delete the Title or URL
-        const protectedFields = ['title', 'url', 'topic'];
-        if (protectedFields.includes(keyToDelete.toLowerCase())) {
-            if (!confirm(`"${keyToDelete}" is a core field. Are you sure you want to delete it?`)) return;
-        } else {
-            if (!confirm(`Delete the field "${keyToDelete}" and all its data?`)) return;
-        }
+        if (!confirm(`Permanently delete the field "${keyToDelete}"?`)) return;
 
         try {
             const updateObj = {};
-            updateObj[keyToDelete] = deleteField(); // Tells Firebase to remove the key
-
-            // Use docId from the closest resource-item card
-            await updateDoc(doc(db, "resources", docId), updateObj); 
+            updateObj[keyToDelete] = deleteField(); 
+            
+            // Explicitly use the docId found from the card
+            await updateDoc(doc(db, "resources", docId), updateObj);
             
             alert(`Field "${keyToDelete}" removed.`);
-            
-            // Remove the row from the UI immediately
             e.target.closest(".field-row").remove();
-            
-            // Refresh the main data so the "Extra Fields" filter updates
             loadAndDisplay(); 
         } catch (err) {
             alert("Error deleting field: " + err.message);
         }
+        return; // Stop here
+    }
+
+    // --- ADD CUSTOM FIELD ---
+    if (e.target.classList.contains("add-field-btn")) {
+        const newFieldName = prompt("New field name:");
+        if (!newFieldName) return;
+        const cleanKey = newFieldName.trim().replace(/\s+/g, '_').toLowerCase();
+        const container = card.querySelector(".new-fields-container");
+        container.insertAdjacentHTML('beforeend', `
+            <div class="field-row" style="margin-top:10px; border-left:3px solid #673AB7; padding-left:10px;">
+                <label style="font-size:0.8em; color:#673AB7;">${cleanKey.toUpperCase()}:</label><br>
+                <input type="text" class="edit-field" data-key="${cleanKey}" style="width:90%; margin:5px 0;">
+            </div>
+        `);
+        return;
     }
 
     // --- EDIT BUTTON ---
@@ -189,73 +183,65 @@ document.addEventListener("click", async (e) => {
         if (prompt("Admin password:") !== "Go3706") return alert("Incorrect password.");
         if (card.querySelector(".edit-panel")) return;
 
-        // FIX: Flexible search using both docId and internal id
-        const res = allPrintables.find(r => r.docId === docId || String(r.id) === String(docId));
-        if (!res) return alert("Error: Could not find printable data.");
+        // FIX: Look for item using docId OR numeric id for old files
+        const item = allResources.find(r => r.id === docId || String(r.id) === String(docId));
+        if (!item) return alert("Error: Could not find resource data. (ID: " + docId + ")");
 
-        const hiddenFields = ['id', 'docId', 'createdAt', 'feedback', 'favoritesCount', 'storagePath', 'url'];
+        const hiddenFields = ['id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath'];
         const panel = document.createElement("div");
         panel.className = "edit-panel";
-        panel.style = "margin:15px auto; padding:15px; background:#f9f9f9; border:1px solid #ccc; border-radius:8px; max-width:400px; text-align:left;";
+        panel.style = "margin:15px auto; padding:15px; background:#f9f9f9; border:1px solid #ccc; border-radius:8px; text-align:left;";
 
         let html = `<strong>Edit Resource:</strong><br><div class="existing-fields">`;
-
+        
         Object.keys(item).forEach(key => {
             if (hiddenFields.includes(key)) return;
-            
-            const listAttr = key === 'topic' ? 'list="topicSuggestions"' : 
-                            key === 'language' ? 'list="langSuggestions"' : '';
-
             html += `
-                <div class="field-row" style="margin-bottom:10px; border-bottom:1px hide #eee; padding-bottom:5px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="field-row" style="margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between;">
                         <label style="font-size:0.8em; color:gray;">${key.toUpperCase()}:</label>
-                        <button type="button" class="remove-field-key-btn" data-key="${key}" style="background:none; border:none; color:red; cursor:pointer; font-size:1.1em;" title="Delete this field entireley">×</button>
+                        <button type="button" class="remove-field-key-btn" data-key="${key}" style="color:red; border:none; background:none; cursor:pointer;">×</button>
                     </div>
-                    <input type="text" class="edit-field" data-key="${key}" ${listAttr} value="${item[key] || ""}" style="width:95%; margin-top:3px;">
+                    <input type="text" class="edit-field" data-key="${key}" value="${item[key] || ""}" style="width:95%;">
                 </div>`;
         });
 
         html += `</div><div class="new-fields-container"></div>
-            <button type="button" class="add-field-btn" style="background:#673AB7; color:white; border:none; padding:5px 10px; margin:10px 0; cursor:pointer; border-radius:4px; font-size:0.8em;">➕ Add Custom Field</button>
+            <button class="add-field-btn" style="background:#673AB7; color:white; border:none; padding:5px; margin:10px 0; cursor:pointer; border-radius:4px;">➕ Add Field</button>
             <div style="text-align:center; border-top:1px solid #ccc; padding-top:10px;">
-                <button class="save-btn" style="background:green; color:white; padding:8px 20px; border:none; border-radius:4px; cursor:pointer;">Save All Changes</button>
+                <button class="save-btn" style="background:green; color:white; padding:8px 20px; border:none; border-radius:4px; cursor:pointer;">Save</button>
                 <button class="cancel-btn" style="background:#888; color:white; padding:8px 20px; margin-left:10px; border:none; border-radius:4px; cursor:pointer;">Cancel</button>
             </div>`;
+        
         panel.innerHTML = html;
         card.appendChild(panel);
+        return;
     }
 
     // --- SAVE BUTTON ---
     if (e.target.classList.contains("save-btn")) {
         const updatedData = {};
         card.querySelectorAll(".edit-field").forEach(input => {
-            const key = input.getAttribute("data-key");
-            if (key) updatedData[key] = input.value.trim();
+            updatedData[input.getAttribute("data-key")] = input.value.trim();
         });
 
         try {
-            // FIX: Uses docId from the card dataset, which is now the real Firebase ID
-            await updateDoc(doc(db, "printables", docId), updatedData);
-            alert("Updated successfully!");
-            loadPrintables();
-        } catch (err) { alert("Error saving: " + err.message); }
+            await updateDoc(doc(db, "resources", docId), updatedData);
+            alert("Saved!");
+            loadAndDisplay();
+        } catch (err) { alert("Save Error: " + err.message); }
     }
 
-    // --- CANCEL & DELETE ---
-    if (e.target.classList.contains("cancel-btn")) e.target.closest(".edit-panel")?.remove();
+    // --- CANCEL, DELETE, FAV, FEED ---
+    if (e.target.classList.contains("cancel-btn")) card.querySelector(".edit-panel")?.remove();
     if (e.target.classList.contains("delete-btn")) {
-        if (prompt("Admin password:") === "Go3706" && confirm("Delete?")) {
-            try {
-                await deleteDoc(doc(db, "printables", docId));
-                loadPrintables();
-            } catch (err) { alert("Delete failed: " + err.message); }
+        if (prompt("Admin password:") === "Go3706" && confirm("Delete entire file?")) {
+            await deleteDoc(doc(db, "resources", docId));
+            loadAndDisplay();
         }
     }
-
-    // --- FAV & FEEDBACK ---
-    if (e.target.classList.contains("fav-action-btn")) handleFavorite('printables', docId);
-    if (e.target.classList.contains("feed-action-btn")) handleFeedback('printables', docId);
+    if (e.target.classList.contains("fav-action-btn")) handleFavorite('resources', docId);
+    if (e.target.classList.contains("feed-action-btn")) handleFeedback('resources', docId);
 });
 
 // 4. Filtering Logic
