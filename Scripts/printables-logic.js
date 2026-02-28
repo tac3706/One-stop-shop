@@ -24,10 +24,12 @@ async function loadPrintables() {
     try {
         const querySnapshot = await getDocs(collection(db, "printables"));
         // FIX: Capture the real Firebase Document ID as docId
-        allPrintables = querySnapshot.docs.map(docSnap => ({ 
-            docId: docSnap.id, 
-            ...docSnap.data() 
-        }));
+        allResources = querySnapshot.docs.map(docSnap => ({ 
+                    // docSnap.id is the REAL Firebase path (e.g., "zX9y7...")
+                    // res.id is the OLD numeric data (e.g., 73)
+                    firebaseId: docSnap.id, 
+                    ...docSnap.data() 
+                }));
 
         populateFilterDropdown("topicFilter", "topic");
         populateFilterDropdown("languageFilter", "language");
@@ -35,8 +37,7 @@ async function loadPrintables() {
         populateExtraFields(); // <--- Add this line
 
         applyPrintableFilters();
-    } catch (error) {
-        list.innerHTML = "<p>Error loading library.</p>";
+    } catch (error) { console.error(error);
     }
 }
 
@@ -184,7 +185,7 @@ document.addEventListener("click", async (e) => {
         if (card.querySelector(".edit-panel")) return;
 
         // FIX: Look for item using docId OR numeric id for old files
-        const item = allResources.find(r => r.id === docId || String(r.id) === String(docId));
+        const item = allResources.find(r => r.firebaseId === docId);
         if (!item) return alert("Error: Could not find resource data. (ID: " + docId + ")");
 
         const hiddenFields = ['id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath'];
