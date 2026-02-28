@@ -99,6 +99,24 @@ document.addEventListener("click", async (e) => {
     const card = e.target.closest(".resource-item");
     const docId = card ? card.dataset.id : null;
 
+    // --- restored: ADD CUSTOM FIELD BUTTON ---
+    if (e.target.classList.contains("add-field-btn")) {
+        const newFieldName = prompt("Enter the name for the new field (e.g., Level, Duration):");
+        if (!newFieldName) return;
+        
+        // This ensures the key is lowercase so filters can find it later
+        const cleanKey = newFieldName.trim().replace(/\s+/g, '_').toLowerCase(); 
+        const container = e.target.closest(".edit-panel").querySelector(".new-fields-container");
+        
+        const newFieldHTML = `
+            <div style="margin-top:10px; border-left:3px solid #673AB7; padding-left:10px;">
+                <label style="font-size:0.8em; color:#673AB7; font-weight:bold;">${cleanKey.toUpperCase()} (New):</label><br>
+                <input type="text" class="edit-field" data-key="${cleanKey}" placeholder="Enter value..." style="width:90%; margin:5px 0;">
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', newFieldHTML);
+    }
+
     // --- EDIT BUTTON ---
     if (e.target.classList.contains("edit-btn")) {
         if (prompt("Admin password:") !== "Go3706") return alert("Incorrect password.");
@@ -112,20 +130,28 @@ document.addEventListener("click", async (e) => {
         panel.className = "edit-panel";
         panel.style = "margin:15px auto; padding:15px; background:#f9f9f9; border:1px solid #ccc; border-radius:8px; max-width:400px; text-align:left;";
 
-        let html = `<strong>Edit Resource:</strong><br>`;
+        let html = `<strong>Edit Resource:</strong><br><div class="existing-fields">`;
+        
         Object.keys(item).forEach(key => {
             if (hiddenFields.includes(key)) return;
             const listAttr = key === 'topic' ? 'list="topicSuggestions"' : 
                              key === 'ageGroup' ? 'list="ageSuggestions"' : 
                              key === 'language' ? 'list="langSuggestions"' : '';
+
             html += `<label style="font-size:0.8em; color:gray;">${key.toUpperCase()}:</label><br>
                      <input type="text" class="edit-field" data-key="${key}" ${listAttr} value="${item[key] || ""}" style="width:90%; margin:5px 0;"><br>`;
         });
 
-        html += `<div style="text-align:center;">
-                    <button class="save-btn" style="background:green; color:white; padding:8px 20px; border:none; border-radius:4px; cursor:pointer;">Save</button>
-                    <button class="cancel-btn" style="background:#888; color:white; padding:8px 20px; margin-left:10px; border:none; border-radius:4px; cursor:pointer;">Cancel</button>
-                 </div>`;
+        // Placeholder for newly added fields
+        html += `</div><div class="new-fields-container"></div>`;
+        
+        html += `
+            <button type="button" class="add-field-btn" style="background:#673AB7; color:white; border:none; padding:5px 10px; margin:10px 0; cursor:pointer; border-radius:4px; font-size:0.8em;">➕ Add Custom Field</button>
+            <div style="text-align:center; border-top:1px solid #ccc; padding-top:10px;">
+                <button class="save-btn" style="background:green; color:white; padding:8px 20px; border:none; border-radius:4px; cursor:pointer;">Save</button>
+                <button class="cancel-btn" style="background:#888; color:white; padding:8px 20px; margin-left:10px; border:none; border-radius:4px; cursor:pointer;">Cancel</button>
+            </div>`;
+        
         panel.innerHTML = html;
         card.appendChild(panel);
     }
@@ -134,14 +160,17 @@ document.addEventListener("click", async (e) => {
     if (e.target.classList.contains("save-btn")) {
         const updatedData = {};
         card.querySelectorAll(".edit-field").forEach(input => {
-            updatedData[input.getAttribute("data-key")] = input.value.trim();
+            const key = input.getAttribute("data-key");
+            if (key) updatedData[key] = input.value.trim();
         });
 
         try {
             await updateDoc(doc(db, "resources", docId), updatedData);
             alert("Resource Updated!");
             loadAndDisplay();
-        } catch (err) { alert("Error: " + err.message); }
+        } catch (err) { 
+            alert("Error: " + err.message); 
+        }
     }
 
     if (e.target.classList.contains("cancel-btn")) e.target.closest(".edit-panel")?.remove();
