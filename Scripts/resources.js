@@ -118,6 +118,23 @@ function displayResources(filteredData) {
 
 // 5. Shared Click Handler
 document.addEventListener("click", async (e) => {
+// --- ADD FIELD BUTTON ---
+    if (e.target.classList.contains("add-field-btn")) {
+        const newFieldName = prompt("Enter the name for the new field (e.g., Level, Duration, Notes):");
+        if (!newFieldName) return;
+        
+        const cleanKey = newFieldName.trim().replace(/\s+/g, '_'); // Replace spaces with underscores for DB safety
+        const container = e.target.closest(".edit-panel").querySelector(".new-fields-container");
+        
+        const newFieldHTML = `
+            <div style="margin-top:10px; border-left:3px solid #673AB7; padding-left:10px;">
+                <label style="font-size:0.8em; color:#673AB7; font-weight:bold;">${cleanKey.toUpperCase()} (New):</label><br>
+                <input type="text" class="edit-field" data-key="${cleanKey}" placeholder="Enter value..." style="width:90%; margin:5px 0;">
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', newFieldHTML);
+    }
+
     // --- EDIT BUTTON ---
     if (e.target.classList.contains("edit-btn")) {
         const password = prompt("Admin password:");
@@ -144,6 +161,7 @@ const card = e.target.closest(".resource-item");
     panel.style = "margin: 15px auto; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; max-width: 400px; text-align: left;";
 
     let panelHTML = `<strong>Edit Resource:</strong><br>`;
+    panelHTML += `<div class="existing-fields">`; // Wrap existing fields
 
     // Loop through EVERY key present in the document to ensure old/unexpected fields show up
     Object.keys(item).forEach(key => {
@@ -161,12 +179,17 @@ const card = e.target.closest(".resource-item");
         `;
     });
 
-    panelHTML += `
-        <div style="text-align:center;">
-            <button class="save-btn" style="background:green; color:white; border:none; padding:8px 20px; margin-top:10px; cursor:pointer; border-radius:4px;">Save</button>
-            <button class="cancel-btn" style="background:#888; color:white; border:none; padding:8px 20px; margin-left:10px; cursor:pointer; border-radius:4px;">Cancel</button>
-        </div>
-    `;
+panelHTML += `</div>`; // Close existing-fields
+panelHTML += `<div class="new-fields-container"></div>`; // Where new fields will appear
+
+// Add the "Add Custom Field" button
+panelHTML += `
+    <button type="button" class="add-field-btn" style="background:#673AB7; color:white; border:none; padding:5px 10px; margin:10px 0; cursor:pointer; border-radius:4px; font-size:0.8em;">➕ Add Custom Field</button>
+    <div style="text-align:center; border-top:1px solid #ccc; pt-10px;">
+        <button class="save-btn" style="background:green; color:white; border:none; padding:8px 20px; margin-top:10px; cursor:pointer; border-radius:4px;">Save All Changes</button>
+        <button class="cancel-btn" style="background:#888; color:white; border:none; padding:8px 20px; margin-left:10px; cursor:pointer; border-radius:4px;">Cancel</button>
+    </div>
+`;
     
     panel.innerHTML = panelHTML;
     card.appendChild(panel);
@@ -183,11 +206,13 @@ if (e.target.classList.contains("save-btn")) {
     const updatedData = {};
     card.querySelectorAll(".edit-field").forEach(input => {
         const key = input.getAttribute("data-key");
-        updatedData[key] = input.value.trim();
+        const val = input.value.trim();
+        if (key) updatedData[key] = val;
     });
 
     try {
-        await updateDoc(doc(db, "resources", docId), updatedData);
+        const collectionName = window.location.href.includes("printables") ? "printables" : "resources";
+        await updateDoc(doc(db, collectionName, docId), updatedData);
         alert("Resource Updated!");
         loadAndDisplay(); // Refresh the list
     } catch (err) { 
