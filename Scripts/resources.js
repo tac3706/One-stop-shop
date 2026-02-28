@@ -24,7 +24,12 @@ async function loadAndDisplay() {
     try {
         const querySnapshot = await getDocs(collection(db, "resources"));
         // FIX: Ensure we store the Firebase doc.id as 'id'
-        allResources = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+        allResources = querySnapshot.docs.map(docSnap => ({ 
+                    // docSnap.id is the REAL Firebase path (e.g., "zX9y7...")
+                    // res.id is the OLD numeric data (e.g., 73)
+                    firebaseId: docSnap.id, 
+                    ...docSnap.data() 
+                }));
 
         populateFilterDropdown("topicFilter", "topic");
         populateFilterDropdown("languageFilter", "language");
@@ -32,8 +37,7 @@ async function loadAndDisplay() {
         populateExtraFields(); // <--- Add this line
 
         applyFilters();
-    } catch (error) {
-        list.innerHTML = "<p>Error loading resources.</p>";
+    } catch (error) { console.error(error);
     }
 }
 
@@ -125,7 +129,7 @@ function displayResources(filteredData) {
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
                 ${topicItems.map(res => `
-                    <div class="resource-item" data-id="${res.id}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
+                    <div class="resource-item" data-id="${res.firebaseId}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
                         <h3>${res.title || "Untitled"}</h3>
                         <div class="card-actions" style="margin-top:10px;">
                             <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${res.favoritesCount || 0}</button>
@@ -198,7 +202,7 @@ document.addEventListener("click", async (e) => {
         if (card.querySelector(".edit-panel")) return;
 
         // FIX: Look for item using docId OR numeric id for old files
-        const item = allResources.find(r => r.id === docId || String(r.id) === String(docId));
+        const item = allResources.find(r => r.firebaseId === docId);
         if (!item) return alert("Error: Could not find resource data. (ID: " + docId + ")");
 
         const hiddenFields = ['id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath'];
