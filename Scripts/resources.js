@@ -123,7 +123,7 @@ document.addEventListener("click", async (e) => {
         const newFieldName = prompt("Enter the name for the new field (e.g., Level, Duration, Notes):");
         if (!newFieldName) return;
         
-        const cleanKey = newFieldName.trim().replace(/\s+/g, '_'); // Replace spaces with underscores for DB safety
+        const cleanKey = newFieldName.trim().replace(/\s+/g, '_').toLowerCase();
         const container = e.target.closest(".edit-panel").querySelector(".new-fields-container");
         
         const newFieldHTML = `
