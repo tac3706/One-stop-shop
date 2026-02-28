@@ -27,8 +27,9 @@ async function loadAndDisplay() {
         allResources = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
 
         populateFilterDropdown("topicFilter", "topic");
-        populateFilterDropdown("ageFilter", "ageGroup");
         populateFilterDropdown("languageFilter", "language");
+
+        populateExtraFields(); // <--- Add this line
 
         applyFilters();
     } catch (error) {
@@ -46,6 +47,59 @@ function populateFilterDropdown(elementId, fieldName) {
         select.innerHTML += `<option value="${val}">${val.charAt(0).toUpperCase() + val.slice(1)}</option>`;
     });
 }
+
+function populateExtraFields() {
+    const fieldSelector = document.getElementById("extraFieldSelector");
+    if (!fieldSelector) return;
+
+    // 1. Define fields that ALREADY have their own dropdowns
+    const staticFields = ['topic', 'agegroup', 'language', 'title', 'teacher', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath'];
+
+    // 2. Find all unique keys in all resources that aren't in the static list
+    let extraKeys = [];
+    allResources.forEach(res => {
+        Object.keys(res).forEach(key => {
+            const lowKey = key.toLowerCase();
+            if (!staticFields.includes(lowKey) && !extraKeys.includes(lowKey)) {
+                extraKeys.push(lowKey);
+            }
+        });
+    });
+
+    // 3. Fill the first dropdown (The Field Names)
+    const currentField = fieldSelector.value;
+    fieldSelector.innerHTML = '<option value="">Search by Extra Field...</option>';
+    extraKeys.sort().forEach(key => {
+        fieldSelector.innerHTML += `<option value="${key}">${key.toUpperCase()}</option>`;
+    });
+    fieldSelector.value = currentField;
+}
+
+// Handle picking a field name to show its values
+document.getElementById("extraFieldSelector")?.addEventListener("change", (e) => {
+    const fieldName = e.target.value;
+    const valueSelector = document.getElementById("extraValueSelector");
+    
+    if (!fieldName) {
+        valueSelector.innerHTML = '<option value="">Select Value...</option>';
+        valueSelector.disabled = true;
+        applyFilters();
+        return;
+    }
+
+    // Find all unique values for THIS specific chosen field
+    const values = [...new Set(allResources.map(res => res[fieldName])
+        .filter(val => val !== undefined && val !== ""))].sort();
+
+    valueSelector.innerHTML = `<option value="">All ${fieldName.toUpperCase()}s</option>`;
+    values.forEach(v => {
+        valueSelector.innerHTML += `<option value="${v}">${v}</option>`;
+    });
+    valueSelector.disabled = false;
+    applyFilters();
+});
+
+document.getElementById("extraValueSelector")?.addEventListener("change", applyFilters);
 
 // 2. Display Logic
 function displayResources(filteredData) {
@@ -188,29 +242,31 @@ document.addEventListener("click", async (e) => {
 
 // 4. Filtering & Sorting
 function applyFilters() {
-    const searchTerm = (document.getElementById("searchInput")?.value || "").toLowerCase();
-    const topic = (document.getElementById("topicFilter")?.value || "").toLowerCase();
-    const age = (document.getElementById("ageFilter")?.value || "").toLowerCase();
-    const teacherSearch = (document.getElementById("teacherFilter")?.value || "").toLowerCase();
-    const langFilter = (document.getElementById("languageFilter")?.value || "").toLowerCase();
+    const searchTerm = document.getElementById("searchInput")?.value.toLowerCase() || "";
+    const topic = document.getElementById("topicFilter")?.value.toLowerCase() || "";
+    const langFilter = document.getElementById("languageFilter")?.value.toLowerCase() || "";
     const favOnly = document.getElementById("favOnlyFilter")?.checked || false;
 
-    let filtered = allResources.filter(res => {
-        const resTitle = (res.title || "").toLowerCase();
-        const resTopic = String(res.topic || "").toLowerCase();
-        const resAge = String(res.ageGroup || "").toLowerCase();
-        const resTeacher = String(res.teacher || "").toLowerCase();
-        const resLang = String(res.language || "").toLowerCase();
+    // Extra Field Logic
+    const extraField = document.getElementById("extraFieldSelector")?.value;
+    const extraValue = document.getElementById("extraValueSelector")?.value.toLowerCase();
 
-        return resTitle.includes(searchTerm) &&
-               (!topic || resTopic === topic) &&
-               (!age || resAge === age) &&
-               (!teacherSearch || resTeacher.includes(teacherSearch)) &&
-               (!langFilter || resLang === langFilter) &&
-               (!favOnly || (res.favoritesCount > 0));
+    let filtered = allResources.filter(res => {
+        const matchesStatic = 
+            (res.title || "").toLowerCase().includes(searchTerm) &&
+            (!topic || String(res.topic || "").toLowerCase() === topic) &&
+            (!langFilter || String(res.language || "").toLowerCase() === langFilter) &&
+            (!favOnly || (res.favoritesCount > 0));
+
+        // Logic for the extra field
+        let matchesExtra = true;
+        if (extraField && extraValue) {
+            matchesExtra = String(res[extraField] || "").toLowerCase() === extraValue;
+        }
+
+        return matchesStatic && matchesExtra;
     });
 
-    // FIX: Sort by favorites (most stars first) if filter is active
     if (favOnly) {
         filtered.sort((a, b) => (b.favoritesCount || 0) - (a.favoritesCount || 0));
     }
