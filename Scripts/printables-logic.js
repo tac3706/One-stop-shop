@@ -24,7 +24,7 @@ async function loadPrintables() {
     try {
         const querySnapshot = await getDocs(collection(db, "printables"));
         // FIX: Capture the real Firebase Document ID as docId
-        allResources = querySnapshot.docs.map(docSnap => ({ 
+        allPrintables = querySnapshot.docs.map(docSnap => ({ 
                     // docSnap.id is the REAL Firebase path (e.g., "zX9y7...")
                     // res.id is the OLD numeric data (e.g., 73)
                     firebaseId: docSnap.id, 
@@ -61,7 +61,7 @@ function populateExtraFields() {
 
     // 2. Find all unique keys in all resources that aren't in the static list
     let extraKeys = [];
-    allResources.forEach(res => {
+    allPrintables.forEach(res => {
         Object.keys(res).forEach(key => {
             const lowKey = key.toLowerCase();
             if (!staticFields.includes(lowKey) && !extraKeys.includes(lowKey)) {
@@ -92,7 +92,7 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
     }
 
     // Find all unique values for THIS specific chosen field
-    const values = [...new Set(allResources.map(res => res[fieldName])
+    const values = [...new Set(allPrintables.map(res => res[fieldName])
         .filter(val => val !== undefined && val !== ""))].sort();
 
     valueSelector.innerHTML = `<option value="">All ${fieldName.toUpperCase()}s</option>`;
@@ -185,7 +185,7 @@ document.addEventListener("click", async (e) => {
         if (card.querySelector(".edit-panel")) return;
 
         // FIX: Look for item using docId OR numeric id for old files
-        const item = allResources.find(r => r.firebaseId === docId);
+        const item = allPrintables.find(r => r.firebaseId === docId);
         if (!item) return alert("Error: Could not find resource data. (ID: " + docId + ")");
 
         const hiddenFields = ['id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath'];
@@ -256,7 +256,7 @@ function applyPrintableFilters() {
     const extraField = document.getElementById("extraFieldSelector")?.value;
     const extraValue = document.getElementById("extraValueSelector")?.value.toLowerCase();
 
-    let filtered = allResources.filter(res => {
+    let filtered = allPrintables.filter(res => {
         const matchesStatic = 
             (res.title || "").toLowerCase().includes(searchTerm) &&
             (!topic || String(res.topic || "").toLowerCase() === topic) &&
