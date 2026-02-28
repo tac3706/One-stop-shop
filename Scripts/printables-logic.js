@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
-    getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, arrayUnion, increment 
+    getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, arrayUnion, increment, deleteField 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -153,6 +153,37 @@ document.addEventListener("click", async (e) => {
         `);
     }
 
+    // --- DELETE A SPECIFIC FIELD KEY ---
+    if (e.target.classList.contains("remove-field-key-btn")) {
+        const keyToDelete = e.target.dataset.key;
+        
+        // Safety check so you don't accidentally delete the Title or URL
+        const protectedFields = ['title', 'url', 'topic'];
+        if (protectedFields.includes(keyToDelete.toLowerCase())) {
+            if (!confirm(`"${keyToDelete}" is a core field. Are you sure you want to delete it?`)) return;
+        } else {
+            if (!confirm(`Delete the field "${keyToDelete}" and all its data?`)) return;
+        }
+
+        try {
+            const updateObj = {};
+            updateObj[keyToDelete] = deleteField(); // Tells Firebase to remove the key
+
+            // Use docId from the closest resource-item card
+            await updateDoc(doc(db, "resources", docId), updateObj); 
+            
+            alert(`Field "${keyToDelete}" removed.`);
+            
+            // Remove the row from the UI immediately
+            e.target.closest(".field-row").remove();
+            
+            // Refresh the main data so the "Extra Fields" filter updates
+            loadAndDisplay(); 
+        } catch (err) {
+            alert("Error deleting field: " + err.message);
+        }
+    }
+
     // --- EDIT BUTTON ---
     if (e.target.classList.contains("edit-btn")) {
         if (prompt("Admin password:") !== "Go3706") return alert("Incorrect password.");
@@ -167,15 +198,22 @@ document.addEventListener("click", async (e) => {
         panel.className = "edit-panel";
         panel.style = "margin:15px auto; padding:15px; background:#f9f9f9; border:1px solid #ccc; border-radius:8px; max-width:400px; text-align:left;";
 
-        let html = `<strong>Edit Printable:</strong><br><div class="existing-fields">`;
-        Object.keys(res).forEach(key => {
-            if (hiddenFields.includes(key)) return;
-            const listAttr = key === 'topic' ? 'list="topicSuggestions"' : 
-                             key === 'ageGroup' ? 'list="ageSuggestions"' : 
-                             key === 'language' ? 'list="langSuggestions"' : '';
+        let html = `<strong>Edit Resource:</strong><br><div class="existing-fields">`;
 
-            html += `<label style="font-size:0.8em; color:gray;">${key.toUpperCase()}:</label><br>
-                     <input type="text" class="edit-field" data-key="${key}" ${listAttr} value="${res[key] || ""}" style="width:90%; margin:5px 0;"><br>`;
+        Object.keys(item).forEach(key => {
+            if (hiddenFields.includes(key)) return;
+            
+            const listAttr = key === 'topic' ? 'list="topicSuggestions"' : 
+                            key === 'language' ? 'list="langSuggestions"' : '';
+
+            html += `
+                <div class="field-row" style="margin-bottom:10px; border-bottom:1px hide #eee; padding-bottom:5px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <label style="font-size:0.8em; color:gray;">${key.toUpperCase()}:</label>
+                        <button type="button" class="remove-field-key-btn" data-key="${key}" style="background:none; border:none; color:red; cursor:pointer; font-size:1.1em;" title="Delete this field entireley">×</button>
+                    </div>
+                    <input type="text" class="edit-field" data-key="${key}" ${listAttr} value="${item[key] || ""}" style="width:95%; margin-top:3px;">
+                </div>`;
         });
 
         html += `</div><div class="new-fields-container"></div>
