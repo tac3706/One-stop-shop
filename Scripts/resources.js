@@ -25,7 +25,7 @@ async function loadAndDisplay() {
 
     try {
         const querySnapshot = await getDocs(collection(db, "resources"));
-        allResources = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+        allResources = querySnapshot.docs.map(docSnap => ({ docId: docSnap.id, ...docSnap.data() }));
 
         // Update dropdown filters automatically based on DB content
         populateFilterDropdown("topicFilter", "topic");
@@ -87,7 +87,7 @@ function displayResources(filteredData) {
                     const langDisplay = res.language ? res.language.toUpperCase() : "N/A";
                     
                     return `
-                        <div class="resource-item" data-id="${res.id}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
+                        <div class="resource-item" data-id="${res.docId || res.id}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
                             <h3>${res.title || "Untitled"}</h3>
                             <p>👤 Teacher: ${res.teacher || "Staff"} | 🌐 Lang: ${langDisplay}</p>
                             <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
@@ -145,7 +145,7 @@ const card = e.target.closest(".resource-item");
 
     const docId = card.dataset.id;
     // FIND THE ITEM SAFELY
-    const item = allResources.find(r => String(r.id) === String(docId));
+    const item = allResources.find(r => r.docId === docId || String(r.id) === String(docId));
     
     if (!item) {
         console.log("Searching for:", docId, "Type:", typeof docId);
