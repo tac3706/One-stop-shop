@@ -52,7 +52,7 @@ function populateExtraFields() {
     const fieldSelector = document.getElementById("extraFieldSelector");
     if (!fieldSelector) return;
 
-    const staticFields = ['topic', 'agegroup', 'language', 'title', 'teacher', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath', 'firebaseid'];
+    const staticFields = ['topic', 'language', 'title', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath', 'firebaseid'];
 
     let extraKeys = [];
     allPrintables.forEach(res => {
