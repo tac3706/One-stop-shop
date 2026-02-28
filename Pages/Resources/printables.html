@@ -24,14 +24,9 @@
 
         <div class="filter-controls">
             <input type="text" id="searchInput" placeholder="Search resources...">
-            <input type="text" id="teacherFilter" placeholder="Filter by teacher...">
 
             <select id="topicFilter">
                 <option value="">All Topics</option>
-            </select>
-
-            <select id="ageFilter">
-                <option value="">All Ages</option>
             </select>
 
             <select id="languageFilter">
@@ -42,6 +37,18 @@
                 <input type="checkbox" id="favOnlyFilter"> ⭐
             </label>
         </div>
+
+        <div class="filter-group">
+        <select id="extraFieldSelector">
+            <option value="">Search by Extra Field...</option>
+        </select>
+
+        <select id="extraValueSelector" disabled>
+            <option value="">Select Value...</option>
+        </select>
+        </div>
+
+        <p id="resultCount" style="margin-top: 10px; font-weight: bold; color: #666;"></p>
 
         <hr>
         <div id="printableList"></div>
