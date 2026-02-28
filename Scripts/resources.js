@@ -57,7 +57,7 @@ function populateExtraFields() {
     if (!fieldSelector) return;
 
     // 1. Define fields that ALREADY have their own dropdowns
-    const staticFields = ['topic', 'agegroup', 'language', 'title', 'teacher', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath'];
+    const staticFields = ['topic', 'language', 'title', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath', 'firebaseid'];
 
     // 2. Find all unique keys in all resources that aren't in the static list
     let extraKeys = [];
