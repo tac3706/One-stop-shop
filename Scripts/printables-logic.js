@@ -23,21 +23,17 @@ async function loadPrintables() {
     list.innerHTML = "<p>Loading printables...</p>";
     try {
         const querySnapshot = await getDocs(collection(db, "printables"));
-        // FIX: Capture the real Firebase Document ID as docId
         allPrintables = querySnapshot.docs.map(docSnap => ({ 
-                    // docSnap.id is the REAL Firebase path (e.g., "zX9y7...")
-                    // res.id is the OLD numeric data (e.g., 73)
-                    firebaseId: docSnap.id, 
-                    ...docSnap.data() 
-                }));
+            firebaseId: docSnap.id, 
+            ...docSnap.data() 
+        }));
 
         populateFilterDropdown("topicFilter", "topic");
         populateFilterDropdown("languageFilter", "language");
-
-        populateExtraFields(); // <--- Add this line
-
+        populateExtraFields(); 
         applyPrintableFilters();
-    } catch (error) { console.error(error);
+    } catch (error) { 
+        console.error("Load Error:", error);
     }
 }
 
@@ -56,10 +52,8 @@ function populateExtraFields() {
     const fieldSelector = document.getElementById("extraFieldSelector");
     if (!fieldSelector) return;
 
-    // 1. Define fields that ALREADY have their own dropdowns
-    const staticFields = ['topic', 'agegroup', 'language', 'title', 'teacher', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath'];
+    const staticFields = ['topic', 'agegroup', 'language', 'title', 'teacher', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath', 'firebaseid'];
 
-    // 2. Find all unique keys in all resources that aren't in the static list
     let extraKeys = [];
     allPrintables.forEach(res => {
         Object.keys(res).forEach(key => {
@@ -70,7 +64,6 @@ function populateExtraFields() {
         });
     });
 
-    // 3. Fill the first dropdown (The Field Names)
     const currentField = fieldSelector.value;
     fieldSelector.innerHTML = '<option value="">Search by Extra Field...</option>';
     extraKeys.sort().forEach(key => {
@@ -79,7 +72,7 @@ function populateExtraFields() {
     fieldSelector.value = currentField;
 }
 
-// Handle picking a field name to show its values
+// Handle Extra Field Dropdowns
 document.getElementById("extraFieldSelector")?.addEventListener("change", (e) => {
     const fieldName = e.target.value;
     const valueSelector = document.getElementById("extraValueSelector");
@@ -87,11 +80,10 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
     if (!fieldName) {
         valueSelector.innerHTML = '<option value="">Select Value...</option>';
         valueSelector.disabled = true;
-        applyFilters();
+        applyPrintableFilters();
         return;
     }
 
-    // Find all unique values for THIS specific chosen field
     const values = [...new Set(allPrintables.map(res => res[fieldName])
         .filter(val => val !== undefined && val !== ""))].sort();
 
@@ -100,10 +92,10 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
         valueSelector.innerHTML += `<option value="${v}">${v}</option>`;
     });
     valueSelector.disabled = false;
-    applyFilters();
+    applyPrintableFilters();
 });
 
-document.getElementById("extraValueSelector")?.addEventListener("change", applyFilters);
+document.getElementById("extraValueSelector")?.addEventListener("change", applyPrintableFilters);
 
 // 2. Display Data
 function displayPrintables(data) {
@@ -114,13 +106,12 @@ function displayPrintables(data) {
     data.forEach(res => {
         const card = document.createElement("div");
         card.className = "resource-item";
-        // FIX: Ensure data-id uses the true Firebase docId
-        card.dataset.id = res.docId || res.id; 
+        // FIX: Match the firebaseId property from load function
+        card.dataset.id = res.firebaseId; 
         card.style = "margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;";
 
         card.innerHTML = `
             <h3>${res.title || "Untitled"}</h3>
-            
             <div style="margin-top:10px;">
                 <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">📥 Download</a>
                 <button class="edit-btn" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
@@ -137,34 +128,27 @@ function displayPrintables(data) {
 
 // 3. Shared Click Handler
 document.addEventListener("click", async (e) => {
-    // 1. Identify the card and the ID
     const card = e.target.closest(".resource-item");
-    if (!card) return; // Exit if click wasn't inside a card
+    if (!card) return; 
 
-    const docId = card.dataset.id; // This is the Firebase Doc ID
+    const docId = card.dataset.id;
 
-    // --- DELETE A SPECIFIC FIELD KEY ---
+    // --- DELETE FIELD ---
     if (e.target.classList.contains("remove-field-key-btn")) {
         const keyToDelete = e.target.dataset.key;
         if (!confirm(`Permanently delete the field "${keyToDelete}"?`)) return;
-
         try {
             const updateObj = {};
             updateObj[keyToDelete] = deleteField(); 
-            
-            // Explicitly use the docId found from the card
-            await updateDoc(doc(db, "resources", docId), updateObj);
-            
-            alert(`Field "${keyToDelete}" removed.`);
+            await updateDoc(doc(db, "printables", docId), updateObj); // FIX: collection name
+            alert(`Field removed.`);
             e.target.closest(".field-row").remove();
-            loadAndDisplay(); 
-        } catch (err) {
-            alert("Error deleting field: " + err.message);
-        }
-        return; // Stop here
+            loadPrintables(); 
+        } catch (err) { alert("Error: " + err.message); }
+        return;
     }
 
-    // --- ADD CUSTOM FIELD ---
+    // --- ADD FIELD ---
     if (e.target.classList.contains("add-field-btn")) {
         const newFieldName = prompt("New field name:");
         if (!newFieldName) return;
@@ -184,17 +168,15 @@ document.addEventListener("click", async (e) => {
         if (prompt("Admin password:") !== "Go3706") return alert("Incorrect password.");
         if (card.querySelector(".edit-panel")) return;
 
-        // FIX: Look for item using docId OR numeric id for old files
         const item = allPrintables.find(r => r.firebaseId === docId);
-        if (!item) return alert("Error: Could not find resource data. (ID: " + docId + ")");
+        if (!item) return alert("Error: Could not find data.");
 
-        const hiddenFields = ['id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath'];
+        const hiddenFields = ['firebaseId', 'id', 'createdAt', 'feedback', 'favoritesCount', 'storagePath'];
         const panel = document.createElement("div");
         panel.className = "edit-panel";
         panel.style = "margin:15px auto; padding:15px; background:#f9f9f9; border:1px solid #ccc; border-radius:8px; text-align:left;";
 
-        let html = `<strong>Edit Resource:</strong><br><div class="existing-fields">`;
-        
+        let html = `<strong>Edit Printable:</strong><br><div class="existing-fields">`;
         Object.keys(item).forEach(key => {
             if (hiddenFields.includes(key)) return;
             html += `
@@ -213,7 +195,6 @@ document.addEventListener("click", async (e) => {
                 <button class="save-btn" style="background:green; color:white; padding:8px 20px; border:none; border-radius:4px; cursor:pointer;">Save</button>
                 <button class="cancel-btn" style="background:#888; color:white; padding:8px 20px; margin-left:10px; border:none; border-radius:4px; cursor:pointer;">Cancel</button>
             </div>`;
-        
         panel.innerHTML = html;
         card.appendChild(panel);
         return;
@@ -225,24 +206,23 @@ document.addEventListener("click", async (e) => {
         card.querySelectorAll(".edit-field").forEach(input => {
             updatedData[input.getAttribute("data-key")] = input.value.trim();
         });
-
         try {
-            await updateDoc(doc(db, "resources", docId), updatedData);
+            await updateDoc(doc(db, "printables", docId), updatedData); // FIX: collection name
             alert("Saved!");
-            loadAndDisplay();
+            loadPrintables();
         } catch (err) { alert("Save Error: " + err.message); }
     }
 
-    // --- CANCEL, DELETE, FAV, FEED ---
     if (e.target.classList.contains("cancel-btn")) card.querySelector(".edit-panel")?.remove();
+    
     if (e.target.classList.contains("delete-btn")) {
         if (prompt("Admin password:") === "Go3706" && confirm("Delete entire file?")) {
-            await deleteDoc(doc(db, "resources", docId));
-            loadAndDisplay();
+            await deleteDoc(doc(db, "printables", docId)); // FIX: collection name
+            loadPrintables();
         }
     }
-    if (e.target.classList.contains("fav-action-btn")) handleFavorite('resources', docId);
-    if (e.target.classList.contains("feed-action-btn")) handleFeedback('resources', docId);
+    if (e.target.classList.contains("fav-action-btn")) handleFavorite('printables', docId);
+    if (e.target.classList.contains("feed-action-btn")) handleFeedback('printables', docId);
 });
 
 // 4. Filtering Logic
@@ -252,7 +232,6 @@ function applyPrintableFilters() {
     const langFilter = document.getElementById("languageFilter")?.value.toLowerCase() || "";
     const favOnly = document.getElementById("favOnlyFilter")?.checked || false;
 
-    // Extra Field Logic
     const extraField = document.getElementById("extraFieldSelector")?.value;
     const extraValue = document.getElementById("extraValueSelector")?.value.toLowerCase();
 
@@ -263,25 +242,22 @@ function applyPrintableFilters() {
             (!langFilter || String(res.language || "").toLowerCase() === langFilter) &&
             (!favOnly || (res.favoritesCount > 0));
 
-        // Logic for the extra field
         let matchesExtra = true;
         if (extraField && extraValue) {
             matchesExtra = String(res[extraField] || "").toLowerCase() === extraValue;
         }
-
         return matchesStatic && matchesExtra;
     });
 
     if (favOnly) {
         filtered.sort((a, b) => (b.favoritesCount || 0) - (a.favoritesCount || 0));
     }
-
     displayPrintables(filtered);
 }
 
 window.addEventListener("DOMContentLoaded", () => {
     loadPrintables();
-    ["searchInput", "topicFilter", "ageFilter", "teacherFilter", "languageFilter", "favOnlyFilter"].forEach(id => {
+    ["searchInput", "topicFilter", "languageFilter", "favOnlyFilter"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener(el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input", applyPrintableFilters);
     });
