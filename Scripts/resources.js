@@ -135,6 +135,15 @@ function displayResources(filteredData) {
                             <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${res.favoritesCount || 0}</button>
                             <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${(res.feedback || []).length})</button>
                         </div>
+
+                        ${(res.feedback && res.feedback.length > 0) ? `
+                                    <div class="feedback-list" style="font-size:0.85em; color:#555; background:#f9f9f9; padding:10px; margin-top:10px; border-radius:5px; text-align:left; display:inline-block; width:90%;">
+                                        <ul style="list-style:none; padding:0; margin:0;">
+                                            ${res.feedback.map(f => `<li style="margin-bottom:5px; border-bottom:1px solid #eee;"><strong>${f.date}:</strong> ${f.text}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+
                         <div style="margin-top:10px;">
                             <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                             <button class="edit-btn" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:4px; margin-left:5px;">Edit</button>
