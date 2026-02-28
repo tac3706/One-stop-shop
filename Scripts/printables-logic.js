@@ -65,8 +65,6 @@ function displayPrintables(data) {
 
         card.innerHTML = `
             <h3>${res.title || "Untitled"}</h3>
-            <p>👤 Teacher: ${res.teacher || "Staff"} | 🌐 Lang: ${res.language ? res.language.toUpperCase() : "N/A"}</p>
-            <p>🏷️ Topic: ${res.topic || "General"} | 🎂 Age: ${res.ageGroup || "All"}</p>
             
             <div style="margin-top:10px;">
                 <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">📥 Download</a>
