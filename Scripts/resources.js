@@ -249,6 +249,10 @@ function applyFilters() {
                (!langFilter || String(res.language || "").toLowerCase() === langFilter) &&
                (!favOnly || (res.favoritesCount > 0));
     });
+    if (favOnly) {
+        filtered.sort((a, b) => (b.favoritesCount || 0) - (a.favoritesCount || 0));
+        }
+
     displayResources(filtered);
 }
 
