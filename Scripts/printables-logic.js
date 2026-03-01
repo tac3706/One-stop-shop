@@ -138,8 +138,10 @@ function displayPrintables(data) {
                         </div>
                         
                         ${(res.feedback && res.feedback.length > 0) ? `
-                            <div class="feedback-list" style="font-size:0.85em; color:#555; background:#fefefe; padding:10px; margin-top:10px; border-radius:5px; text-align:left; border:1px dashed #ccc;">
-                                ${res.feedback.map(f => `<p style="margin:4px 0;"><strong>${f.date}:</strong> ${f.text}</p>`).join('')}
+                            <div class="feedback-list" style="font-size:0.85em; color:#555; background:#f9f9f9; padding:10px; margin-top:10px; border-radius:5px; text-align:center;">
+                                <ul style="list-style:none; padding:0; margin:0;">
+                                    ${res.feedback.map(f => `<li style="margin-bottom:5px; border-bottom:1px solid #eee;"><strong>${f.date}:</strong> ${f.text}</li>`).join('')}
+                                </ul>
                             </div>
                         ` : ''}
                     </div>
