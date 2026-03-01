@@ -106,17 +106,20 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
 document.getElementById("extraValueSelector")?.addEventListener("change", applyFilters);
 
 // 2. Display Logic
+// Replace your displayResources function with this:
 function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
     if (!list) return;
-    list.innerHTML = "";
+    
+    // Add Total Count at the top
+    list.innerHTML = `<p style="text-align:center; font-weight:bold;">Showing ${filteredData.length} resource(s)</p>`;
 
     if (filteredData.length === 0) {
-        list.innerHTML = "<p>No resources found.</p>";
+        list.innerHTML += "<p>No resources found.</p>";
         return;
     }
 
-    const topics = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))];
+    const topics = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))].sort();
 
     topics.forEach(topic => {
         const topicItems = filteredData.filter(res => String(res.topic || "general").toLowerCase() === topic);
@@ -135,14 +138,12 @@ function displayResources(filteredData) {
                             <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${res.favoritesCount || 0}</button>
                             <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${(res.feedback || []).length})</button>
                         </div>
-
+                        
                         ${(res.feedback && res.feedback.length > 0) ? `
-                                    <div class="feedback-list" style="font-size:0.85em; color:#555; background:#f9f9f9; padding:10px; margin-top:10px; border-radius:5px; text-align:left; display:inline-block; width:90%;">
-                                        <ul style="list-style:none; padding:0; margin:0;">
-                                            ${res.feedback.map(f => `<li style="margin-bottom:5px; border-bottom:1px solid #eee;"><strong>${f.date}:</strong> ${f.text}</li>`).join('')}
-                                        </ul>
-                                    </div>
-                                ` : ''}
+                            <div class="feedback-list" style="font-size:0.85em; color:#555; background:#f9f9f9; padding:10px; margin-top:10px; border-radius:5px; text-align:left;">
+                                ${res.feedback.map(f => `<p style="margin:4px 0;"><strong>${f.date}:</strong> ${f.text}</p>`).join('')}
+                            </div>
+                        ` : ''}
 
                         <div style="margin-top:10px;">
                             <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
