@@ -55,6 +55,14 @@
                 <small>Max size: 50MB (PDF, PPTX, JPG, PNG)</small>
             </div>
 
+            <div id="customFieldsContainer" style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
+                <label style="font-weight: bold; color: #673AB7;">Custom Details:</label>
+                <div id="dynamicFieldsList"></div>
+                <button type="button" id="addCustomFieldBtn" style="background:#673AB7; color:white; border:none; padding:5px 10px; margin:10px 0; cursor:pointer; border-radius:4px; font-size:0.8em;">
+                    ➕ Add Custom Field (e.g. Level, Duration)
+                </button>
+            </div>
+
             <button id="uploadBtn" style="width:100%; padding:12px; background-color:#28a745; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">
                 🚀 Upload to Library
             </button>
@@ -80,6 +88,26 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
+        // --- DYNAMIC FIELD LOGIC ---
+        const addFieldBtn = document.getElementById('addCustomFieldBtn');
+        const dynamicFieldsList = document.getElementById('dynamicFieldsList');
+
+        addFieldBtn.addEventListener('click', () => {
+            const fieldName = prompt("Enter the name for the new field (e.g., Level, Duration):");
+            if (!fieldName) return;
+
+            const cleanKey = fieldName.trim().replace(/\s+/g, '_').toLowerCase();
+            
+            const fieldHTML = `
+                <div class="custom-field-row" style="margin-bottom:10px; background:#f0f0f0; padding:10px; border-radius:5px; position:relative;">
+                    <label style="font-size:0.8em; color:#673AB7; font-weight:bold;">${cleanKey.toUpperCase()}:</label>
+                    <button type="button" onclick="this.parentElement.remove()" style="position:absolute; right:5px; top:5px; background:none; border:none; color:red; cursor:pointer;">×</button>
+                    <input type="text" class="custom-data-input" data-key="${cleanKey}" placeholder="Enter value..." style="width:100%; margin-top:5px; padding:5px; box-sizing:border-box;">
+                </div>
+            `;
+            dynamicFieldsList.insertAdjacentHTML('beforeend', fieldHTML);
+        });
+
         // --- POPULATE SUGGESTIONS FROM DATABASE ---
         async function populateSuggestions() {
             try {
@@ -89,13 +117,9 @@
 
                 const getUnique = (key) => [...new Set(allData.map(item => item[key]?.trim().toLowerCase()).filter(Boolean))].sort();
 
-                const topics = getUnique('topic');
-                const ages = getUnique('ageGroup');
-                const langs = getUnique('language'); // Added this
-
-                document.getElementById('topicSuggestions').innerHTML = topics.map(t => `<option value="${t.charAt(0).toUpperCase() + t.slice(1)}">`).join('');
-                document.getElementById('ageSuggestions').innerHTML = ages.map(a => `<option value="${a.charAt(0).toUpperCase() + a.slice(1)}">`).join('');
-                document.getElementById('langSuggestions').innerHTML = langs.map(l => `<option value="${l.charAt(0).toUpperCase() + l.slice(1)}">`).join(''); // Added this
+                document.getElementById('topicSuggestions').innerHTML = getUnique('topic').map(t => `<option value="${t.charAt(0).toUpperCase() + t.slice(1)}">`).join('');
+                document.getElementById('ageSuggestions').innerHTML = getUnique('ageGroup').map(a => `<option value="${a.charAt(0).toUpperCase() + a.slice(1)}">`).join('');
+                document.getElementById('langSuggestions').innerHTML = getUnique('language').map(l => `<option value="${l.charAt(0).toUpperCase() + l.slice(1)}">`).join('');
             } catch (e) { console.error("Suggestions error:", e); }
         }
         populateSuggestions();
@@ -124,6 +148,28 @@
             status.innerText = "⏳ Processing upload...";
 
             try {
+                // 1. Build the base document object
+                let finalDoc = {
+                    title, 
+                    topic, 
+                    teacher, 
+                    ageGroup: age, 
+                    language,
+                    createdAt: new Date(),
+                    favoritesCount: 0,
+                    feedback: []
+                };
+
+                // 2. Add any dynamic custom fields
+                document.querySelectorAll('.custom-data-input').forEach(input => {
+                    const key = input.getAttribute('data-key');
+                    if (key && input.value.trim()) {
+                        finalDoc[key] = input.value.trim();
+                    }
+                });
+
+                const collectionName = categorySelect.value === 'printable' ? "printables" : "resources";
+
                 if (categorySelect.value === 'printable') {
                     const file = document.getElementById('filePicker').files[0];
                     if (!file) throw new Error("Please select a file.");
@@ -131,26 +177,23 @@
                     const storagePath = `printables/${Date.now()}_${file.name}`;
                     const storageRef = ref(storage, storagePath);
                     const snapshot = await uploadBytes(storageRef, file);
-                    const downloadURL = await getDownloadURL(snapshot.ref);
-
-                    await addDoc(collection(db, "printables"), {
-                        title, topic, teacher, ageGroup: age, language,
-                        url: downloadURL, storagePath, createdAt: new Date(),
-                        favoritesCount: 0, feedback: []
-                    });
+                    finalDoc.url = await getDownloadURL(snapshot.ref);
+                    finalDoc.storagePath = storagePath;
                 } else {
                     const linkUrl = document.getElementById('externalUrl').value;
                     if (!linkUrl) throw new Error("Please paste a URL.");
-
-                    await addDoc(collection(db, "resources"), {
-                        title, topic, teacher, ageGroup: age, language,
-                        url: linkUrl, createdAt: new Date(),
-                        favoritesCount: 0, feedback: []
-                    });
+                    finalDoc.url = linkUrl;
                 }
 
+                // 3. Save to Firebase
+                await addDoc(collection(db, collectionName), finalDoc);
+
                 status.innerText = "✅ Success! Added to the library.";
-                populateSuggestions(); // Refresh suggestions for next upload
+                
+                // Clear the form
+                document.getElementById('fileTitle').value = "";
+                document.getElementById('dynamicFieldsList').innerHTML = "";
+                populateSuggestions();
             } catch (error) {
                 status.innerText = "❌ Error: " + error.message;
             } finally {
