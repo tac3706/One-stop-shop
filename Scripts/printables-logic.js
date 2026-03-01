@@ -137,7 +137,6 @@ function displayPrintables(data) {
                             <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${(res.feedback || []).length})</button>
                         </div>
                         
-                    // Inside displayPrintables in printables-logic.js
                     ${(res.feedback && res.feedback.length > 0) ? `
                         <div class="feedback-list" style="font-size:0.85em; color:#555; background:#fefefe; padding:10px; margin-top:10px; border-radius:5px; text-align:center; border:1px dashed #ccc;">
                             ${res.feedback.map(f => `<p style="margin:4px 0;"><strong>${f.date}:</strong> ${f.text}</p>`).join('')}
