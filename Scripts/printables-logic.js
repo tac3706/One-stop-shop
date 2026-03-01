@@ -98,38 +98,60 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
 document.getElementById("extraValueSelector")?.addEventListener("change", applyPrintableFilters);
 
 // 2. Display Data
+// Replace your displayPrintables function with this:
 function displayPrintables(data) {
     const list = document.getElementById("printableList");
     if (!list) return;
-    list.innerHTML = "";
+    
+    // Add Total Count at the top
+    list.innerHTML = `<p style="text-align:center; font-weight:bold;">Showing ${data.length} printable(s)</p>`;
 
-    data.forEach(res => {
-        const card = document.createElement("div");
-        card.className = "resource-item";
-        // FIX: Match the firebaseId property from load function
-        card.dataset.id = res.firebaseId; 
-        card.style = "margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;";
+    if (data.length === 0) {
+        list.innerHTML += "<p>No printables found.</p>";
+        return;
+    }
 
-        card.innerHTML = `
-            <h3>${res.title || "Untitled"}</h3>
-            <div style="margin-top:10px;">
-                <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">📥 Download</a>
-                <button class="edit-btn" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
-                <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
-            </div>
-            <div class="card-actions" style="margin-top:10px;">
-                <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${res.favoritesCount || 0}</button>
-                <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${(res.feedback || []).length})</button>
-            </div>
-            
-            ${(res.feedback && res.feedback.length > 0) ? `
-                    <div class="feedback-list" style="font-size:0.85em; color:#555; background:#fefefe; padding:10px; margin-top:10px; border-radius:5px; text-align:left; border:1px dashed #ccc; width:90%; margin-left:auto; margin-right:auto;">
-                        ${res.feedback.map(f => `<p style="margin:4px 0;"><strong>${f.date}:</strong> ${f.text}</p>`).join('')}
+    // Group by topic
+    const topics = [...new Set(data.map(res => String(res.topic || "general").toLowerCase()))].sort();
+
+    topics.forEach(topic => {
+        const topicItems = data.filter(res => String(res.topic || "general").toLowerCase() === topic);
+        const section = document.createElement("div");
+        section.style.marginBottom = "15px";
+
+        section.innerHTML = `
+            <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px; text-align:center;">
+                ▶ ${topic.toUpperCase()} (${topicItems.length})
+            </h2>
+            <div class="topic-content" style="display:none; padding:10px;">
+                ${topicItems.map(res => `
+                    <div class="resource-item" data-id="${res.firebaseId}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
+                        <h3>${res.title || "Untitled"}</h3>
+                        <div style="margin-top:10px;">
+                            <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">📥 Download</a>
+                            <button class="edit-btn" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
+                            <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
+                        </div>
+                        <div class="card-actions" style="margin-top:10px;">
+                            <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${res.favoritesCount || 0}</button>
+                            <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${(res.feedback || []).length})</button>
+                        </div>
+                        
+                        ${(res.feedback && res.feedback.length > 0) ? `
+                            <div class="feedback-list" style="font-size:0.85em; color:#555; background:#fefefe; padding:10px; margin-top:10px; border-radius:5px; text-align:left; border:1px dashed #ccc;">
+                                ${res.feedback.map(f => `<p style="margin:4px 0;"><strong>${f.date}:</strong> ${f.text}</p>`).join('')}
+                            </div>
+                        ` : ''}
                     </div>
-                ` : ''}
-
+                `).join('')}
+            </div>
         `;
-        list.appendChild(card);
+        
+        section.querySelector("h2").onclick = () => {
+            const content = section.querySelector(".topic-content");
+            content.style.display = content.style.display === "none" ? "block" : "none";
+        };
+        list.appendChild(section);
     });
 }
 
