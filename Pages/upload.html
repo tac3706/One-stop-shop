@@ -177,6 +177,12 @@
                     const file = document.getElementById('filePicker').files[0];
                     if (!file) throw new Error("Please select a file.");
 
+                    // ADD THIS SIZE CHECK HERE
+                    const maxSizeInBytes = 10 * 1024 * 1024;
+                    if (file.size > maxSizeInBytes) {
+                        throw new Error("File is too big! Please keep it under 5MB.");
+                    }
+
                     const storagePath = `printables/${Date.now()}_${file.name}`;
                     const storageRef = ref(storage, storagePath);
                     const snapshot = await uploadBytes(storageRef, file);
