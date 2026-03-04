@@ -93,12 +93,9 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
 
     // Get unique values and normalize them to Title Case (e.g., "English")
     const values = [...new Set(allResources.map(res => {
-        const val = res[field];
+        const val = res[fieldName]; // Use the fieldName from the listener
         return val ? val.toString().trim().toLowerCase() : null;
     }).filter(Boolean))].sort();
-
-    const matchesExtra = !extraField || !extraValue || 
-    (item[extraField] && item[extraField].toString().toLowerCase() === extraValue.toLowerCase());
 
     valueSelector.innerHTML = `<option value="">All ${fieldName.toUpperCase()}s</option>`;
     values.forEach(v => {
@@ -310,7 +307,7 @@ function applyFilters() {
         // Logic for the extra field
         let matchesExtra = true;
         if (extraField && extraValue) {
-            matchesExtra = String(res[extraField] || "").toLowerCase() === extraValue;
+            matchesExtra = String(res[extraField] || "").trim().toLowerCase() === extraValue.trim().toLowerCase();
         }
 
         return matchesStatic && matchesExtra;
