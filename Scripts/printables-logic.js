@@ -295,7 +295,7 @@ function applyPrintableFilters() {
 
 window.addEventListener("DOMContentLoaded", () => {
     loadPrintables();
-    ["searchInput", "favOnlyFilter"].forEach(id => {
+    ["searchInput", "favOnlyFilter", "sortOrder"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener(el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input", applyPrintableFilters);
     });
