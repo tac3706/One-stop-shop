@@ -108,6 +108,7 @@ document.getElementById("extraValueSelector")?.addEventListener("change", applyF
 
 // 2. Display Logic
 function displayResources(filteredData) {
+    const favOnly = document.getElementById("favOnlyFilter")?.checked; // Check the state
     const list = document.getElementById("resourceList");
     if (!list) return;
     
@@ -118,62 +119,67 @@ function displayResources(filteredData) {
         return;
     }
 
-    const sortOrder = document.getElementById("sortOrder")?.value || "newest";
-    const getTime = (val) => val?.seconds || new Date(val).getTime() / 1000 || 0;
+    if (favOnly) {
+        const flatContainer = document.createElement("div");
+        flatContainer.innerHTML = filteredData.map(res => renderResourceCard(res)).join('');
+        list.appendChild(flatContainer);
+        
+        // Re-attach listeners for the flat list
+        attachResourceListeners(flatContainer, filteredData);
+        return; // Stop here so it doesn't run the grouping logic
+    }
 
-    // 1. Group and Sort Topics
-    const topicGroups = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))]
-        .map(name => {
-            const items = filteredData.filter(res => String(res.topic || "general").toLowerCase() === name);
-            items.sort((a, b) => {
-                if (sortOrder === "newest") return getTime(b.createdAt) - getTime(a.createdAt);
-                if (sortOrder === "oldest") return getTime(a.createdAt) - getTime(b.createdAt);
-                return (a.title || "").localeCompare(b.title || "");
-            });
-            return { name, items, groupTime: getTime(items[0]?.createdAt) };
+    const sortOrder = document.getElementById("sortOrder")?.value || "newest";
+
+    // 1. Helper to get numeric time
+    const getTime = (val) => {
+        if (!val) return 0;
+        if (val.seconds) return val.seconds;
+        return new Date(val).getTime() / 1000 || 0;
+    };
+
+    // 2. Identify all unique topics
+    const topicNames = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))];
+
+    // 3. Create Topic Objects with their "Group Timestamp"
+    const topicGroups = topicNames.map(name => {
+        const items = filteredData.filter(res => String(res.topic || "general").toLowerCase() === name);
+        
+        // Sort items within this group
+        items.sort((a, b) => {
+            if (sortOrder === "newest") return getTime(b.createdAt) - getTime(a.createdAt);
+            if (sortOrder === "oldest") return getTime(a.createdAt) - getTime(b.createdAt);
+            return (a.title || "").localeCompare(b.title || "");
         });
 
+        // The timestamp for the WHOLE group is the timestamp of its newest/first item
+        const groupTime = getTime(items[0]?.createdAt);
+
+        return { name, items, groupTime };
+    });
+
+    // 4. Sort the actual Topic Groups based on the selected order
     topicGroups.sort((a, b) => {
         if (sortOrder === "newest") return b.groupTime - a.groupTime;
         if (sortOrder === "oldest") return a.groupTime - b.groupTime;
         return a.name.localeCompare(b.name);
     });
 
-    // 2. Render
+    // 5. Render the sorted groups
     topicGroups.forEach(group => {
         const section = document.createElement("div");
         section.style.marginBottom = "15px";
-
-        // Generate the HTML for the items inside the group
-        const itemsHtml = group.items.map(res => `
-            <div class="resource-item" data-id="${res.firebaseId}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
-                <h3>${res.title || "Untitled"}</h3>
-                
-                <div style="margin-top:10px;">
-                    <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
-                    <button class="edit-btn" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
-                    <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
-                </div>
-
-                <div class="card-actions" style="margin-top:10px;">
-                    <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${res.favoritesCount || 0}</button>
-                    <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${(res.feedback || []).length})</button>
-                </div>
-
-                ${(res.feedback && res.feedback.length > 0) ? `
-                    <div class="feedback-list" style="font-size:0.85em; color:#555; background:#f9f9f9; padding:10px; margin-top:10px; border-radius:5px; text-align:center;">
-                        ${res.feedback.map(f => `<p style="margin:4px 0;"><strong>${f.date}:</strong> ${f.text}</p>`).join('')}
-                    </div>
-                ` : ''}
-            </div>
-        `).join('');
 
         section.innerHTML = `
             <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px; text-align:center;">
                 ▶ ${group.name.toUpperCase()} (${group.items.length})
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
-                ${itemsHtml}
+                ${group.items.map(res => `
+                    <div class="resource-item" data-id="${res.firebaseId}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
+                        <h3>${res.title || "Untitled"}</h3>
+                        </div>
+                `).join('')}
             </div>
         `;
 
@@ -191,7 +197,7 @@ function displayResources(filteredData) {
             const content = section.querySelector(".topic-content");
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
-        
+
         list.appendChild(section);
     });
 }

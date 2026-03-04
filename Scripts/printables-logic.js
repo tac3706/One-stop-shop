@@ -102,6 +102,7 @@ document.getElementById("extraValueSelector")?.addEventListener("change", applyP
 // 2. Display Data
 function displayPrintables(data) {
     const list = document.getElementById("printableList");
+    const favOnly = document.getElementById("favOnlyFilter")?.checked; // Check the state
     if (!list) return;
     
     // 1. Display Total Count at the top
@@ -110,6 +111,17 @@ function displayPrintables(data) {
     if (data.length === 0) {
         list.innerHTML += "<p>No printables found.</p>";
         return;
+    }
+
+    // IF FAVORITES OVERRIDE IS ON: Show as a flat list, not grouped by topic
+    if (favOnly) {
+        const flatContainer = document.createElement("div");
+        flatContainer.innerHTML = filteredData.map(res => renderResourceCard(res)).join('');
+        list.appendChild(flatContainer);
+        
+        // Re-attach listeners for the flat list
+        attachResourceListeners(flatContainer, filteredData);
+        return; // Stop here so it doesn't run the grouping logic
     }
 
     const sortOrder = document.getElementById("sortOrder")?.value || "newest";
