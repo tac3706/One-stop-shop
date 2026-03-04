@@ -277,8 +277,6 @@ document.addEventListener("click", async (e) => {
 // 4. Filtering & Sorting
 function applyFilters() {
     const searchTerm = document.getElementById("searchInput")?.value.toLowerCase() || "";
-    const topic = document.getElementById("topicFilter")?.value.toLowerCase() || "";
-    const langFilter = document.getElementById("languageFilter")?.value.toLowerCase() || "";
     const favOnly = document.getElementById("favOnlyFilter")?.checked || false;
 
     // Extra Field Logic
@@ -288,8 +286,6 @@ function applyFilters() {
     let filtered = allResources.filter(res => {
         const matchesStatic = 
             (res.title || "").toLowerCase().includes(searchTerm) &&
-            (!topic || String(res.topic || "").toLowerCase() === topic) &&
-            (!langFilter || String(res.language || "").toLowerCase() === langFilter) &&
             (!favOnly || (res.favoritesCount > 0));
 
         // Logic for the extra field
@@ -301,6 +297,20 @@ function applyFilters() {
         return matchesStatic && matchesExtra;
     });
 
+    const sortOrder = document.getElementById("sortOrder")?.value || "newest";
+
+    // Sorting Logic
+    filtered.sort((a, b) => {
+        if (sortOrder === "newest") {
+            return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+        } else if (sortOrder === "oldest") {
+            return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+        } else if (sortOrder === "title") {
+            return (a.title || "").localeCompare(b.title || "");
+        }
+        return 0;
+    });
+
     if (favOnly) {
         filtered.sort((a, b) => (b.favoritesCount || 0) - (a.favoritesCount || 0));
     }
@@ -310,7 +320,7 @@ function applyFilters() {
 
 window.addEventListener("DOMContentLoaded", () => {
     loadAndDisplay();
-    ["searchInput", "topicFilter", "ageFilter", "teacherFilter", "languageFilter", "favOnlyFilter"].forEach(id => {
+    ["searchInput", "favOnlyFilter", "sortOrder"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener(el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input", applyFilters);
     });

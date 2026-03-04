@@ -257,8 +257,6 @@ document.addEventListener("click", async (e) => {
 // 4. Filtering Logic
 function applyPrintableFilters() {
     const searchTerm = document.getElementById("searchInput")?.value.toLowerCase() || "";
-    const topic = document.getElementById("topicFilter")?.value.toLowerCase() || "";
-    const langFilter = document.getElementById("languageFilter")?.value.toLowerCase() || "";
     const favOnly = document.getElementById("favOnlyFilter")?.checked || false;
 
     const extraField = document.getElementById("extraFieldSelector")?.value;
@@ -267,8 +265,6 @@ function applyPrintableFilters() {
     let filtered = allPrintables.filter(res => {
         const matchesStatic = 
             (res.title || "").toLowerCase().includes(searchTerm) &&
-            (!topic || String(res.topic || "").toLowerCase() === topic) &&
-            (!langFilter || String(res.language || "").toLowerCase() === langFilter) &&
             (!favOnly || (res.favoritesCount > 0));
 
         let matchesExtra = true;
@@ -276,6 +272,19 @@ function applyPrintableFilters() {
             matchesExtra = String(res[extraField] || "").toLowerCase() === extraValue;
         }
         return matchesStatic && matchesExtra;
+    });
+
+    const sortOrder = document.getElementById("sortOrder")?.value || "newest";
+
+    filtered.sort((a, b) => {
+        if (sortOrder === "newest") {
+            return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+        } else if (sortOrder === "oldest") {
+            return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+        } else if (sortOrder === "title") {
+            return (a.title || "").localeCompare(b.title || "");
+        }
+        return 0;
     });
 
     if (favOnly) {
@@ -286,7 +295,7 @@ function applyPrintableFilters() {
 
 window.addEventListener("DOMContentLoaded", () => {
     loadPrintables();
-    ["searchInput", "topicFilter", "languageFilter", "favOnlyFilter"].forEach(id => {
+    ["searchInput", "favOnlyFilter"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener(el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input", applyPrintableFilters);
     });
