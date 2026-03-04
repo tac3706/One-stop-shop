@@ -120,13 +120,12 @@ function displayResources(filteredData) {
     }
 
     if (favOnly) {
-        const flatContainer = document.createElement("div");
-        flatContainer.innerHTML = filteredData.map(res => renderResourceCard(res)).join('');
-        list.appendChild(flatContainer);
-        
-        // Re-attach listeners for the flat list
-        attachResourceListeners(flatContainer, filteredData);
-        return; // Stop here so it doesn't run the grouping logic
+        const flatList = document.createElement("div");
+        // Reuse your card generation logic here
+        flatList.innerHTML = filteredData.map(res => renderResourceCard(res)).join('');
+        list.appendChild(flatList);
+        attachResourceListeners(flatList, filteredData); // Re-attach edit/delete buttons
+        return; 
     }
 
     const sortOrder = document.getElementById("sortOrder")?.value || "newest";

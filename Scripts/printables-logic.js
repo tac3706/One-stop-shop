@@ -115,13 +115,11 @@ function displayPrintables(data) {
 
     // IF FAVORITES OVERRIDE IS ON: Show as a flat list, not grouped by topic
     if (favOnly) {
-        const flatContainer = document.createElement("div");
-        flatContainer.innerHTML = filteredData.map(res => renderResourceCard(res)).join('');
-        list.appendChild(flatContainer);
-        
-        // Re-attach listeners for the flat list
-        attachResourceListeners(flatContainer, filteredData);
-        return; // Stop here so it doesn't run the grouping logic
+        const flatList = document.createElement("div");
+        flatList.innerHTML = filteredData.map(res => renderResourceCard(res)).join('');
+        list.appendChild(flatList);
+        attachResourceListeners(flatList, filteredData);
+        return;
     }
 
     const sortOrder = document.getElementById("sortOrder")?.value || "newest";
