@@ -100,62 +100,82 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
 document.getElementById("extraValueSelector")?.addEventListener("change", applyPrintableFilters);
 
 // 2. Display Data
-// --- Updated displayPrintables for printables-logic.js ---
-function displayPrintables(filteredData) {
+function displayPrintables(data) {
     const list = document.getElementById("printableList");
+    const favOnly = document.getElementById("favOnlyFilter")?.checked;
     if (!list) return;
     
-    const favOnly = document.getElementById("favOnlyFilter")?.checked;
-    
-    // Updated terminology: "printable(s)" instead of "resource(s)"
-    list.innerHTML = `<p style="text-align:center; font-weight:bold;">Showing ${filteredData.length} printable(s)</p>`;
+    list.innerHTML = `<p style="text-align:center; font-weight:bold;">Showing ${data.length} printable(s)</p>`;
 
-    if (filteredData.length === 0) {
+    if (data.length === 0) {
         list.innerHTML += "<p>No printables found.</p>";
         return;
     }
 
-    // FAVORITES OVERRIDE (Flat List)
+    // 1. FAVORITES OVERRIDE: Show as a simple list ranked by popularity
     if (favOnly) {
-        const flatContainer = document.createElement("div");
-        // Ensure you use the same card helper for consistency
-        flatContainer.innerHTML = filteredData.map(item => renderPrintableCard(item)).join('');
-        list.appendChild(flatContainer);
-        attachPrintableListeners(flatContainer, filteredData);
+        const flatList = document.createElement("div");
+        // Note: Using the provided data which is already sorted by favorites in applyPrintableFilters
+        flatList.innerHTML = data.map(res => renderResourceCard(res)).join('');
+        list.appendChild(flatList);
+        attachResourceListeners(flatList, data); 
         return;
     }
 
-    // TOPIC GROUPING MODE
-    const topicGroups = [...new Set(filteredData.map(item => String(item.topic || "general").toLowerCase()))]
-        .map(name => ({
-            name,
-            items: filteredData.filter(item => String(item.topic || "general").toLowerCase() === name)
-        }));
+    const sortOrder = document.getElementById("sortOrder")?.value || "newest";
 
+    const getTime = (val) => {
+        if (!val) return 0;
+        if (val.seconds) return val.seconds; 
+        return new Date(val).getTime() / 1000 || 0; 
+    };
+
+    // 2. Map unique topics into group objects
+    const topicGroups = [...new Set(data.map(res => String(res.topic || "general").toLowerCase()))]
+        .map(name => {
+            const items = data.filter(res => String(res.topic || "general").toLowerCase() === name);
+            
+            // Sort items inside the group
+            items.sort((a, b) => {
+                if (sortOrder === "newest") return getTime(b.createdAt) - getTime(a.createdAt);
+                if (sortOrder === "oldest") return getTime(a.createdAt) - getTime(b.createdAt);
+                if (sortOrder === "title") return (a.title || "").localeCompare(b.title || "");
+                return 0;
+            });
+
+            // FIX: Group time is now based on the absolute newest item in that group
+            return { name, items, groupTime: getTime(items[0]?.createdAt) };
+        });
+
+    // 3. Sort the Topic Groups themselves based on the user's selection
+    topicGroups.sort((a, b) => {
+        if (sortOrder === "newest") return b.groupTime - a.groupTime;
+        if (sortOrder === "oldest") return a.groupTime - b.groupTime;
+        return a.name.localeCompare(b.name);
+    });
+
+    // 4. Render the groups
     topicGroups.forEach(group => {
         const section = document.createElement("div");
         section.style.marginBottom = "15px";
-        
-        const itemsHtml = group.items.map(item => renderPrintableCard(item)).join('');
 
         section.innerHTML = `
             <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px; text-align:center;">
                 ▶ ${group.name.toUpperCase()} (${group.items.length})
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
-                ${itemsHtml}
+                ${group.items.map(res => renderResourceCard(res)).join('')}
             </div>
         `;
 
-        // Toggle visibility on header click
         section.querySelector("h2").onclick = () => {
             const content = section.querySelector(".topic-content");
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
 
-        // Re-attach listeners for buttons inside this group
-        attachPrintableListeners(section, group.items);
         list.appendChild(section);
+        // Important: Re-attach listeners so edit/delete/fav buttons work
+        attachResourceListeners(section, group.items);
     });
 }
 
