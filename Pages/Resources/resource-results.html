@@ -27,12 +27,10 @@
         <div class="filter-controls">
             <input type="text" id="searchInput" placeholder="Search resources...">
 
-            <select id="topicFilter">
-                <option value="">All Topics</option>
-            </select>
-
-            <select id="languageFilter">
-                <option value="">All Languages</option>
+            <select id="sortOrder">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="title">A-Z (Title)</option>
             </select>
 
             <label style="margin-left: 10px; font-weight: bold;">
@@ -42,11 +40,11 @@
 
         <div class="filter-group">
         <select id="extraFieldSelector">
-            <option value="">Search by Extra Field...</option>
+            <option value="">Filter Results</option>
         </select>
 
         <select id="extraValueSelector" disabled>
-            <option value="">Select Value...</option>
+            <option value="">Select Filter</option>
         </select>
         </div>
 
