@@ -31,9 +31,6 @@ async function loadAndDisplay() {
                     ...docSnap.data() 
                 }));
 
-        populateFilterDropdown("topicFilter", "topic");
-        populateFilterDropdown("languageFilter", "language");
-
         populateExtraFields(); // <--- Add this line
 
         applyFilters();
@@ -44,7 +41,7 @@ async function loadAndDisplay() {
 function populateFilterDropdown(elementId, fieldName) {
     const select = document.getElementById(elementId);
     if (!select) return;
-    const uniqueValues = [...new Set(allResources.map(res => res[fieldName]?.trim().toLowerCase()).filter(Boolean))].sort();
+    const uniqueValues = [...new Set(allResources.map(res => res[fieldName]?.trim().toUpperCase()).filter(Boolean))].sort();
     const originalLabel = select.options[0]?.text || "Select";
     select.innerHTML = `<option value="">${originalLabel}</option>`;
     uniqueValues.forEach(val => {
@@ -72,7 +69,7 @@ function populateExtraFields() {
 
     // 3. Fill the first dropdown (The Field Names)
     const currentField = fieldSelector.value;
-    fieldSelector.innerHTML = '<option value="">Search by Extra Field...</option>';
+    fieldSelector.innerHTML = '<option value="">Filter Results</option>';
     extraKeys.sort().forEach(key => {
         fieldSelector.innerHTML += `<option value="${key}">${key.toUpperCase()}</option>`;
     });
