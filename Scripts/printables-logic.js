@@ -104,8 +104,10 @@ document.getElementById("extraValueSelector")?.addEventListener("change", applyP
 function displayPrintables(filteredData) {
     const list = document.getElementById("printableList");
     if (!list) return;
-
+    
     const favOnly = document.getElementById("favOnlyFilter")?.checked;
+    
+    // Updated terminology: "printable(s)" instead of "resource(s)"
     list.innerHTML = `<p style="text-align:center; font-weight:bold;">Showing ${filteredData.length} printable(s)</p>`;
 
     if (filteredData.length === 0) {
@@ -113,71 +115,77 @@ function displayPrintables(filteredData) {
         return;
     }
 
+    // FAVORITES OVERRIDE (Flat List)
     if (favOnly) {
         const flatContainer = document.createElement("div");
-        flatContainer.innerHTML = filteredData.map(res => renderResourceCard(res)).join('');
+        // Ensure you use the same card helper for consistency
+        flatContainer.innerHTML = filteredData.map(item => renderPrintableCard(item)).join('');
         list.appendChild(flatContainer);
-        attachResourceListeners(flatContainer, filteredData, 'printables');
+        attachPrintableListeners(flatContainer, filteredData);
         return;
     }
 
-    const topicGroups = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))]
+    // TOPIC GROUPING MODE
+    const topicGroups = [...new Set(filteredData.map(item => String(item.topic || "general").toLowerCase()))]
         .map(name => ({
             name,
-            items: filteredData.filter(res => String(res.topic || "general").toLowerCase() === name)
+            items: filteredData.filter(item => String(item.topic || "general").toLowerCase() === name)
         }));
 
     topicGroups.forEach(group => {
         const section = document.createElement("div");
         section.style.marginBottom = "15px";
+        
+        const itemsHtml = group.items.map(item => renderPrintableCard(item)).join('');
+
         section.innerHTML = `
             <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px; text-align:center;">
-                ▶ ${group.name.charAt(0).toUpperCase() + group.name.slice(1)} (${group.items.length})
+                ▶ ${group.name.toUpperCase()} (${group.items.length})
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
-                ${group.items.map(res => renderResourceCard(res)).join('')}
+                ${itemsHtml}
             </div>
         `;
+
+        // Toggle visibility on header click
         section.querySelector("h2").onclick = () => {
             const content = section.querySelector(".topic-content");
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
-        attachResourceListeners(section, group.items, 'printables');
+
+        // Re-attach listeners for buttons inside this group
+        attachPrintableListeners(section, group.items);
         list.appendChild(section);
     });
 }
 
-// Note: Also copy the renderResourceCard and attachResourceListeners helpers 
-// from above into the bottom of this file.
-
-// Helper to render consistent cards
-function renderResourceCard(res) {
+function renderPrintableCard(item) {
     return `
-        <div class="resource-item" data-id="${res.firebaseId}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
-            <h3>${res.title || "Untitled"}</h3>
+        <div class="printable-item" data-id="${item.firebaseId}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
+            <h3>${item.title || "Untitled"}</h3>
             <div style="margin-top:10px;">
-                <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
+                <a href="${item.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
                 <button class="edit-btn" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
                 <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
             </div>
             <div class="card-actions" style="margin-top:10px;">
-                <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${res.favoritesCount || 0}</button>
-                <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${(res.feedback || []).length})</button>
+                <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${item.favoritesCount || 0}</button>
+                <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${(item.feedback || []).length})</button>
             </div>
         </div>
     `;
 }
 
-function attachResourceListeners(container, data, collectionName) {
-    container.querySelectorAll(".resource-item").forEach((itemEl) => {
+function attachPrintableListeners(container, data) {
+    container.querySelectorAll(".printable-item").forEach((itemEl) => {
         const id = itemEl.getAttribute("data-id");
-        const res = data.find(r => r.firebaseId === id);
-        if (!res) return;
+        const item = data.find(p => p.firebaseId === id);
+        if (!item) return;
 
-        itemEl.querySelector(".fav-action-btn").onclick = () => handleFavorite(collectionName, id);
-        itemEl.querySelector(".feed-action-btn").onclick = () => openFeedbackModal(collectionName, id);
-        itemEl.querySelector(".edit-btn").onclick = () => editResource(res);
-        itemEl.querySelector(".delete-btn").onclick = () => deleteResource(id, res.storagePath);
+        itemEl.querySelector(".fav-action-btn").onclick = () => handleFavorite('printables', id);
+        itemEl.querySelector(".feed-action-btn").onclick = () => openFeedbackModal('printables', id);
+        itemEl.querySelector(".edit-btn").onclick = () => editPrintable(item); // Ensure this function exists
+        itemEl.querySelector(".delete-btn").onclick = () => deletePrintable(id, item.storagePath); // Ensure this function exists
     });
 }
 
