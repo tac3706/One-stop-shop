@@ -57,7 +57,7 @@ function populateExtraFields() {
     if (!fieldSelector) return;
 
     // 1. Define fields that ALREADY have their own dropdowns
-    const staticFields = ['topic', 'language', 'title', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath', 'firebaseid'];
+    const staticFields = ['title', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath', 'firebaseid'];
 
     // 2. Find all unique keys in all resources that aren't in the static list
     let extraKeys = [];
@@ -297,17 +297,22 @@ function applyFilters() {
         return matchesStatic && matchesExtra;
     });
 
-    const sortOrder = document.getElementById("sortOrder")?.value || "newest";
-
-    // Sorting Logic
+    // --- Updated Sorting Logic in resources.js ---
     filtered.sort((a, b) => {
-        if (sortOrder === "newest") {
-            return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
-        } else if (sortOrder === "oldest") {
-            return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
-        } else if (sortOrder === "title") {
-            return (a.title || "").localeCompare(b.title || "");
-        }
+        // Helper to convert Firebase Timestamp or Date to a number
+        const getTime = (val) => {
+            if (!val) return 0;
+            if (val.seconds) return val.seconds; // Firebase Timestamp
+            if (val instanceof Date) return val.getTime() / 1000; // JS Date
+            return new Date(val).getTime() / 1000 || 0; // String Date
+        };
+
+        const timeA = getTime(a.createdAt);
+        const timeB = getTime(b.createdAt);
+
+        if (sortOrder === "newest") return timeB - timeA;
+        if (sortOrder === "oldest") return timeA - timeB;
+        if (sortOrder === "title") return (a.title || "").localeCompare(b.title || "");
         return 0;
     });
 

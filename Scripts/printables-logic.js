@@ -52,7 +52,7 @@ function populateExtraFields() {
     const fieldSelector = document.getElementById("extraFieldSelector");
     if (!fieldSelector) return;
 
-    const staticFields = ['topic', 'language', 'title', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath', 'firebaseid'];
+    const staticFields = ['title', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath', 'firebaseid'];
 
     let extraKeys = [];
     allPrintables.forEach(res => {
@@ -274,16 +274,20 @@ function applyPrintableFilters() {
         return matchesStatic && matchesExtra;
     });
 
-    const sortOrder = document.getElementById("sortOrder")?.value || "newest";
-
+    // --- Updated Sorting Logic in printables-logic.js ---
     filtered.sort((a, b) => {
-        if (sortOrder === "newest") {
-            return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
-        } else if (sortOrder === "oldest") {
-            return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
-        } else if (sortOrder === "title") {
-            return (a.title || "").localeCompare(b.title || "");
-        }
+        const getTime = (val) => {
+            if (!val) return 0;
+            if (val.seconds) return val.seconds; 
+            return new Date(val).getTime() / 1000 || 0; 
+        };
+
+        const timeA = getTime(a.createdAt);
+        const timeB = getTime(b.createdAt);
+
+        if (sortOrder === "newest") return timeB - timeA;
+        if (sortOrder === "oldest") return timeA - timeB;
+        if (sortOrder === "title") return (a.title || "").localeCompare(b.title || "");
         return 0;
     });
 
