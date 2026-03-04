@@ -122,6 +122,24 @@ function displayPrintables(data) {
         return;
     }
 
+// Helper to render consistent cards
+function renderResourceCard(res) {
+    return `
+        <div class="resource-item" data-id="${res.firebaseId}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
+            <h3>${res.title || "Untitled"}</h3>
+            <div style="margin-top:10px;">
+                <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">🔗 Open</a>
+                <button class="edit-btn" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
+                <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
+            </div>
+            <div class="card-actions" style="margin-top:10px;">
+                <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${res.favoritesCount || 0}</button>
+                <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${(res.feedback || []).length})</button>
+            </div>
+        </div>
+    `;
+}
+
     const sortOrder = document.getElementById("sortOrder")?.value || "newest";
 
     // Helper to get numeric time for sorting groups and items
