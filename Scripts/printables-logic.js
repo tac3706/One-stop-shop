@@ -100,102 +100,55 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
 document.getElementById("extraValueSelector")?.addEventListener("change", applyPrintableFilters);
 
 // 2. Display Data
-function displayPrintables(data) {
+// --- Updated displayPrintables for printables-logic.js ---
+function displayPrintables(filteredData) {
     const list = document.getElementById("printableList");
-    const favOnly = document.getElementById("favOnlyFilter")?.checked; // Check the state
     if (!list) return;
-    
-    // 1. Display Total Count at the top
-    list.innerHTML = `<p style="text-align:center; font-weight:bold;">Showing ${data.length} printable(s)</p>`;
 
-    if (data.length === 0) {
+    const favOnly = document.getElementById("favOnlyFilter")?.checked;
+    list.innerHTML = `<p style="text-align:center; font-weight:bold;">Showing ${filteredData.length} printable(s)</p>`;
+
+    if (filteredData.length === 0) {
         list.innerHTML += "<p>No printables found.</p>";
         return;
     }
 
-    // IF FAVORITES OVERRIDE IS ON: Show as a flat list, not grouped by topic
     if (favOnly) {
-        const flatList = document.createElement("div");
-        flatList.innerHTML = filteredData.map(res => renderResourceCard(res)).join('');
-        list.appendChild(flatList);
-        attachResourceListeners(flatList, filteredData);
+        const flatContainer = document.createElement("div");
+        flatContainer.innerHTML = filteredData.map(res => renderResourceCard(res)).join('');
+        list.appendChild(flatContainer);
+        attachResourceListeners(flatContainer, filteredData, 'printables');
         return;
     }
 
-    const sortOrder = document.getElementById("sortOrder")?.value || "newest";
+    const topicGroups = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))]
+        .map(name => ({
+            name,
+            items: filteredData.filter(res => String(res.topic || "general").toLowerCase() === name)
+        }));
 
-    // Helper to get numeric time for sorting groups and items
-    const getTime = (val) => {
-        if (!val) return 0;
-        if (val.seconds) return val.seconds; // Firebase Timestamp
-        return new Date(val).getTime() / 1000 || 0; // JS Date or String
-    };
-
-    // 2. Map unique topics into sorted group objects
-    const topicGroups = [...new Set(data.map(res => String(res.topic || "general").toLowerCase()))]
-        .map(name => {
-            const items = data.filter(res => String(res.topic || "general").toLowerCase() === name);
-            
-            // Sort items within this specific group
-            items.sort((a, b) => {
-                if (sortOrder === "newest") return getTime(b.createdAt) - getTime(a.createdAt);
-                if (sortOrder === "oldest") return getTime(a.createdAt) - getTime(b.createdAt);
-                if (sortOrder === "title") return (a.title || "").localeCompare(b.title || "");
-                return 0;
-            });
-
-            // The group's reference time is based on its first item after sorting
-            return { name, items, groupTime: getTime(items[0]?.createdAt) };
-        });
-
-    // 3. Sort the Topic Groups themselves
-    topicGroups.sort((a, b) => {
-        if (sortOrder === "newest") return b.groupTime - a.groupTime;
-        if (sortOrder === "oldest") return a.groupTime - b.groupTime;
-        return a.name.localeCompare(b.name);
-    });
-
-    // 4. Render the sorted groups and their items
     topicGroups.forEach(group => {
         const section = document.createElement("div");
         section.style.marginBottom = "15px";
-
         section.innerHTML = `
             <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px; text-align:center;">
-                ▶ ${group.name.toUpperCase()} (${group.items.length})
+                ▶ ${group.name.charAt(0).toUpperCase() + group.name.slice(1)} (${group.items.length})
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
-                ${group.items.map(res => `
-                    <div class="resource-item" data-id="${res.firebaseId}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
-                        <h3>${res.title || "Untitled"}</h3>
-                        <div style="margin-top:10px;">
-                            <a href="${res.url}" target="_blank" style="background:#4CAF50; color:white; display:inline-block; padding:5px 15px; text-decoration:none; border-radius:3px;">📥 Download</a>
-                            <button class="edit-btn" style="background:#2196F3; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Edit</button>
-                            <button class="delete-btn" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; border-radius:3px; margin-left:10px;">Delete</button>
-                        </div>
-                        <div class="card-actions" style="margin-top:10px;">
-                            <button class="fav-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px;">⭐ ${res.favoritesCount || 0}</button>
-                            <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${(res.feedback || []).length})</button>
-                        </div>
-                        
-                        ${(res.feedback && res.feedback.length > 0) ? `
-                            <div class="feedback-list" style="font-size:0.85em; color:#555; background:#fefefe; padding:10px; margin-top:10px; border-radius:5px; text-align:center; border:1px dashed #ccc;">
-                                ${res.feedback.map(f => `<p style="margin:4px 0;"><strong>${f.date}:</strong> ${f.text}</p>`).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
-                `).join('')}
+                ${group.items.map(res => renderResourceCard(res)).join('')}
             </div>
         `;
-        
-        // Toggle visibility of the topic content
         section.querySelector("h2").onclick = () => {
             const content = section.querySelector(".topic-content");
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
+        attachResourceListeners(section, group.items, 'printables');
         list.appendChild(section);
     });
 }
+
+// Note: Also copy the renderResourceCard and attachResourceListeners helpers 
+// from above into the bottom of this file.
 
 // Helper to render consistent cards
 function renderResourceCard(res) {
