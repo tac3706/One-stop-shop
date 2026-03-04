@@ -107,11 +107,12 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
 document.getElementById("extraValueSelector")?.addEventListener("change", applyFilters);
 
 // 2. Display Logic
+// --- Updated displayResources for resources.js ---
 function displayResources(filteredData) {
-    const favOnly = document.getElementById("favOnlyFilter")?.checked; // Check the state
     const list = document.getElementById("resourceList");
     if (!list) return;
     
+    const favOnly = document.getElementById("favOnlyFilter")?.checked;
     list.innerHTML = `<p style="text-align:center; font-weight:bold;">Showing ${filteredData.length} resource(s)</p>`;
 
     if (filteredData.length === 0) {
@@ -119,89 +120,45 @@ function displayResources(filteredData) {
         return;
     }
 
+    // FAVORITES OVERRIDE
     if (favOnly) {
-        const flatList = document.createElement("div");
-        // Reuse your card generation logic here
-        flatList.innerHTML = filteredData.map(res => renderResourceCard(res)).join('');
-        list.appendChild(flatList);
-        attachResourceListeners(flatList, filteredData); // Re-attach edit/delete buttons
-        return; 
+        const flatContainer = document.createElement("div");
+        flatContainer.innerHTML = filteredData.map(res => renderResourceCard(res)).join('');
+        list.appendChild(flatContainer);
+        attachResourceListeners(flatContainer, filteredData, 'resources');
+        return;
     }
 
-    const sortOrder = document.getElementById("sortOrder")?.value || "newest";
+    // TOPIC GROUPING
+    const topicGroups = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))]
+        .map(name => ({
+            name,
+            items: filteredData.filter(res => String(res.topic || "general").toLowerCase() === name)
+        }));
 
-    // 1. Helper to get numeric time
-    const getTime = (val) => {
-        if (!val) return 0;
-        if (val.seconds) return val.seconds;
-        return new Date(val).getTime() / 1000 || 0;
-    };
-
-    // 2. Identify all unique topics
-    const topicNames = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))];
-
-    // 3. Create Topic Objects with their "Group Timestamp"
-    const topicGroups = topicNames.map(name => {
-        const items = filteredData.filter(res => String(res.topic || "general").toLowerCase() === name);
-        
-        // Sort items within this group
-        items.sort((a, b) => {
-            if (sortOrder === "newest") return getTime(b.createdAt) - getTime(a.createdAt);
-            if (sortOrder === "oldest") return getTime(a.createdAt) - getTime(b.createdAt);
-            return (a.title || "").localeCompare(b.title || "");
-        });
-
-        // The timestamp for the WHOLE group is the timestamp of its newest/first item
-        const groupTime = getTime(items[0]?.createdAt);
-
-        return { name, items, groupTime };
-    });
-
-    // 4. Sort the actual Topic Groups based on the selected order
-    topicGroups.sort((a, b) => {
-        if (sortOrder === "newest") return b.groupTime - a.groupTime;
-        if (sortOrder === "oldest") return a.groupTime - b.groupTime;
-        return a.name.localeCompare(b.name);
-    });
-
-    // 5. Render the sorted groups
     topicGroups.forEach(group => {
         const section = document.createElement("div");
         section.style.marginBottom = "15px";
+        const itemsHtml = group.items.map(res => renderResourceCard(res)).join('');
 
         section.innerHTML = `
             <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px; text-align:center;">
-                ▶ ${group.name.toUpperCase()} (${group.items.length})
+                ▶ ${group.name.charAt(0).toUpperCase() + group.name.slice(1)} (${group.items.length})
             </h2>
-            <div class="topic-content" style="display:none; padding:10px;">
-                ${group.items.map(res => `
-                    <div class="resource-item" data-id="${res.firebaseId}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
-                        <h3>${res.title || "Untitled"}</h3>
-                        </div>
-                `).join('')}
-            </div>
+            <div class="topic-content" style="display:none; padding:10px;">${itemsHtml}</div>
         `;
-
-        // Re-attach Event Listeners for the buttons
-        section.querySelectorAll(".resource-item").forEach((itemEl, idx) => {
-            const res = group.items[idx];
-            
-            itemEl.querySelector(".fav-action-btn").onclick = () => handleFavorite('resources', res.firebaseId);
-            itemEl.querySelector(".feed-action-btn").onclick = () => openFeedbackModal('resources', res.firebaseId);
-            itemEl.querySelector(".edit-btn").onclick = () => editResource(res);
-            itemEl.querySelector(".delete-btn").onclick = () => deleteResource(res.firebaseId, res.storagePath);
-        });
 
         section.querySelector("h2").onclick = () => {
             const content = section.querySelector(".topic-content");
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
 
+        attachResourceListeners(section, group.items, 'resources');
         list.appendChild(section);
     });
 }
 
-// Helper to render consistent cards
+// --- ADD THESE HELPERS TO THE BOTTOM OF resources.js ---
 function renderResourceCard(res) {
     return `
         <div class="resource-item" data-id="${res.firebaseId}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
@@ -224,7 +181,6 @@ function attachResourceListeners(container, data, collectionName) {
         const id = itemEl.getAttribute("data-id");
         const res = data.find(r => r.firebaseId === id);
         if (!res) return;
-
         itemEl.querySelector(".fav-action-btn").onclick = () => handleFavorite(collectionName, id);
         itemEl.querySelector(".feed-action-btn").onclick = () => openFeedbackModal(collectionName, id);
         itemEl.querySelector(".edit-btn").onclick = () => editResource(res);
