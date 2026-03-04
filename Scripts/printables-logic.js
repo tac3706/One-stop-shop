@@ -112,13 +112,14 @@ function displayPrintables(data) {
         return;
     }
 
-    // 1. FAVORITES OVERRIDE: Show as a simple list ranked by popularity
+    // 1. FAVORITES OVERRIDE
     if (favOnly) {
         const flatList = document.createElement("div");
-        // Note: Using the provided data which is already sorted by favorites in applyPrintableFilters
-        flatList.innerHTML = data.map(res => renderResourceCard(res)).join('');
+        // FIXED: Using renderPrintableCard instead of renderResourceCard
+        flatList.innerHTML = data.map(res => renderPrintableCard(res)).join('');
         list.appendChild(flatList);
-        attachResourceListeners(flatList, data); 
+        // FIXED: Using attachPrintableListeners instead of attachResourceListeners
+        attachPrintableListeners(flatList, data); 
         return;
     }
 
@@ -143,11 +144,10 @@ function displayPrintables(data) {
                 return 0;
             });
 
-            // FIX: Group time is now based on the absolute newest item in that group
             return { name, items, groupTime: getTime(items[0]?.createdAt) };
         });
 
-    // 3. Sort the Topic Groups themselves based on the user's selection
+    // 3. Sort the Topic Groups themselves
     topicGroups.sort((a, b) => {
         if (sortOrder === "newest") return b.groupTime - a.groupTime;
         if (sortOrder === "oldest") return a.groupTime - b.groupTime;
@@ -164,7 +164,7 @@ function displayPrintables(data) {
                 ▶ ${group.name.toUpperCase()} (${group.items.length})
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
-                ${group.items.map(res => renderResourceCard(res)).join('')}
+                ${group.items.map(res => renderPrintableCard(res)).join('')}
             </div>
         `;
 
@@ -174,8 +174,8 @@ function displayPrintables(data) {
         };
 
         list.appendChild(section);
-        // Important: Re-attach listeners so edit/delete/fav buttons work
-        attachResourceListeners(section, group.items);
+        // FIXED: Using attachPrintableListeners
+        attachPrintableListeners(section, group.items);
     });
 }
 
