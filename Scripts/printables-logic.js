@@ -40,7 +40,7 @@ async function loadPrintables() {
 function populateFilterDropdown(elementId, fieldName) {
     const select = document.getElementById(elementId);
     if (!select) return;
-    const uniqueValues = [...new Set(allPrintables.map(res => res[fieldName]?.trim().toLowerCase()).filter(Boolean))].sort();
+    const uniqueValues = [...new Set(allPrintables.map(res => res[fieldName]?.trim().toUpperCase()).filter(Boolean))].sort();
     const originalLabel = select.options[0] ? select.options[0].text : "Select";
     select.innerHTML = `<option value="">${originalLabel}</option>`;
     uniqueValues.forEach(val => {
@@ -57,7 +57,7 @@ function populateExtraFields() {
     let extraKeys = [];
     allPrintables.forEach(res => {
         Object.keys(res).forEach(key => {
-            const lowKey = key.toLowerCase();
+            const lowKey = key.toUpperCase();
             if (!staticFields.includes(lowKey) && !extraKeys.includes(lowKey)) {
                 extraKeys.push(lowKey);
             }
@@ -86,7 +86,7 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
 
     const values = [...new Set(allPrintables.map(res => {
         const val = res[fieldName]; // Use the fieldName from the listener
-            return val ? val.toString().trim().toLowerCase() : null;
+            return val ? val.toString().trim().toUpperCase() : null;
         }).filter(Boolean))].sort();
 
     valueSelector.innerHTML = `<option value="">All ${fieldName.toUpperCase()}s</option>`;
@@ -122,9 +122,9 @@ function displayPrintables(data) {
     };
 
     // 2. Map unique topics into sorted group objects
-    const topicGroups = [...new Set(data.map(res => String(res.topic || "general").toLowerCase()))]
+    const topicGroups = [...new Set(data.map(res => String(res.topic || "general").toUpperCase()))]
         .map(name => {
-            const items = data.filter(res => String(res.topic || "general").toLowerCase() === name);
+            const items = data.filter(res => String(res.topic || "general").toUpperCase() === name);
             
             // Sort items within this specific group
             items.sort((a, b) => {
@@ -213,7 +213,7 @@ document.addEventListener("click", async (e) => {
     if (e.target.classList.contains("add-field-btn")) {
         const newFieldName = prompt("New field name:");
         if (!newFieldName) return;
-        const cleanKey = newFieldName.trim().replace(/\s+/g, '_').toLowerCase();
+        const cleanKey = newFieldName.trim().replace(/\s+/g, '_').toUpperCase();
         const container = card.querySelector(".new-fields-container");
         container.insertAdjacentHTML('beforeend', `
             <div class="field-row" style="margin-top:10px; border-left:3px solid #673AB7; padding-left:10px;">
@@ -288,20 +288,20 @@ document.addEventListener("click", async (e) => {
 
 // 4. Filtering Logic
 function applyPrintableFilters() {
-    const searchTerm = document.getElementById("searchInput")?.value.toLowerCase() || "";
+    const searchTerm = document.getElementById("searchInput")?.value.toUpperCase() || "";
     const favOnly = document.getElementById("favOnlyFilter")?.checked || false;
 
     const extraField = document.getElementById("extraFieldSelector")?.value;
-    const extraValue = document.getElementById("extraValueSelector")?.value.toLowerCase();
+    const extraValue = document.getElementById("extraValueSelector")?.value.toUpperCase();
 
     let filtered = allPrintables.filter(res => {
         const matchesStatic = 
-            (res.title || "").toLowerCase().includes(searchTerm) &&
+            (res.title || "").toUpperCase().includes(searchTerm) &&
             (!favOnly || (res.favoritesCount > 0));
 
         let matchesExtra = true;
         if (extraField && extraValue) {
-            matchesExtra = String(res[extraField] || "").trim().toLowerCase() === extraValue.trim().toLowerCase();
+            matchesExtra = String(res[extraField] || "").trim().toUpperCase() === extraValue.trim().toUpperCase();
         }
         return matchesStatic && matchesExtra;
     });
