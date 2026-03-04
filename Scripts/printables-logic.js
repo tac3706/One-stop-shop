@@ -84,8 +84,10 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
         return;
     }
 
-    const values = [...new Set(allPrintables.map(res => res[fieldName])
-        .filter(val => val !== undefined && val !== ""))].sort();
+    const values = [...new Set(allPrintables.map(res => {
+        const val = res[field];
+        return val ? val.toString().trim().toLowerCase() : null;
+    }).filter(Boolean))].sort();
 
     valueSelector.innerHTML = `<option value="">All ${fieldName.toUpperCase()}s</option>`;
     values.forEach(v => {

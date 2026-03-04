@@ -91,9 +91,11 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
         return;
     }
 
-    // Find all unique values for THIS specific chosen field
-    const values = [...new Set(allResources.map(res => res[fieldName])
-        .filter(val => val !== undefined && val !== ""))].sort();
+    // Get unique values and normalize them to Title Case (e.g., "English")
+    const values = [...new Set(allResources.map(res => {
+        const val = res[field];
+        return val ? val.toString().trim().toLowerCase() : null;
+    }).filter(Boolean))].sort();
 
     valueSelector.innerHTML = `<option value="">All ${fieldName.toUpperCase()}s</option>`;
     values.forEach(v => {
