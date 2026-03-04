@@ -110,9 +110,9 @@ document.getElementById("extraValueSelector")?.addEventListener("change", applyF
 // --- Updated displayResources for resources.js ---
 function displayResources(filteredData) {
     const list = document.getElementById("resourceList");
-    if (!list) return;
-    
     const favOnly = document.getElementById("favOnlyFilter")?.checked;
+    if (!list) return;
+
     list.innerHTML = `<p style="text-align:center; font-weight:bold;">Showing ${filteredData.length} resource(s)</p>`;
 
     if (filteredData.length === 0) {
@@ -120,16 +120,16 @@ function displayResources(filteredData) {
         return;
     }
 
-    // FAVORITES OVERRIDE
+    // IF FAVORITES: Show flat list (Leaderboard style)
     if (favOnly) {
-        const flatContainer = document.createElement("div");
-        flatContainer.innerHTML = filteredData.map(res => renderResourceCard(res)).join('');
-        list.appendChild(flatContainer);
-        attachResourceListeners(flatContainer, filteredData, 'resources');
+        const container = document.createElement("div");
+        container.innerHTML = filteredData.map(res => renderResourceCard(res)).join('');
+        list.appendChild(container);
+        attachResourceListeners(container, filteredData, 'resources');
         return;
     }
 
-    // TOPIC GROUPING
+    // IF NOT FAVORITES: Use Topic Grouping
     const topicGroups = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))]
         .map(name => ({
             name,
@@ -139,20 +139,18 @@ function displayResources(filteredData) {
     topicGroups.forEach(group => {
         const section = document.createElement("div");
         section.style.marginBottom = "15px";
-        const itemsHtml = group.items.map(res => renderResourceCard(res)).join('');
-
         section.innerHTML = `
             <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px; text-align:center;">
-                ▶ ${group.name.charAt(0).toUpperCase() + group.name.slice(1)} (${group.items.length})
+                ▶ ${group.name.toUpperCase()} (${group.items.length})
             </h2>
-            <div class="topic-content" style="display:none; padding:10px;">${itemsHtml}</div>
+            <div class="topic-content" style="display:none; padding:10px;">
+                ${group.items.map(res => renderResourceCard(res)).join('')}
+            </div>
         `;
-
         section.querySelector("h2").onclick = () => {
             const content = section.querySelector(".topic-content");
             content.style.display = content.style.display === "none" ? "block" : "none";
         };
-
         attachResourceListeners(section, group.items, 'resources');
         list.appendChild(section);
     });
@@ -300,35 +298,24 @@ document.addEventListener("click", async (e) => {
 
 // 4. Filtering & Sorting
 function applyFilters() {
-    const searchTerm = document.getElementById("searchInput")?.value.toUpperCase() || "";
-    const favOnly = document.getElementById("favOnlyFilter")?.checked || false;
-
-    // Extra Field Logic
+    const searchTerm = document.getElementById("searchInput")?.value.toLowerCase() || "";
+    const favOnly = document.getElementById("favOnlyFilter")?.checked;
+    const sortOrder = document.getElementById("sortOrder")?.value || "newest";
     const extraField = document.getElementById("extraFieldSelector")?.value;
-    const extraValue = document.getElementById("extraValueSelector")?.value.toUpperCase();
+    const extraValue = document.getElementById("extraValueSelector")?.value;
 
     let filtered = allResources.filter(res => {
-        const matchesStatic = 
-            (res.title || "").toLowerCase().includes(searchTerm) &&
-            (!favOnly || (res.favoritesCount > 0));
-
-        // Logic for the extra field
-        let matchesExtra = true;
-        if (extraField && extraValue) {
-            matchesExtra = String(res[extraField] || "").trim().toLowerCase() === extraValue.toLowerCase();
-        }
-
-        return matchesStatic && matchesExtra;
+        const matchesSearch = (res.title || "").toLowerCase().includes(searchTerm);
+        const matchesExtra = !extraField || !extraValue || 
+                           (res[extraField] && String(res[extraField]).toLowerCase() === extraValue.toLowerCase());
+        return matchesSearch && matchesExtra;
     });
 
-    // --- Updated Sorting Logic in resources.js ---
+    // GLOBAL SORTING (The logic you liked before)
     filtered.sort((a, b) => {
-        // Helper to convert Firebase Timestamp or Date to a number
         const getTime = (val) => {
             if (!val) return 0;
-            if (val.seconds) return val.seconds; // Firebase Timestamp
-            if (val instanceof Date) return val.getTime() / 1000; // JS Date
-            return new Date(val).getTime() / 1000 || 0; // String Date
+            return val.seconds || new Date(val).getTime() / 1000 || 0;
         };
 
         const timeA = getTime(a.createdAt);
@@ -340,6 +327,7 @@ function applyFilters() {
         return 0;
     });
 
+    // FAVORITES OVERRIDE: If box is checked, ignore date and sort by stars
     if (favOnly) {
         filtered.sort((a, b) => (b.favoritesCount || 0) - (a.favoritesCount || 0));
     }
