@@ -51,26 +51,24 @@ function populateExtraFields() {
     if (!fieldSelector) return;
 
     const staticFields = ['title', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath', 'firebaseid'];
+    let extraKeys = [];
 
-let extraKeys = [];
     allPrintables.forEach(res => {
         Object.keys(res).forEach(key => {
             const lowKey = key.toLowerCase();
-            if (!staticFields.includes(lowKey) && !extraKeys.includes(key)) {
+            if (!staticFields.includes(lowKey) && !extraKeys.some(k => k.toLowerCase() === lowKey)) {
                 extraKeys.push(key);
             }
         });
     });
 
-    const currentField = fieldSelector.value;
     fieldSelector.innerHTML = '<option value="">Filter Results</option>';
     extraKeys.sort().forEach(key => {
-    const label = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
-            fieldSelector.innerHTML += `<option value="${key}">${label}</option>`;
+        const label = key.charAt(0).toUpperCase() + key.slice(1);
+        fieldSelector.innerHTML += `<option value="${key}">${label}</option>`;
     });
 }
 
-// Handle Extra Field Dropdowns
 document.getElementById("extraFieldSelector")?.addEventListener("change", (e) => {
     const fieldName = e.target.value;
     const valueSelector = document.getElementById("extraValueSelector");
@@ -82,16 +80,17 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
         return;
     }
 
-    const values = [...new Set(allPrintables.map(res => {
-        const val = res[fieldName]; // Use the fieldName from the listener
-            return val ? val.toString().trim(): null;
-        }).filter(Boolean))].sort();
+    const uniqueValues = [...new Set(allPrintables.map(res => {
+        const val = res[fieldName];
+        return val ? val.toString().trim().toLowerCase() : null;
+    }).filter(Boolean))].sort();
 
-    const groupLabel = fieldName.charAt(0).toUpperCase() + fieldName.slice(1).toLowerCase();
-    valueSelector.innerHTML = `<option value="">ALL ${groupLabel}S</option>`;
+    const displayField = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+    const suffix = displayField.toLowerCase().endsWith('s') ? '' : 's';
+    valueSelector.innerHTML = `<option value="">All ${displayField}${suffix}</option>`;
 
-    values.forEach(v => {
-        const displayValue = v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
+    uniqueValues.forEach(v => {
+        const displayValue = v.charAt(0).toUpperCase() + v.slice(1);
         valueSelector.innerHTML += `<option value="${v}">${displayValue}</option>`;
     });
     valueSelector.disabled = false;

@@ -53,32 +53,26 @@ function populateExtraFields() {
     const fieldSelector = document.getElementById("extraFieldSelector");
     if (!fieldSelector) return;
 
-    // 1. Define fields that ALREADY have their own dropdowns
     const staticFields = ['title', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath', 'firebaseid'];
-
-    // 2. Find all unique keys in all resources that aren't in the static list
     let extraKeys = [];
+
     allResources.forEach(res => {
         Object.keys(res).forEach(key => {
             const lowKey = key.toLowerCase();
-            if (!staticFields.includes(lowKey) && !extraKeys.includes(key)) {
+            if (!staticFields.includes(lowKey) && !extraKeys.some(k => k.toLowerCase() === lowKey)) {
                 extraKeys.push(key);
             }
         });
     });
 
-    // 3. Fill the first dropdown (The Field Names)
-    const currentField = fieldSelector.value;
     fieldSelector.innerHTML = '<option value="">Filter Results</option>';
     extraKeys.sort().forEach(key => {
-        // Capitalize first letter only for the label (e.g., topic -> Topic)
-        const label = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+        // Capitalize first letter and PRESERVE SPACES
+        const label = key.charAt(0).toUpperCase() + key.slice(1);
         fieldSelector.innerHTML += `<option value="${key}">${label}</option>`;
     });
-    fieldSelector.value = currentField;
 }
 
-// Handle picking a field name to show its values
 document.getElementById("extraFieldSelector")?.addEventListener("change", (e) => {
     const fieldName = e.target.value;
     const valueSelector = document.getElementById("extraValueSelector");
@@ -90,20 +84,21 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
         return;
     }
 
-    // Get unique values and normalize them to Title Case (e.g., "English")
-    const values = [...new Set(allResources.map(res => {
-        const val = res[fieldName]; // Use the fieldName from the listener
-        return val ? val.toString().trim() : null;
+    // Fix: Consolidate English/english by using a lowercase map for the Set
+    const uniqueValues = [...new Set(allResources.map(res => {
+        const val = res[fieldName];
+        return val ? val.toString().trim().toLowerCase() : null;
     }).filter(Boolean))].sort();
 
-    // Formatting the "ALL" option (e.g., "ALL Topics")
-    const groupLabel = fieldName.charAt(0).toUpperCase() + fieldName.slice(1).toLowerCase();
-    valueSelector.innerHTML = `<option value="">ALL ${groupLabel}S</option>`;
+    // Fix: Better label logic (remove the extra 'S' if field already ends in 's')
+    const displayField = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+    const suffix = displayField.toLowerCase().endsWith('s') ? '' : 's';
+    valueSelector.innerHTML = `<option value="">All ${displayField}${suffix}</option>`;
 
-    values.forEach(v => {
-        // Capitalize ONLY the first letter of the value
-        const displayValue = v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
-        valueSelector.innerHTML += `<option value="${v}">${displayValue}</option>`;
+    uniqueValues.forEach(v => {
+        // Capitalize first letter of each option (English, Age group)
+        const displayValue = v.charAt(0).toUpperCase() + v.slice(1);
+        valueSelector.innerHTML += `<option value="${v}">${displayValue}</option>`; 
     });
     valueSelector.disabled = false;
     applyFilters();
