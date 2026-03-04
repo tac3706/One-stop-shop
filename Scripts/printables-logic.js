@@ -57,7 +57,7 @@ function populateExtraFields() {
     let extraKeys = [];
     allPrintables.forEach(res => {
         Object.keys(res).forEach(key => {
-            const lowKey = key.toUpperCase();
+            const lowKey = key.toLowerCase();
             if (!staticFields.includes(lowKey) && !extraKeys.includes(lowKey)) {
                 extraKeys.push(lowKey);
             }
@@ -122,9 +122,9 @@ function displayPrintables(data) {
     };
 
     // 2. Map unique topics into sorted group objects
-    const topicGroups = [...new Set(data.map(res => String(res.topic || "general").toUpperCase()))]
+    const topicGroups = [...new Set(data.map(res => String(res.topic || "general").toLowerCase()))]
         .map(name => {
-            const items = data.filter(res => String(res.topic || "general").toUpperCase() === name);
+            const items = data.filter(res => String(res.topic || "general").toLowerCase() === name);
             
             // Sort items within this specific group
             items.sort((a, b) => {
@@ -213,7 +213,7 @@ document.addEventListener("click", async (e) => {
     if (e.target.classList.contains("add-field-btn")) {
         const newFieldName = prompt("New field name:");
         if (!newFieldName) return;
-        const cleanKey = newFieldName.trim().replace(/\s+/g, '_').toUpperCase();
+        const cleanKey = newFieldName.trim().replace(/\s+/g, '_').toLowerCase();
         const container = card.querySelector(".new-fields-container");
         container.insertAdjacentHTML('beforeend', `
             <div class="field-row" style="margin-top:10px; border-left:3px solid #673AB7; padding-left:10px;">
@@ -288,11 +288,11 @@ document.addEventListener("click", async (e) => {
 
 // 4. Filtering Logic
 function applyPrintableFilters() {
-    const searchTerm = document.getElementById("searchInput")?.value.toUpperCase() || "";
+    const searchTerm = document.getElementById("searchInput")?.value.toLowerCase() || "";
     const favOnly = document.getElementById("favOnlyFilter")?.checked || false;
 
     const extraField = document.getElementById("extraFieldSelector")?.value;
-    const extraValue = document.getElementById("extraValueSelector")?.value.toUpperCase();
+    const extraValue = document.getElementById("extraValueSelector")?.value.toLowerCase();
 
     let filtered = allPrintables.filter(res => {
         const matchesStatic = 

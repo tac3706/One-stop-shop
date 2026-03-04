@@ -44,7 +44,7 @@ async function loadAndDisplay() {
 function populateFilterDropdown(elementId, fieldName) {
     const select = document.getElementById(elementId);
     if (!select) return;
-    const uniqueValues = [...new Set(allResources.map(res => res[fieldName]?.trim().toUpperCase()).filter(Boolean))].sort();
+    const uniqueValues = [...new Set(allResources.map(res => res[fieldName]?.trim().toLowerCase()).filter(Boolean))].sort();
     const originalLabel = select.options[0]?.text || "Select";
     select.innerHTML = `<option value="">${originalLabel}</option>`;
     uniqueValues.forEach(val => {
@@ -63,7 +63,7 @@ function populateExtraFields() {
     let extraKeys = [];
     allResources.forEach(res => {
         Object.keys(res).forEach(key => {
-            const lowKey = key.toUpperCase();
+            const lowKey = key.toLowerCase();
             if (!staticFields.includes(lowKey) && !extraKeys.includes(lowKey)) {
                 extraKeys.push(lowKey);
             }
@@ -94,7 +94,7 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
     // Get unique values and normalize them to Title Case (e.g., "English")
     const values = [...new Set(allResources.map(res => {
         const val = res[fieldName]; // Use the fieldName from the listener
-        return val ? val.toString().trim().toUpperCase() : null;
+        return val ? val.toString().trim().toLowerCase() : null;
     }).filter(Boolean))].sort();
 
     valueSelector.innerHTML = `<option value="">All ${fieldName.toUpperCase()}s</option>`;
@@ -129,11 +129,11 @@ function displayResources(filteredData) {
     };
 
     // 2. Identify all unique topics
-    const topicNames = [...new Set(filteredData.map(res => String(res.topic || "general").toUpperCase()))];
+    const topicNames = [...new Set(filteredData.map(res => String(res.topic || "general").toLowerCase()))];
 
     // 3. Create Topic Objects with their "Group Timestamp"
     const topicGroups = topicNames.map(name => {
-        const items = filteredData.filter(res => String(res.topic || "general").toUpperCase() === name);
+        const items = filteredData.filter(res => String(res.topic || "general").toLowerCase() === name);
         
         // Sort items within this group
         items.sort((a, b) => {
@@ -213,7 +213,7 @@ document.addEventListener("click", async (e) => {
     if (e.target.classList.contains("add-field-btn")) {
         const newFieldName = prompt("New field name:");
         if (!newFieldName) return;
-        const cleanKey = newFieldName.trim().replace(/\s+/g, '_').toUpperCase();
+        const cleanKey = newFieldName.trim().replace(/\s+/g, '_').toLowerCase();
         const container = card.querySelector(".new-fields-container");
         container.insertAdjacentHTML('beforeend', `
             <div class="field-row" style="margin-top:10px; border-left:3px solid #673AB7; padding-left:10px;">
@@ -301,7 +301,7 @@ function applyFilters() {
 
     let filtered = allResources.filter(res => {
         const matchesStatic = 
-            (res.title || "").toUpperCase().includes(searchTerm) &&
+            (res.title || "").toLowerCase().includes(searchTerm) &&
             (!favOnly || (res.favoritesCount > 0));
 
         // Logic for the extra field
