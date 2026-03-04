@@ -97,6 +97,9 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
         return val ? val.toString().trim().toLowerCase() : null;
     }).filter(Boolean))].sort();
 
+    const matchesExtra = !extraField || !extraValue || 
+    (item[extraField] && item[extraField].toString().toLowerCase() === extraValue.toLowerCase());
+
     valueSelector.innerHTML = `<option value="">All ${fieldName.toUpperCase()}s</option>`;
     values.forEach(v => {
         valueSelector.innerHTML += `<option value="${v}">${v}</option>`;
