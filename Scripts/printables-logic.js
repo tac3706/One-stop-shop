@@ -28,8 +28,6 @@ async function loadPrintables() {
             ...docSnap.data() 
         }));
 
-        populateFilterDropdown("topicFilter", "topic");
-        populateFilterDropdown("languageFilter", "language");
         populateExtraFields(); 
         applyPrintableFilters();
     } catch (error) { 
@@ -65,7 +63,7 @@ function populateExtraFields() {
     });
 
     const currentField = fieldSelector.value;
-    fieldSelector.innerHTML = '<option value="">Search by Extra Field...</option>';
+    fieldSelector.innerHTML = '<option value="">Filter Results</option>';
     extraKeys.sort().forEach(key => {
         fieldSelector.innerHTML += `<option value="${key}">${key.toUpperCase()}</option>`;
     });
