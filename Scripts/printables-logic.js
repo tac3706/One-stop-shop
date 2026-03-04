@@ -84,12 +84,15 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
 
     const values = [...new Set(allPrintables.map(res => {
         const val = res[fieldName]; // Use the fieldName from the listener
-            return val ? val.toString().trim().toUpperCase() : null;
+            return val ? val.toString().trim(): null;
         }).filter(Boolean))].sort();
 
-    valueSelector.innerHTML = `<option value="">All ${fieldName.toUpperCase()}s</option>`;
+    const formattedFieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+    valueSelector.innerHTML = `<option value="">ALL ${formattedFieldName}S</option>`;
+
     values.forEach(v => {
-        valueSelector.innerHTML += `<option value="${v}">${v}</option>`;
+        const displayValue = v.charAt(0).toUpperCase() + v.slice(1);
+        valueSelector.innerHTML += `<option value="${v}">${displayValue}</option>`;
     });
     valueSelector.disabled = false;
     applyPrintableFilters();
@@ -299,7 +302,7 @@ function applyPrintableFilters() {
 
         let matchesExtra = true;
         if (extraField && extraValue) {
-            matchesExtra = String(res[extraField] || "").trim().toUpperCase() === extraValue.trim().toUpperCase();
+            matchesExtra = String(res[extraField] || "").trim().toLowerCase() === extraValue.toLowerCase();
         }
         return matchesStatic && matchesExtra;
     });

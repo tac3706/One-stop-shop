@@ -91,12 +91,17 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
     // Get unique values and normalize them to Title Case (e.g., "English")
     const values = [...new Set(allResources.map(res => {
         const val = res[fieldName]; // Use the fieldName from the listener
-        return val ? val.toString().trim().toLowerCase() : null;
+        return val ? val.toString().trim() : null;
     }).filter(Boolean))].sort();
 
-    valueSelector.innerHTML = `<option value="">All ${fieldName.toUpperCase()}s</option>`;
+    // Visual formatting for the "ALL" option (e.g., Age group -> Age Group)
+    const formattedFieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+    valueSelector.innerHTML = `<option value="">ALL ${formattedFieldName}S</option>`;
+
     values.forEach(v => {
-        valueSelector.innerHTML += `<option value="${v}">${v}</option>`;
+        // Fix: Capitalize first letter, keep rest as is (preserves spaces automatically)
+        const displayValue = v.charAt(0).toUpperCase() + v.slice(1);
+        valueSelector.innerHTML += `<option value="${v}">${displayValue}</option>`; 
     });
     valueSelector.disabled = false;
     applyFilters();
@@ -304,7 +309,7 @@ function applyFilters() {
         // Logic for the extra field
         let matchesExtra = true;
         if (extraField && extraValue) {
-            matchesExtra = String(res[extraField] || "").trim().toUpperCase() === extraValue.trim().toUpperCase();
+            matchesExtra = String(res[extraField] || "").trim().toLowerCase() === extraValue.toLowerCase();
         }
 
         return matchesStatic && matchesExtra;
