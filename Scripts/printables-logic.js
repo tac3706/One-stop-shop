@@ -98,12 +98,11 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
 document.getElementById("extraValueSelector")?.addEventListener("change", applyPrintableFilters);
 
 // 2. Display Data
-// Replace your displayPrintables function with this:
 function displayPrintables(data) {
     const list = document.getElementById("printableList");
     if (!list) return;
     
-    // Add Total Count at the top
+    // 1. Display Total Count at the top
     list.innerHTML = `<p style="text-align:center; font-weight:bold;">Showing ${data.length} printable(s)</p>`;
 
     if (data.length === 0) {
@@ -111,20 +110,50 @@ function displayPrintables(data) {
         return;
     }
 
-    // Group by topic
-    const topics = [...new Set(data.map(res => String(res.topic || "general").toLowerCase()))].sort();
+    const sortOrder = document.getElementById("sortOrder")?.value || "newest";
 
-    topics.forEach(topic => {
-        const topicItems = data.filter(res => String(res.topic || "general").toLowerCase() === topic);
+    // Helper to get numeric time for sorting groups and items
+    const getTime = (val) => {
+        if (!val) return 0;
+        if (val.seconds) return val.seconds; // Firebase Timestamp
+        return new Date(val).getTime() / 1000 || 0; // JS Date or String
+    };
+
+    // 2. Map unique topics into sorted group objects
+    const topicGroups = [...new Set(data.map(res => String(res.topic || "general").toLowerCase()))]
+        .map(name => {
+            const items = data.filter(res => String(res.topic || "general").toLowerCase() === name);
+            
+            // Sort items within this specific group
+            items.sort((a, b) => {
+                if (sortOrder === "newest") return getTime(b.createdAt) - getTime(a.createdAt);
+                if (sortOrder === "oldest") return getTime(a.createdAt) - getTime(b.createdAt);
+                if (sortOrder === "title") return (a.title || "").localeCompare(b.title || "");
+                return 0;
+            });
+
+            // The group's reference time is based on its first item after sorting
+            return { name, items, groupTime: getTime(items[0]?.createdAt) };
+        });
+
+    // 3. Sort the Topic Groups themselves
+    topicGroups.sort((a, b) => {
+        if (sortOrder === "newest") return b.groupTime - a.groupTime;
+        if (sortOrder === "oldest") return a.groupTime - b.groupTime;
+        return a.name.localeCompare(b.name);
+    });
+
+    // 4. Render the sorted groups and their items
+    topicGroups.forEach(group => {
         const section = document.createElement("div");
         section.style.marginBottom = "15px";
 
         section.innerHTML = `
             <h2 class="topic-header" style="cursor:pointer; background:#f0f0f0; padding:10px; border-radius:5px; text-align:center;">
-                ▶ ${topic.toUpperCase()} (${topicItems.length})
+                ▶ ${group.name.toUpperCase()} (${group.items.length})
             </h2>
             <div class="topic-content" style="display:none; padding:10px;">
-                ${topicItems.map(res => `
+                ${group.items.map(res => `
                     <div class="resource-item" data-id="${res.firebaseId}" style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px; text-align:center;">
                         <h3>${res.title || "Untitled"}</h3>
                         <div style="margin-top:10px;">
@@ -137,16 +166,17 @@ function displayPrintables(data) {
                             <button class="feed-action-btn" style="cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px; padding:5px 10px; margin-left:5px;">💬 Feedback (${(res.feedback || []).length})</button>
                         </div>
                         
-                    ${(res.feedback && res.feedback.length > 0) ? `
-                        <div class="feedback-list" style="font-size:0.85em; color:#555; background:#fefefe; padding:10px; margin-top:10px; border-radius:5px; text-align:center; border:1px dashed #ccc;">
-                            ${res.feedback.map(f => `<p style="margin:4px 0;"><strong>${f.date}:</strong> ${f.text}</p>`).join('')}
-                        </div>
-                    ` : ''}
+                        ${(res.feedback && res.feedback.length > 0) ? `
+                            <div class="feedback-list" style="font-size:0.85em; color:#555; background:#fefefe; padding:10px; margin-top:10px; border-radius:5px; text-align:center; border:1px dashed #ccc;">
+                                ${res.feedback.map(f => `<p style="margin:4px 0;"><strong>${f.date}:</strong> ${f.text}</p>`).join('')}
+                            </div>
+                        ` : ''}
                     </div>
                 `).join('')}
             </div>
         `;
         
+        // Toggle visibility of the topic content
         section.querySelector("h2").onclick = () => {
             const content = section.querySelector(".topic-content");
             content.style.display = content.style.display === "none" ? "block" : "none";
