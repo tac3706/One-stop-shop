@@ -61,8 +61,8 @@ function populateExtraFields() {
     allResources.forEach(res => {
         Object.keys(res).forEach(key => {
             const lowKey = key.toLowerCase();
-            if (!staticFields.includes(lowKey) && !extraKeys.includes(lowKey)) {
-                extraKeys.push(lowKey);
+            if (!staticFields.includes(lowKey) && !extraKeys.includes(key)) {
+                extraKeys.push(key);
             }
         });
     });
@@ -71,7 +71,9 @@ function populateExtraFields() {
     const currentField = fieldSelector.value;
     fieldSelector.innerHTML = '<option value="">Filter Results</option>';
     extraKeys.sort().forEach(key => {
-        fieldSelector.innerHTML += `<option value="${key}">${key.toUpperCase()}</option>`;
+        // Capitalize first letter only for the label (e.g., topic -> Topic)
+        const label = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+        fieldSelector.innerHTML += `<option value="${key}">${label}</option>`;
     });
     fieldSelector.value = currentField;
 }
@@ -94,14 +96,14 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
         return val ? val.toString().trim() : null;
     }).filter(Boolean))].sort();
 
-    // Visual formatting for the "ALL" option (e.g., Age group -> Age Group)
-    const formattedFieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
-    valueSelector.innerHTML = `<option value="">ALL ${formattedFieldName}S</option>`;
+    // Formatting the "ALL" option (e.g., "ALL Topics")
+    const groupLabel = fieldName.charAt(0).toUpperCase() + fieldName.slice(1).toLowerCase();
+    valueSelector.innerHTML = `<option value="">ALL ${groupLabel}S</option>`;
 
     values.forEach(v => {
-        // Fix: Capitalize first letter, keep rest as is (preserves spaces automatically)
-        const displayValue = v.charAt(0).toUpperCase() + v.slice(1);
-        valueSelector.innerHTML += `<option value="${v}">${displayValue}</option>`; 
+        // Capitalize ONLY the first letter of the value
+        const displayValue = v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
+        valueSelector.innerHTML += `<option value="${v}">${displayValue}</option>`;
     });
     valueSelector.disabled = false;
     applyFilters();

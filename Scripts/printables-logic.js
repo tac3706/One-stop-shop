@@ -52,12 +52,12 @@ function populateExtraFields() {
 
     const staticFields = ['title', 'url', 'id', 'docid', 'favoritescount', 'feedback', 'createdat', 'storagepath', 'firebaseid'];
 
-    let extraKeys = [];
+let extraKeys = [];
     allPrintables.forEach(res => {
         Object.keys(res).forEach(key => {
             const lowKey = key.toLowerCase();
-            if (!staticFields.includes(lowKey) && !extraKeys.includes(lowKey)) {
-                extraKeys.push(lowKey);
+            if (!staticFields.includes(lowKey) && !extraKeys.includes(key)) {
+                extraKeys.push(key);
             }
         });
     });
@@ -65,9 +65,9 @@ function populateExtraFields() {
     const currentField = fieldSelector.value;
     fieldSelector.innerHTML = '<option value="">Filter Results</option>';
     extraKeys.sort().forEach(key => {
-        fieldSelector.innerHTML += `<option value="${key}">${key.toUpperCase()}</option>`;
+    const label = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+            fieldSelector.innerHTML += `<option value="${key}">${label}</option>`;
     });
-    fieldSelector.value = currentField;
 }
 
 // Handle Extra Field Dropdowns
@@ -87,11 +87,11 @@ document.getElementById("extraFieldSelector")?.addEventListener("change", (e) =>
             return val ? val.toString().trim(): null;
         }).filter(Boolean))].sort();
 
-    const formattedFieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
-    valueSelector.innerHTML = `<option value="">ALL ${formattedFieldName}S</option>`;
+    const groupLabel = fieldName.charAt(0).toUpperCase() + fieldName.slice(1).toLowerCase();
+    valueSelector.innerHTML = `<option value="">ALL ${groupLabel}S</option>`;
 
     values.forEach(v => {
-        const displayValue = v.charAt(0).toUpperCase() + v.slice(1);
+        const displayValue = v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
         valueSelector.innerHTML += `<option value="${v}">${displayValue}</option>`;
     });
     valueSelector.disabled = false;
